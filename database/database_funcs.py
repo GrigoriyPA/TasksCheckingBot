@@ -92,6 +92,10 @@ class DatabaseHelper:
         self.cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
         self.con.commit()
 
+    def change_user_telegram_id(self, login, new_telegram_id):
+        self.cur.execute("UPDATE users SET telegram_id = ? WHERE login = ?", (new_telegram_id, login))
+        self.con.commit()
+
 
 # dh = DatabaseHelper('database.db')
 # dh.create_database()
