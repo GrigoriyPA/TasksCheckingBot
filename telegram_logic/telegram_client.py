@@ -1,9 +1,6 @@
 import threading
 from telebot import types, TeleBot
-<<<<<<< HEAD
-=======
 from user import User
->>>>>>> origin/telegram_logic
 from database.database_funcs import DatabaseHelper
 import config
 import constants
