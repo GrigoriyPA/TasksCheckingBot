@@ -3,9 +3,9 @@ from user import User
 
 
 class DatabaseHelper:
-    def __init__(self, database_name):
+    def __init__(self, path_to_database, database_name):
         self.DATABASE_NAME = database_name
-        self.con = sqlite3.connect(database_name)
+        self.con = sqlite3.connect(path_to_database + database_name)
         self.cur = self.con.cursor()
 
     def __del__(self):
@@ -90,6 +90,10 @@ class DatabaseHelper:
 
     def change_user_status(self, login, new_status):
         self.cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
+        self.con.commit()
+
+    def change_user_telegram_id(self, login, new_telegram_id):
+        self.cur.execute("UPDATE users SET telegram_id = ? WHERE login = ?", (new_telegram_id, login))
         self.con.commit()
 
 
