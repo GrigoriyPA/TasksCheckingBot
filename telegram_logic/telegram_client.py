@@ -132,6 +132,7 @@ class TelegramClient:
 
     def __compute_keyboard_sign_up(self, message):
         if self.__is_authorized(message.chat.id):
+            self.wait_mode[message.chat.id] = None
             self.__send_message(message.chat.id, "Вы уже были авторизованны.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -162,10 +163,10 @@ class TelegramClient:
             return
 
         id = self.__get_id_by_login(login)
-        if id is not None:
-            self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.")
-
         self.__sign_up(login, message.chat.id)
+        if id is not None:
+            self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.", markup=self.__get_markup(id))
+
         self.__send_message(message.chat.id, "Успешная авторизация!", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_sign_out(self, message):
@@ -178,6 +179,7 @@ class TelegramClient:
 
     def __compute_keyboard_add_account(self, message):
         if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None
             self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -206,6 +208,7 @@ class TelegramClient:
 
     def __compute_keyboard_delete_account(self, message):
         if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None
             self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -215,7 +218,12 @@ class TelegramClient:
             return
 
         login = message.text
+        status = self.data_base.get_user_by_login(login).status
         self.wait_mode[message.chat.id] = None
+        if status == constants.SUPER_ADMIN or not self.__is_super_admin(message.chat.id) and status == constants.ADMIN:
+            self.__send_message(message.chat.id, "Введите не можете удалить этот аккаунт.", markup=self.__get_markup(message.chat.id))
+            return
+
         if not self.__is_valid_login(message.text):
             self.__send_message(message.chat.id, "Введённый логин не существует, удаление аккаунта отменено.", markup=self.__get_markup(message.chat.id))
             return
@@ -225,6 +233,7 @@ class TelegramClient:
 
     def __compute_keyboard_add_admin(self, message):
         if not self.__is_super_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None
             self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -248,6 +257,7 @@ class TelegramClient:
 
     def __compute_keyboard_delete_admin(self, message):
         if not self.__is_super_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None
             self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -260,6 +270,10 @@ class TelegramClient:
         self.wait_mode[message.chat.id] = None
         if not self.__is_valid_login(message.text):
             self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.", markup=self.__get_markup(message.chat.id))
+            return
+
+        if self.data_base.get_user_by_login(login).status == constants.SUPER_ADMIN:
+            self.__send_message(message.chat.id, "Запрещено менять права доступа этого пользователя.", markup=self.__get_markup(message.chat.id))
             return
 
         self.__delete_admin(login)

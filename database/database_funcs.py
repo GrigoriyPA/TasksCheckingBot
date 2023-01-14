@@ -19,7 +19,7 @@ class DatabaseHelper:
         cur.execute("PRAGMA foreign_keys = ON")
 
         # Creating table with info about the users
-        cur.execute("DROP TABLE users")
+        cur.execute("DROP TABLE IF EXISTS users")
         cur.execute("CREATE TABLE users("
                          "user_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                          "login TEXT NOT NULL UNIQUE,"
@@ -28,7 +28,7 @@ class DatabaseHelper:
                          "telegram_id INTEGER NOT NULL);")
 
         # Creating table with info about the tasks
-        cur.execute("DROP TABLE tasks")
+        cur.execute("DROP TABLE IF EXISTS tasks")
         cur.execute("CREATE TABLE tasks("
                          "task_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                          "homework_number INTEGER NOT NULL,"
@@ -36,7 +36,7 @@ class DatabaseHelper:
                          "right_answer TEXT NOT NULL);")
 
         # Creating table with results of solving tasks by users
-        cur.execute("DROP TABLE results")
+        cur.execute("DROP TABLE IF EXISTS results")
         cur.execute("CREATE TABLE results("
                          "user_id INTEGER NOT NULL,"
                          "task_id INTEGER NOT NULL,"
