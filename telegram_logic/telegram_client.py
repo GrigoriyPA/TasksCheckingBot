@@ -1,6 +1,5 @@
 import threading
-import telebot
-from telebot import types
+from telebot import types, TeleBot
 from database.database_funcs import DatabaseHelper
 import config
 import constants
@@ -179,6 +178,6 @@ class TelegramClient:
         self.client.infinity_polling()
 
     def run(self):
-        self.client = telebot.TeleBot(config.TELEGRAM_TOKEN)
+        self.client = TeleBot(config.TELEGRAM_TOKEN)
         self.handler_thread = threading.Thread(target=self.__handler)
         self.handler_thread.start()

@@ -110,16 +110,4 @@ class DatabaseHelper:
         con.commit()
 
 
-# dh = DatabaseHelper('database.db')
-# dh.create_database()
-# a = User('a', 'b', 'c', 5)
-# b = User('b', 'b', 'c', 6)
-# c = User('c', 'b', 'c', 7)
-# d = User('d', 'b', 'c', 8)
-# dh.create_user(a)
-# dh.create_user(b)
-# dh.create_user(c)
-# dh.create_user(d)
-# dh.get_user_by_login('d')
-# dh.change_user_status('ahg', 'bobobo')
 

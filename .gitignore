@@ -1,4 +1,6 @@
 /.idea
 /__pycache__
+database/__pycache__
+telegram_logic/__pycache__
 
 config.py
