@@ -88,6 +88,10 @@ class DatabaseHelper:
         # Returning user with the given parameters
         return User(*user_parameters)
 
+    def change_user_status(self, login, new_status):
+        self.cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
+        self.con.commit()
+
 
 # dh = DatabaseHelper('database.db')
 # dh.create_database()
@@ -100,4 +104,5 @@ class DatabaseHelper:
 # dh.create_user(c)
 # dh.create_user(d)
 # dh.get_user_by_login('d')
+# dh.change_user_status('ahg', 'bobobo')
 
