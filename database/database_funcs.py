@@ -108,6 +108,3 @@ class DatabaseHelper:
 
         cur.execute("UPDATE users SET telegram_id = ? WHERE login = ?", (new_telegram_id, login))
         con.commit()
-
-
-
