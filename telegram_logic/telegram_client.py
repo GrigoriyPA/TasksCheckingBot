@@ -1,8 +1,16 @@
 import threading
 import telebot
 from telebot import types
+from user import User
+from database.database_funcs import DatabaseHelper
 import config
 import constants
+
+
+def add_error_to_log(text):
+    error_log = open(constants.ERROR_LOG_NAME, "a")
+    error_log.write(text + "\n\n")
+    error_log.close()
 
 
 class WaitModeDescription:
@@ -18,23 +26,24 @@ class TelegramClient:
         self.handler_thread = None
         self.wait_mode = dict()
 
-    def __is_super_admin(self, id):
-        return False
-
-    def __is_admin(self, id):
-        return False
+        self.data_base = DatabaseHelper(constants.DATABASE_NAME)
+        # self.data_base.create_database()
 
     def __is_valid_login(self, login):
-        return False
+        return self.data_base.get_user_by_login(login) is not None
 
     def __is_valid_password(self, login, password):
-        return False
+        return self.data_base.get_user_by_login(login).password == password
 
     def __is_authorized(self, id):
         return False
 
     def __sign_out(self, login):
-        return 0  # delogined id (None if not)
+        user = self.data_base.get_user_by_login(login)
+
+        if user is not None:
+            return user.telegram_id
+        return None
 
     def __sign_up(self, login, id):
         pass
@@ -68,16 +77,19 @@ class TelegramClient:
 
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_sign_up, status="WAIT_LOGIN")
-            self.client.send_message(message.chat.id, text="Введите лигон аккаунта для авторизации:", markup=self.__get_markup(message))
+            self.client.send_message(message.chat.id, text="Введите логин аккаунта для авторизации:",
+                                     markup=self.__get_markup(message))
             return
 
         if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
             if not self.__is_valid_login(message.text):
                 self.wait_mode[message.chat.id] = None
-                self.client.send_message(message.chat.id, text="Введённый логин не существует, авторизация отменена.", markup=self.__get_markup(message))
+                self.client.send_message(message.chat.id, text="Введённый логин не существует, авторизация отменена.",
+                                         markup=self.__get_markup(message))
                 return
 
-            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_sign_up, status="WAIT_PASSWORD", data=message.text)
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_sign_up,
+                                                                  status="WAIT_PASSWORD", data=message.text)
             self.client.send_message(message.chat.id, text="Введите пароль:", markup=self.__get_markup(message))
             return
 
@@ -87,16 +99,21 @@ class TelegramClient:
 
             self.wait_mode[message.chat.id] = None
             if not self.__is_valid_password(login, password):
-                self.client.send_message(message.chat.id, text="Введённый неправильный пароль, авторизация отменена.", markup=self.__get_markup(message))
+                self.client.send_message(message.chat.id, text="Введённый неправильный пароль, авторизация отменена.",
+                                         markup=self.__get_markup(message))
                 return
 
             last_id = self.__sign_out(login)
             if last_id is not None:
-                self.client.send_message(last_id, text="В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.")
+                self.client.send_message(last_id,
+                                         text="В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.")
 
             self.__sign_up(login, message.chat.id)
-            self.client.send_message(message.chat.id, text="Успешная авторизация!", reply_markup=self.__get_markup(message))
+            self.client.send_message(message.chat.id, text="Успешная авторизация!",
+                                     reply_markup=self.__get_markup(message))
             return
+
+        add_error_to_log("Invalid wait status \'" + str(self.wait_mode[message.chat.id].status) + "\' in function __compute_keyboard_sign_up")
 
     def __handler(self):
         print("TG client started.")
