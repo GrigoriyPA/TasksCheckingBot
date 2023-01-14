@@ -3,9 +3,9 @@ from user import User
 
 
 class DatabaseHelper:
-    def __init__(self, database_name):
+    def __init__(self, path_to_database, database_name):
         self.DATABASE_NAME = database_name
-        self.con = sqlite3.connect(database_name)
+        self.con = sqlite3.connect(path_to_database + database_name)
         self.cur = self.con.cursor()
 
     def __del__(self):
