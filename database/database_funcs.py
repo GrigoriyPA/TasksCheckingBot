@@ -72,6 +72,26 @@ class DatabaseHelper:
         # Returning user with the given parameters
         return User(*user_parameters)
 
+    def get_user_by_telegram_id(self, telegram_id):
+        # Getting user with the given telegram_id
+
+        self.cur.execute("SELECT login, password, status, telegram_id "
+                                "FROM users "
+                                "WHERE telegram_id = ?", (telegram_id, ))
+
+        user_parameters = self.cur.fetchone()
+
+        # If there is no such user just return None
+        if user_parameters is None:
+            return None
+
+        # Returning user with the given parameters
+        return User(*user_parameters)
+
+    def change_user_status(self, login, new_status):
+        self.cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
+        self.con.commit()
+
 
 # dh = DatabaseHelper('database.db')
 # dh.create_database()
@@ -84,4 +104,5 @@ class DatabaseHelper:
 # dh.create_user(c)
 # dh.create_user(d)
 # dh.get_user_by_login('d')
+# dh.change_user_status('ahg', 'bobobo')
 
