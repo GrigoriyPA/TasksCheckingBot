@@ -1,4 +1,6 @@
 DATABASE_NAME = "database.db"
+ERROR_LOG_NAME = "error_log.txt"
+
 SUPER_ADMIN = "SUPER_ADMIN"
 ADMIN = "ADMIN"
 USER = "USER"

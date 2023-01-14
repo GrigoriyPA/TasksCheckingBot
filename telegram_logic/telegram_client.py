@@ -1,7 +1,6 @@
 import threading
 import telebot
 from telebot import types
-from user import User
 from database.database_funcs import DatabaseHelper
 import config
 import constants
@@ -36,7 +35,14 @@ class TelegramClient:
         return self.data_base.get_user_by_login(login).password == password
 
     def __is_authorized(self, id):
-        return False
+        return self.data_base.get_user_by_telegram_id(id) is not None
+
+    def __get_login_by_id(self, id):
+        user = self.data_base.get_user_by_telegram_id(id)
+
+        if user is None:
+            return None
+        return user.login
 
     def __sign_out(self, login):
         user = self.data_base.get_user_by_login(login)
@@ -55,6 +61,8 @@ class TelegramClient:
 
         if not self.__is_authorized(id):
             markup.add(types.KeyboardButton(text="Авторизоваться"))
+        else:
+            markup.add(types.KeyboardButton(text="Выйти"))
 
         return markup
 
@@ -113,7 +121,17 @@ class TelegramClient:
                                      reply_markup=self.__get_markup(message))
             return
 
+        self.wait_mode[message.chat.id] = None
         add_error_to_log("Invalid wait status \'" + str(self.wait_mode[message.chat.id].status) + "\' in function __compute_keyboard_sign_up")
+
+    def __compute_keyboard_sign_out(self, message):
+        login = self.__get_login_by_id(message.chat.id)
+        if login is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message))
+            return
+
+        self.__sign_out(login)
+        self.__send_message(message.chat.id, "Вы вышли из аккаунта.", markup=self.__get_markup(message))
 
     def __handler(self):
         print("TG client started.")
@@ -132,6 +150,8 @@ class TelegramClient:
                 self.wait_mode[message.chat.id]["function"](message)
             elif message.text == "Авторизоваться":
                 self.__compute_keyboard_sign_up(message)
+            elif message.text == "Выйти":
+                self.__compute_keyboard_sign_out(message)
 
         self.client.infinity_polling()
 
