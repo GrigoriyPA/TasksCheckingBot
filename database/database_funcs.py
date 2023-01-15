@@ -7,17 +7,23 @@ class DatabaseHelper:
     def __init__(self, path_to_database: str, database_name: str):
         self.database_path: str = path_to_database + database_name
 
-    def create_database(self):
+    def create_connection_and_cursor(self):
+        # Returns connection and cursor to our database
         con = sqlite3.connect(self.database_path)
         cur = con.cursor()
+
+        # Activating ability to use foreign keys
+        cur.execute("PRAGMA foreign_keys = ON")
+        con.commit()
+
+        return con, cur
+
+    def create_database(self):
+        con, cur = self.create_connection_and_cursor()
 
         # USE ONLY WHEN CREATING NEW DATABASE
 
         # Creates database with particular tables and relationships between them
-        # Returns connection to that database
-
-        # Activating ability to use foreign keys
-        cur.execute("PRAGMA foreign_keys = ON")
 
         # Creating table with info about the users
         cur.execute("DROP TABLE IF EXISTS users")
@@ -34,7 +40,8 @@ class DatabaseHelper:
                     "task_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                     "homework_name TEXT NOT NULL,"
                     "task_number INTEGER NOT NULL,"
-                    "right_answer TEXT NOT NULL);")
+                    "right_answer TEXT NOT NULL,"
+                    "UNIQUE(homework_name, task_number))")
 
         # Creating table with results of solving tasks by users
         cur.execute("DROP TABLE IF EXISTS results")
@@ -42,8 +49,8 @@ class DatabaseHelper:
                     "user_id INTEGER NOT NULL,"
                     "task_id INTEGER NOT NULL,"
                     "user_answer TEXT NOT NULL,"
-                    "FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,"
-                    "FOREIGN KEY (task_id) REFERENCES tasks (task_id) ON DELETE SET NULL,"
+                    "FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,"
+                    "FOREIGN KEY (task_id) REFERENCES tasks (task_id) ON DELETE CASCADE,"
                     "PRIMARY KEY (user_id, task_id));")
 
         # Saving changes
@@ -51,8 +58,8 @@ class DatabaseHelper:
 
     def add_user(self, user: User):
         # Creating new user with the given parameters
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+
+        con, cur = self.create_connection_and_cursor()
 
         # TODO adding same logins
 
@@ -61,8 +68,7 @@ class DatabaseHelper:
         con.commit()
 
     def get_user_by_login(self, login: str):
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         # Getting user with the given login
 
@@ -80,8 +86,7 @@ class DatabaseHelper:
         return User(*user_parameters)
 
     def get_user_id_by_login(self, login: str):
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         # Getting user id with the corresponding login
 
@@ -99,8 +104,7 @@ class DatabaseHelper:
         return user_id[0]
 
     def get_user_by_telegram_id(self, telegram_id: int):
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         # Getting user with the given telegram_id
 
@@ -118,30 +122,27 @@ class DatabaseHelper:
         return User(*user_parameters)
 
     def change_user_status(self, login: str, new_status: str):
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
         con.commit()
 
     def change_user_telegram_id(self, login: str, new_telegram_id: int):
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         cur.execute("UPDATE users SET telegram_id = ? WHERE login = ?", (new_telegram_id, login))
         con.commit()
 
     def delete_user_by_login(self, login: str):
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
 
     def add_homework(self, homework: Homework):
         # Creating new homework with the given parameters
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+
+        con, cur = self.create_connection_and_cursor()
 
         # There is a line in the database for each task in the homework
         for i in range(len(homework.right_answers)):
@@ -154,8 +155,8 @@ class DatabaseHelper:
 
     def delete_homework_by_name(self, homework_name: str):
         # Deletes all the tasks in the homework by it's name
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+
+        con, cur = self.create_connection_and_cursor()
 
         cur.execute("DELETE FROM tasks WHERE homework_name = ?", (homework_name,))
         con.commit()
@@ -163,10 +164,10 @@ class DatabaseHelper:
     def get_task_id(self, homework_name: str, task_number: int):
         # Returns task id with given homework name and task number
 
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
-        cur.execute("SELECT task_id FROM tasks WHERE homework_name = ? AND task_number = ?", (homework_name, task_number))
+        cur.execute("SELECT task_id FROM tasks WHERE homework_name = ? AND task_number = ?",
+                    (homework_name, task_number))
         task_id = cur.fetchone()
 
         # Returns None if there is no such task
@@ -178,10 +179,10 @@ class DatabaseHelper:
     def get_right_answer_for_the_task(self, homework_name: str, task_number: int):
         # Returns right answer for the task with given homework name and task number
 
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
-        cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ? AND task_number = ?", (homework_name, task_number))
+        cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ? AND task_number = ?",
+                    (homework_name, task_number))
         right_answer = cur.fetchone()
 
         # If there is no such task just returns None
@@ -205,8 +206,7 @@ class DatabaseHelper:
         if task_id is None:
             return None
 
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         cur.execute("SELECT user_answer FROM results WHERE user_id = ? AND task_id = ?", (user_id, task_id))
         answer = cur.fetchone()
@@ -232,8 +232,7 @@ class DatabaseHelper:
         if task_id is None:
             return None
 
-        con = sqlite3.connect(self.database_path)
-        cur = con.cursor()
+        con, cur = self.create_connection_and_cursor()
 
         # TODO empty answer
         # TODO unique constraint
@@ -242,3 +241,29 @@ class DatabaseHelper:
         con.commit()
 
         return self.get_right_answer_for_the_task(homework_name, task_number)
+
+    def get_all_homeworks_name(self) -> list[str]:
+        # Returns list of homeworks names
+
+        con, cur = self.create_connection_and_cursor()
+
+        cur.execute("SELECT DISTINCT homework_name FROM tasks")
+
+        # We need to take the first element in each list
+        return [data[0] for data in cur.fetchall()]
+
+    def get_homework_by_name(self, homework_name: str):
+        # Returns the object of class Homework corresponding to the given homework name
+
+        con, cur = self.create_connection_and_cursor()
+
+        cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ?", (homework_name,))
+
+        # We need to take the first element in each list
+        right_answers = [data[0] for data in cur.fetchall()]
+
+        # If there is no such tasks with given homework name we return None
+        if len(right_answers) == 0:
+            return None
+
+        return Homework(homework_name, right_answers)
