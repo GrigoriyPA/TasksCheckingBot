@@ -211,9 +211,9 @@ class DatabaseHelper:
         cur.execute("SELECT user_answer FROM results WHERE user_id = ? AND task_id = ?", (user_id, task_id))
         answer = cur.fetchone()
 
-        # If user didn't give answer to that task we return None
+        # If user didn't give answer to that task we return empty string
         if answer is None:
-            return None
+            return ''
 
         return answer[0]
 
@@ -242,7 +242,7 @@ class DatabaseHelper:
 
         return self.get_right_answer_for_the_task(homework_name, task_number)
 
-    def get_all_homeworks_name(self) -> list[str]:
+    def get_all_homeworks_names(self) -> list[str]:
         # Returns list of homeworks names
 
         con, cur = self.create_connection_and_cursor()
@@ -267,3 +267,26 @@ class DatabaseHelper:
             return None
 
         return Homework(homework_name, right_answers)
+
+    def get_list_of_unsolved_tasks(self, login: str, homework_name: str):
+        # Returns a list of tasks in particular homework on which user didn't give any answer
+
+        homework = self.get_homework_by_name(homework_name)
+
+        # if there is no such homework we return None
+        if homework is None:
+            return None
+
+        user = self.get_user_by_login(login)
+
+        # if there is no such user we return None
+        if user is None:
+            return None
+
+        # For each task we check if there is an answer
+        unsolved_tasks = []
+        for i in range(len(homework.right_answers)):
+            if self.get_user_answer_for_the_task(login, homework_name, i + 1) == '':
+                unsolved_tasks.append(i + 1)
+
+        return unsolved_tasks
