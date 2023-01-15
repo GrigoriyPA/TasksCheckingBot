@@ -3,6 +3,7 @@ from telebot import types, TeleBot
 from user import User
 from homework import Homework
 from database.database_funcs import DatabaseHelper
+import markups
 import config
 import constants
 
@@ -28,6 +29,12 @@ class TelegramClient:
 
         self.data_base = DatabaseHelper(constants.PATH_TO_DATABASE, constants.DATABASE_NAME)
         # self.data_base.create_database()
+
+    def __check_homework(self, homework_name):
+        pass
+
+    def __check_task(self, homework_name, task_id):
+        pass
 
     def __is_super_admin(self, id):
         user = self.data_base.get_user_by_telegram_id(id)
@@ -73,6 +80,8 @@ class TelegramClient:
 
         if self.__is_admin(id):
             markup.add(types.KeyboardButton(text="Добавить"), types.KeyboardButton(text="Удалить"))
+        else:
+            markup.add(types.KeyboardButton(text="Сдать задачу"))
 
         markup.add(types.KeyboardButton(text="Выйти"))
         return markup
@@ -322,6 +331,15 @@ class TelegramClient:
         else:
             self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.", markup=self.__get_markup(message.chat.id))
 
+    def __compute_keyboard_send_answer(self, message):
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        markup = markups.get_homework_list("????", self.__check_homework)
+        self.__send_message(message.chat.id, "Выберите имя работы.", markup=markup)
+
     def __handler(self):
         print("TG client started.")
 
@@ -346,6 +364,8 @@ class TelegramClient:
                 self.__compute_keyboard_sign_up(message)
             elif message.text == "Выйти":
                 self.__compute_keyboard_sign_out(message)
+            elif message.text == "Сдать задачу" and not self.__is_admin(message.chat.id):
+                self.__compute_keyboard_send_answer(message)
             elif message.text == "Добавить" and self.__is_admin(message.chat.id):
                 self.__compute_keyboard_add(message)
             elif message.text == "Удалить" and self.__is_admin(message.chat.id):
