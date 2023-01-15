@@ -108,3 +108,10 @@ class DatabaseHelper:
 
         cur.execute("UPDATE users SET telegram_id = ? WHERE login = ?", (new_telegram_id, login))
         con.commit()
+
+    def delete_user_by_login(self, login):
+        con = sqlite3.connect(self.database_path)
+        cur = con.cursor()
+
+        cur.execute("DELETE FROM users WHERE login = ?", (login, ))
+        con.commit()
