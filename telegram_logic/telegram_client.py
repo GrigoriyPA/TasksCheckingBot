@@ -254,7 +254,7 @@ class TelegramClient:
         self.wait_mode[message.chat.id] = None
 
         # add exercise
-        self.__send_message(message.chat.id, "Задание успешно добавленно.", markup=self.__get_markup(message.chat.id))
+        self.__send_message(message.chat.id, "Задание успешно добавленно (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_admin(self, message):
         if self.wait_mode[message.chat.id] is None:
