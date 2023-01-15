@@ -66,8 +66,7 @@ class TelegramClient:
         if id in self.wait_mode and self.wait_mode[id] is not None:
             if self.wait_mode[id].status == "ADMIN_ACTION" or self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
                 markup.add(types.KeyboardButton(text="Аккаунт"))
-                if self.wait_mode[id].data == "ADD":
-                    markup.add(types.KeyboardButton(text="Задание"))
+                markup.add(types.KeyboardButton(text="Задание"))
 
             if self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
                 markup.add(types.KeyboardButton(text="Администратор"))
@@ -256,6 +255,18 @@ class TelegramClient:
         # add exercise
         self.__send_message(message.chat.id, "Задание успешно добавленно (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
 
+    def __compute_keyboard_delete_exercise(self, message):
+        if self.wait_mode[message.chat.id] is None:
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_exercise)
+            self.__send_message(message.chat.id, "Введите номер задания для удаления.", markup=self.__get_markup(message.chat.id))
+            return
+
+        number = message.text
+        self.wait_mode[message.chat.id] = None
+
+        # delete exercise
+        self.__send_message(message.chat.id, "Задание успешно удалено (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
+
     def __compute_keyboard_delete_admin(self, message):
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_admin)
@@ -312,6 +323,8 @@ class TelegramClient:
         self.wait_mode[message.chat.id] = None
         if message.text == "Аккаунт" and self.__is_admin(message.chat.id):
             self.__compute_keyboard_delete_account(message)
+        elif message.text == "Задание" and self.__is_admin(message.chat.id):
+            self.__compute_keyboard_delete_exercise(message)
         elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
             self.__compute_keyboard_delete_admin(message)
         else:
