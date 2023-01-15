@@ -99,6 +99,15 @@ class TelegramClient:
 
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
+    def __compute_wait_answer(self, message):
+        pass
+
+    def __compute_callback_select_homework(self, data, message):
+        pass
+
+    def __compute_callback_select_task(self, data, message):
+        pass
+
     def __compute_keyboard_back(self, message):
         self.wait_mode[message.chat.id] = None
         self.__send_message(message.chat.id, "Выход выполнен.", markup=self.__get_markup(message.chat.id))
@@ -346,6 +355,17 @@ class TelegramClient:
         @self.client.message_handler(commands=['start'])
         def start(message):
             self.__compute_command_start(message)
+
+        @self.client.callback_query_handler(func=lambda call: True)
+        def callback_inline(call):
+            self.client.answer_callback_query(callback_query_id=call.id)
+            data = call.data.split()
+            if data[0] == "SELECT_HOMEWORK":
+                self.__compute_callback_select_homework(data[1:], call.message)
+            elif data[0] == "SELECT_TASK":
+                self.__compute_callback_select_task(data[1:], call.message)
+            else:
+                add_error_to_log("Unknown callback: " + data[0])
 
         @self.client.message_handler(content_types=["text"])
         def on_message(message):
