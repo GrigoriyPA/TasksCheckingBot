@@ -217,7 +217,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.", markup=self.__get_markup(message.chat.id))
             return
 
-        # delete user
+        self.data_base.delete_user_by_login(login)
         self.__send_message(message.chat.id, "Аккаунт успешно удалён.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_add_admin(self, message):
