@@ -100,13 +100,27 @@ class TelegramClient:
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
     def __compute_wait_answer(self, message):
-        pass
+        self.wait_mode[message.chat.id] = None
+        answer = message.text
+        self.__send_message(message.chat.id, "К сожалению, ответы мы проверять не умеем)", markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_select_homework(self, data, message):
-        pass
+        homework_name = data[0]
+        if not self.__check_homework(homework_name):
+            self.__send_message(message.chat.id, "Выбранная работа недоступна.", markup=self.__get_markup(message.chat.id))
+            return
+
+        markup = markups.get_task_list("????", "?????", self.__check_task)
+        self.__send_message(message.chat.id, "Выберите задание.", markup=markup)
 
     def __compute_callback_select_task(self, data, message):
-        pass
+        homework_name, task_id = data[0], int(data[1])
+        if not self.__check_task(homework_name, task_id):
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            return
+
+        self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_wait_answer)
+        self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_back(self, message):
         self.wait_mode[message.chat.id] = None
