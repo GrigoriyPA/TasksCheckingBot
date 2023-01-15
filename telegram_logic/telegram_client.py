@@ -68,13 +68,12 @@ class TelegramClient:
                 markup.add(types.KeyboardButton(text="Аккаунт"))
                 if self.wait_mode[id].data == "ADD":
                     markup.add(types.KeyboardButton(text="Задание"))
+
             if self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
                 markup.add(types.KeyboardButton(text="Администратор"))
 
-            if self.wait_mode[id].status == "ADMIN_ACTION" or self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
-                return markup
-            else:
-                return types.ReplyKeyboardRemove()
+            markup.add(types.KeyboardButton(text="Назад"))
+            return markup
 
         if self.data_base.get_user_by_telegram_id(id) is None:
             markup.add(types.KeyboardButton(text="Авторизоваться"))
@@ -130,6 +129,10 @@ class TelegramClient:
             text = "Пожалуйста, авторизуйтесь."
 
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
+
+    def __compute_keyboard_back(self, message):
+        self.wait_mode[message.chat.id] = None
+        self.__send_message(message.chat.id, "Выход выполнен.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_sign_up(self, message):
         if self.data_base.get_user_by_telegram_id(message.chat.id) is not None:
@@ -330,7 +333,10 @@ class TelegramClient:
                 self.wait_mode[message.chat.id] = None
 
             if self.wait_mode[message.chat.id] is not None:
-                self.wait_mode[message.chat.id].function(message)
+                if message.text == "Назад":
+                    self.__compute_keyboard_back(message)
+                else:
+                    self.wait_mode[message.chat.id].function(message)
             elif message.text == "Авторизоваться":
                 self.__compute_keyboard_sign_up(message)
             elif message.text == "Выйти":
