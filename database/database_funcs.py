@@ -242,7 +242,7 @@ class DatabaseHelper:
 
         return self.get_right_answer_for_the_task(homework_name, task_number)
 
-    def get_all_homeworks_name(self) -> list[str]:
+    def get_all_homeworks_names(self) -> list[str]:
         # Returns list of homeworks names
 
         con, cur = self.create_connection_and_cursor()
