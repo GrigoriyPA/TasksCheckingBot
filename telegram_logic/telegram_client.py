@@ -1,6 +1,7 @@
 import threading
 from telebot import types, TeleBot
 from user import User
+from homework import Homework
 from database.database_funcs import DatabaseHelper
 import config
 import constants
@@ -126,7 +127,7 @@ class TelegramClient:
             return
 
         id = self.__get_id_by_login(login)
-        self.data_base.change_user_telegram_id(login, id)
+        self.data_base.change_user_telegram_id(login, message.chat.id)
         if id is not None:
             self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.", markup=self.__get_markup(id))
 
@@ -162,7 +163,7 @@ class TelegramClient:
         password = message.text
         self.wait_mode[message.chat.id] = None
 
-        self.data_base.create_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGREM_ID))
+        self.data_base.add_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGREM_ID))
         self.__send_message(message.chat.id, "Аккаунт успешно создан.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_account(self, message):
@@ -229,12 +230,19 @@ class TelegramClient:
 
     def __compute_keyboard_add_exercise(self, message):
         if self.wait_mode[message.chat.id] is None:
-            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise, status="WAIT_NUMBER_OF_EXERCISES")
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise, status="WAIT_NAME")
+            self.__send_message(message.chat.id, "Введите имя нового задания:", markup=self.__get_markup(message.chat.id))
+            return
+
+        if self.wait_mode[message.chat.id].status == "WAIT_NAME":
+            homework_name = message.text
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise, data={"name": homework_name, "answers": []}, status="WAIT_NUMBER_OF_EXERCISES")
             self.__send_message(message.chat.id, "Введите количество заданий:", markup=self.__get_markup(message.chat.id))
             return
 
         if self.wait_mode[message.chat.id].status == "WAIT_NUMBER_OF_EXERCISES":
             success = True
+            number = 0
             try:
                 number = int(message.text)
             except:
@@ -245,10 +253,9 @@ class TelegramClient:
                 return
 
             self.wait_mode[message.chat.id].status = {"current_number": 0, "amount": number}
-            self.wait_mode[message.chat.id].data = []
 
         if self.wait_mode[message.chat.id].status["current_number"] > 0:
-            self.wait_mode[message.chat.id].data.append(message.text)
+            self.wait_mode[message.chat.id].data["answers"].append(message.text)
             self.__send_message(message.chat.id, "Ответ принят.", markup=self.__get_markup(message.chat.id))
 
         if self.wait_mode[message.chat.id].status["current_number"] < self.wait_mode[message.chat.id].status["amount"]:
@@ -256,23 +263,24 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Введите ответ к задаче номер " + str(self.wait_mode[message.chat.id].status["current_number"]) + ":", markup=self.__get_markup(message.chat.id))
             return
 
-        answers = self.wait_mode[message.chat.id].data
+        homework_name = self.wait_mode[message.chat.id].data["name"]
+        answers = self.wait_mode[message.chat.id].data["answers"]
         self.wait_mode[message.chat.id] = None
 
-        # add exercise
-        self.__send_message(message.chat.id, "Задание успешно добавленно (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
+        self.data_base.add_homework(Homework(homework_name, answers))
+        self.__send_message(message.chat.id, "Задание успешно добавленно.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_exercise(self, message):
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_exercise)
-            self.__send_message(message.chat.id, "Введите номер задания для удаления.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введите имя задания для удаления.", markup=self.__get_markup(message.chat.id))
             return
 
-        number = message.text
+        homework_name = message.text
         self.wait_mode[message.chat.id] = None
 
-        # delete exercise
-        self.__send_message(message.chat.id, "Задание успешно удалено (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
+        self.data_base.delete_homework_by_name(homework_name)
+        self.__send_message(message.chat.id, "Задание успешно удалено.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_add(self, message):
         if self.wait_mode[message.chat.id] is None:
