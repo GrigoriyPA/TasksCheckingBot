@@ -2,12 +2,12 @@ from telebot import types
 import constants
 
 
-def get_homework_list(homework_list, check_name):
+def get_homework_list(login, homework_list, check_name):
     keyboard = []
     row = []
     id = 0
     for name in homework_list:
-        if not check_name(name):
+        if not check_name(login, name):
             continue
 
         row.append(types.InlineKeyboardButton(text=name, callback_data="SELECT_HOMEWORK " + name))
@@ -23,12 +23,12 @@ def get_homework_list(homework_list, check_name):
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_task_list(homework_size, homework_name, check_task):
+def get_task_list(login, homework_size, homework_name, check_task):
     keyboard = []
     row = []
     id = 0
     for task_id in range(1, homework_size + 1):
-        if not check_task(homework_name, task_id):
+        if not check_task(login, homework_name, task_id):
             continue
 
         row.append(types.InlineKeyboardButton(text=str(task_id), callback_data="SELECT_TASK " + homework_name + " " + str(task_id)))

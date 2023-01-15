@@ -30,11 +30,23 @@ class TelegramClient:
         self.data_base = DatabaseHelper(constants.PATH_TO_DATABASE, constants.DATABASE_NAME)
         # self.data_base.create_database()
 
-    def __check_homework(self, homework_name):
-        pass
+    def __check_homework(self, login, homework_name):
+        user = self.data_base.get_user_by_login(login)
+        if user is None:
+            return False
 
-    def __check_task(self, homework_name, task_id):
-        pass
+        homework = self.data_base.get_homework_by_name(homework_name)
+        if homework is None:
+            return False
+
+        # check answers
+
+    def __check_task(self, login, homework_name, task_id):
+        user = self.data_base.get_user_by_login(login)
+        if user is None:
+            return False
+
+        return self.data_base.get_user_answer_for_the_task(login, homework_name, task_id) == ""
 
     def __is_super_admin(self, id):
         user = self.data_base.get_user_by_telegram_id(id)
@@ -100,22 +112,39 @@ class TelegramClient:
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
     def __compute_wait_answer(self, message):
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.wait_mode[message.chat.id] = None
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            return
+
         self.wait_mode[message.chat.id] = None
         answer = message.text
         self.__send_message(message.chat.id, "К сожалению, ответы мы проверять не умеем)", markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_select_homework(self, data, message):
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            return
+
         homework_name = data[0]
-        if not self.__check_homework(homework_name):
+        if not self.__check_homework(user.login, homework_name):
             self.__send_message(message.chat.id, "Выбранная работа недоступна.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_task_list("????", "?????", self.__check_task)
+        homework = self.data_base.get_homework_by_name(homework_name)
+        markup = markups.get_task_list(user.login, len(homework.right_answers), homework.name, self.__check_task)
         self.__send_message(message.chat.id, "Выберите задание.", markup=markup)
 
     def __compute_callback_select_task(self, data, message):
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            return
+
         homework_name, task_id = data[0], int(data[1])
-        if not self.__check_task(homework_name, task_id):
+        if not self.__check_task(user.login, homework_name, task_id):
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -360,7 +389,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_homework_list("????", self.__check_homework)
+        markup = markups.get_homework_list(user.login, self.data_base.get_all_homeworks_name(), self.__check_homework)
         self.__send_message(message.chat.id, "Выберите имя работы.", markup=markup)
 
     def __handler(self):
