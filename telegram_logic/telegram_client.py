@@ -36,14 +36,6 @@ class TelegramClient:
         user = self.data_base.get_user_by_telegram_id(id)
         return user is not None and (user.status == constants.ADMIN or user.status == constants.SUPER_ADMIN)
 
-    def __is_valid_password(self, login, password):
-        user = self.data_base.get_user_by_login(login)
-        if user is None:
-            add_error_to_log("Invalid login in function __is_valid_password")
-            return None
-
-        return user.password == password
-
     def __get_login_by_id(self, id):
         user = self.data_base.get_user_by_telegram_id(id)
 
@@ -83,38 +75,6 @@ class TelegramClient:
 
         markup.add(types.KeyboardButton(text="Выйти"))
         return markup
-
-    def __sign_out(self, id):
-        user = self.data_base.get_user_by_telegram_id(id)
-        if user is None:
-            add_error_to_log("Invalid id in function __sign_out")
-            return None
-
-        self.data_base.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGREM_ID)
-
-    def __sign_up(self, login, id):
-        user = self.data_base.get_user_by_login(login)
-        if user is None:
-            add_error_to_log("Invalid login in function __sign_out")
-            return None
-
-        self.data_base.change_user_telegram_id(user.login, id)
-
-    def __add_admin(self, login):
-        user = self.data_base.get_user_by_login(login)
-        if user is None:
-            add_error_to_log("Invalid login in function __add_admin")
-            return None
-
-        self.data_base.change_user_status(user.login, constants.ADMIN)
-
-    def __delete_admin(self, login):
-        user = self.data_base.get_user_by_login(login)
-        if user is None:
-            add_error_to_log("Invalid login in function __delete_admin")
-            return None
-
-        self.data_base.change_user_status(user.login, constants.USER)
 
     def __send_message(self, id, text, markup=None):
         if markup is None:
@@ -160,24 +120,25 @@ class TelegramClient:
         login = self.wait_mode[message.chat.id].data
         password = message.text
         self.wait_mode[message.chat.id] = None
-        if not self.__is_valid_password(login, password):
+        if self.data_base.get_user_by_login(login).password != password:
             self.__send_message(message.chat.id, "Введённый неправильный пароль, авторизация отменена.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
         id = self.__get_id_by_login(login)
-        self.__sign_up(login, message.chat.id)
+        self.data_base.change_user_telegram_id(login, id)
         if id is not None:
             self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Успешная авторизация!", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_sign_out(self, message):
-        if self.data_base.get_user_by_telegram_id(message.chat.id) is None:
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        self.__sign_out(message.chat.id)
+        self.data_base.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGREM_ID)
         self.__send_message(message.chat.id, "Вы вышли из аккаунта.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_add_account(self, message):
@@ -236,36 +197,12 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.", markup=self.__get_markup(message.chat.id))
             return
 
-        self.__add_admin(login)
+        self.data_base.change_user_status(login, constants.ADMIN)
         id = self.__get_id_by_login(login)
         if id is not None:
             self.__send_message(id, "Вам выданы права администратора.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
-
-    def __compute_keyboard_add_exercise(self, message):
-        if self.wait_mode[message.chat.id] is None:
-            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise)
-            self.__send_message(message.chat.id, "Введите через запятую правильный ответ к каждому заданию соответственно.", markup=self.__get_markup(message.chat.id))
-            return
-
-        answers = list(map(str.strip, message.text.split(",")))
-        self.wait_mode[message.chat.id] = None
-
-        # add exercise
-        self.__send_message(message.chat.id, "Задание успешно добавленно (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
-
-    def __compute_keyboard_delete_exercise(self, message):
-        if self.wait_mode[message.chat.id] is None:
-            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_exercise)
-            self.__send_message(message.chat.id, "Введите номер задания для удаления.", markup=self.__get_markup(message.chat.id))
-            return
-
-        number = message.text
-        self.wait_mode[message.chat.id] = None
-
-        # delete exercise
-        self.__send_message(message.chat.id, "Задание успешно удалено (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_admin(self, message):
         if self.wait_mode[message.chat.id] is None:
@@ -283,12 +220,59 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Запрещено менять права доступа этого пользователя.", markup=self.__get_markup(message.chat.id))
             return
 
-        self.__delete_admin(login)
+        self.data_base.change_user_status(login, constants.USER)
         id = self.__get_id_by_login(login)
         if id is not None:
             self.__send_message(id, "Вы лишены прав администратора.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
+
+    def __compute_keyboard_add_exercise(self, message):
+        if self.wait_mode[message.chat.id] is None:
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise, status="WAIT_NUMBER_OF_EXERCISES")
+            self.__send_message(message.chat.id, "Введите количество заданий:", markup=self.__get_markup(message.chat.id))
+            return
+
+        if self.wait_mode[message.chat.id].status == "WAIT_NUMBER_OF_EXERCISES":
+            success = True
+            try:
+                number = int(message.text)
+            except:
+                success = False
+            if not success or number <= 0:
+                self.wait_mode[message.chat.id] = None
+                self.__send_message(message.chat.id, "Введено некорректное число задач, создание задания отменено.", markup=self.__get_markup(message.chat.id))
+                return
+
+            self.wait_mode[message.chat.id].status = {"current_number": 0, "amount": number}
+            self.wait_mode[message.chat.id].data = []
+
+        if self.wait_mode[message.chat.id].status["current_number"] > 0:
+            self.wait_mode[message.chat.id].data.append(message.text)
+            self.__send_message(message.chat.id, "Ответ принят.", markup=self.__get_markup(message.chat.id))
+
+        if self.wait_mode[message.chat.id].status["current_number"] < self.wait_mode[message.chat.id].status["amount"]:
+            self.wait_mode[message.chat.id].status["current_number"] += 1
+            self.__send_message(message.chat.id, "Введите ответ к задаче номер " + str(self.wait_mode[message.chat.id].status["current_number"]) + ":", markup=self.__get_markup(message.chat.id))
+            return
+
+        answers = self.wait_mode[message.chat.id].data
+        self.wait_mode[message.chat.id] = None
+
+        # add exercise
+        self.__send_message(message.chat.id, "Задание успешно добавленно (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
+
+    def __compute_keyboard_delete_exercise(self, message):
+        if self.wait_mode[message.chat.id] is None:
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_exercise)
+            self.__send_message(message.chat.id, "Введите номер задания для удаления.", markup=self.__get_markup(message.chat.id))
+            return
+
+        number = message.text
+        self.wait_mode[message.chat.id] = None
+
+        # delete exercise
+        self.__send_message(message.chat.id, "Задание успешно удалено (на самом деле нет...).", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_add(self, message):
         if self.wait_mode[message.chat.id] is None:
