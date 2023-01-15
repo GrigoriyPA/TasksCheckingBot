@@ -54,6 +54,8 @@ class DatabaseHelper:
         con = sqlite3.connect(self.database_path)
         cur = con.cursor()
 
+        # TODO adding same logins
+
         cur.execute("INSERT INTO users (login, password, status, telegram_id) "
                     "VALUES (?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id))
         con.commit()
@@ -76,6 +78,25 @@ class DatabaseHelper:
 
         # Returning user with the given parameters
         return User(*user_parameters)
+
+    def get_user_id_by_login(self, login: str):
+        con = sqlite3.connect(self.database_path)
+        cur = con.cursor()
+
+        # Getting user id with the corresponding login
+
+        cur.execute("SELECT user_id "
+                    "FROM users "
+                    "WHERE login = ?", (login,))
+
+        user_id = cur.fetchone()
+
+        # If there is no such user just return None
+        if user_id is None:
+            return None
+
+        # Returning user id with the given parameters
+        return user_id[0]
 
     def get_user_by_telegram_id(self, telegram_id: int):
         con = sqlite3.connect(self.database_path)
@@ -125,6 +146,7 @@ class DatabaseHelper:
         # There is a line in the database for each task in the homework
         for i in range(len(homework.right_answers)):
             right_answer = homework.right_answers[i]
+            # TODO unique constraint
             cur.execute("INSERT INTO tasks (homework_name, task_number, right_answer) "
                         "VALUES (?, ?, ?)", (homework.name, i + 1, right_answer))
 
@@ -137,3 +159,86 @@ class DatabaseHelper:
 
         cur.execute("DELETE FROM tasks WHERE homework_name = ?", (homework_name,))
         con.commit()
+
+    def get_task_id(self, homework_name: str, task_number: int):
+        # Returns task id with given homework name and task number
+
+        con = sqlite3.connect(self.database_path)
+        cur = con.cursor()
+
+        cur.execute("SELECT task_id FROM tasks WHERE homework_name = ? AND task_number = ?", (homework_name, task_number))
+        task_id = cur.fetchone()
+
+        # Returns None if there is no such task
+        if task_id is None:
+            return None
+
+        return task_id[0]
+
+    def get_right_answer_for_the_task(self, homework_name: str, task_number: int):
+        # Returns right answer for the task with given homework name and task number
+
+        con = sqlite3.connect(self.database_path)
+        cur = con.cursor()
+
+        cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ? AND task_number = ?", (homework_name, task_number))
+        right_answer = cur.fetchone()
+
+        # If there is no such task just returns None
+        if right_answer is None:
+            return None
+
+        return right_answer[0]
+
+    def get_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int):
+        # Returns the answer user gave for the given task
+
+        user_id = self.get_user_id_by_login(login)
+
+        # If there is no such user, we just return None
+        if user_id is None:
+            return None
+
+        task_id = self.get_task_id(homework_name, task_number)
+
+        # If there is no such task, we just return None
+        if task_id is None:
+            return None
+
+        con = sqlite3.connect(self.database_path)
+        cur = con.cursor()
+
+        cur.execute("SELECT user_answer FROM results WHERE user_id = ? AND task_id = ?", (user_id, task_id))
+        answer = cur.fetchone()
+
+        # If user didn't give answer to that task we return None
+        if answer is None:
+            return None
+
+        return answer[0]
+
+    def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int, answer: str):
+        # Writes info about user answer for the particular task
+
+        user_id = self.get_user_id_by_login(login)
+
+        # If there is no such user, we just return None
+        if user_id is None:
+            return None
+
+        task_id = self.get_task_id(homework_name, task_number)
+
+        # If there is no such task, we just return None
+        if task_id is None:
+            return None
+
+        con = sqlite3.connect(self.database_path)
+        cur = con.cursor()
+
+        # TODO empty answer
+        # TODO unique constraint
+
+        cur.execute("INSERT INTO results (user_id, task_id, user_answer) VALUES (?, ?, ?)", (user_id, task_id, answer))
+        con.commit()
+
+        return self.get_right_answer_for_the_task(homework_name, task_number)
