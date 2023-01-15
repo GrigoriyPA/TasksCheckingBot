@@ -36,9 +36,6 @@ class TelegramClient:
         user = self.data_base.get_user_by_telegram_id(id)
         return user is not None and (user.status == constants.ADMIN or user.status == constants.SUPER_ADMIN)
 
-    def __is_valid_login(self, login):
-        return self.data_base.get_user_by_login(login) is not None
-
     def __is_valid_password(self, login, password):
         user = self.data_base.get_user_by_login(login)
         if user is None:
@@ -46,9 +43,6 @@ class TelegramClient:
             return None
 
         return user.password == password
-
-    def __is_authorized(self, id):
-        return self.data_base.get_user_by_telegram_id(id) is not None
 
     def __get_login_by_id(self, id):
         user = self.data_base.get_user_by_telegram_id(id)
@@ -59,31 +53,36 @@ class TelegramClient:
 
     def __get_id_by_login(self, login):
         user = self.data_base.get_user_by_login(login)
+        if user is None:
+            add_error_to_log("Invalid login in function __get_id_by_login")
+            return None
 
-        if user is None or user.telegram_id == constants.UNAUTHORIZED_TELEGREM_ID:
+        if user.telegram_id == constants.UNAUTHORIZED_TELEGREM_ID:
             return None
         return user.telegram_id
 
     def __get_markup(self, id):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         if id in self.wait_mode and self.wait_mode[id] is not None:
-            return types.ReplyKeyboardRemove()
+            if self.wait_mode[id].status == "ADMIN_ACTION" or self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
+                markup.add(types.KeyboardButton(text="Аккаунт"))
+            if self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
+                markup.add(types.KeyboardButton(text="Администратор"))
 
-        if not self.__is_authorized(id):
+            if self.wait_mode[id].status == "ADMIN_ACTION" or self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
+                return markup
+            else:
+                return types.ReplyKeyboardRemove()
+
+        if self.data_base.get_user_by_telegram_id(id) is None:
             markup.add(types.KeyboardButton(text="Авторизоваться"))
             return markup
 
         if self.__is_admin(id):
-            markup.add(types.KeyboardButton(text="Добавить аккаунт"), types.KeyboardButton(text="Удалить аккаунт"))
-        if self.__is_super_admin(id):
-            markup.add(types.KeyboardButton(text="Добавить адм."), types.KeyboardButton(text="Удалить адм."))
+            markup.add(types.KeyboardButton(text="Добавить"), types.KeyboardButton(text="Удалить"))
 
         markup.add(types.KeyboardButton(text="Выйти"))
         return markup
-
-    def __add_user(self, id):
-        if id not in self.wait_mode:
-            self.wait_mode[id] = None
 
     def __sign_out(self, id):
         user = self.data_base.get_user_by_telegram_id(id)
@@ -125,15 +124,15 @@ class TelegramClient:
 
     def __compute_command_start(self, message):
         text = "С возвращением!"
-        if not self.__is_authorized(message.chat.id):
+        if self.data_base.get_user_by_telegram_id(message.chat.id) is None:
             text = "Пожалуйста, авторизуйтесь."
 
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_sign_up(self, message):
-        if self.__is_authorized(message.chat.id):
+        if self.data_base.get_user_by_telegram_id(message.chat.id) is not None:
             self.wait_mode[message.chat.id] = None
-            self.__send_message(message.chat.id, "Вы уже были авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
         if self.wait_mode[message.chat.id] is None:
@@ -144,7 +143,7 @@ class TelegramClient:
 
         if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
             login = message.text
-            if not self.__is_valid_login(login):
+            if self.data_base.get_user_by_login(login) is None:
                 self.wait_mode[message.chat.id] = None
                 self.__send_message(message.chat.id, "Введённый логин не существует, авторизация отменена.",
                                     markup=self.__get_markup(message.chat.id))
@@ -170,19 +169,14 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Успешная авторизация!", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_sign_out(self, message):
-        if not self.__is_authorized(message.chat.id):
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+        if self.data_base.get_user_by_telegram_id(message.chat.id) is None:
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
         self.__sign_out(message.chat.id)
         self.__send_message(message.chat.id, "Вы вышли из аккаунта.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_add_account(self, message):
-        if not self.__is_admin(message.chat.id):
-            self.wait_mode[message.chat.id] = None
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
-            return
-
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_account, status="WAIT_LOGIN")
             self.__send_message(message.chat.id, "Введите логин для нового аккаунта:", markup=self.__get_markup(message.chat.id))
@@ -190,7 +184,7 @@ class TelegramClient:
 
         if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
             login = message.text
-            if self.__is_valid_login(message.text):
+            if self.data_base.get_user_by_login(login) is not None:
                 self.wait_mode[message.chat.id] = None
                 self.__send_message(message.chat.id, "Введённый логин уже существует, создание аккаунта отменено.", markup=self.__get_markup(message.chat.id))
                 return
@@ -207,36 +201,26 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Аккаунт успешно создан.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_account(self, message):
-        if not self.__is_admin(message.chat.id):
-            self.wait_mode[message.chat.id] = None
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
-            return
-
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_account)
             self.__send_message(message.chat.id, "Введите логин аккаунта для удаления:", markup=self.__get_markup(message.chat.id))
             return
 
         login = message.text
-        status = self.data_base.get_user_by_login(login).status
         self.wait_mode[message.chat.id] = None
-        if status == constants.SUPER_ADMIN or not self.__is_super_admin(message.chat.id) and status == constants.ADMIN:
-            self.__send_message(message.chat.id, "Введите не можете удалить этот аккаунт.", markup=self.__get_markup(message.chat.id))
+        if self.data_base.get_user_by_login(login) is None:
+            self.__send_message(message.chat.id, "Введённый логин не существует, удаление аккаунта отменено.", markup=self.__get_markup(message.chat.id))
             return
 
-        if not self.__is_valid_login(message.text):
-            self.__send_message(message.chat.id, "Введённый логин не существует, удаление аккаунта отменено.", markup=self.__get_markup(message.chat.id))
+        status = self.data_base.get_user_by_login(login).status
+        if status == constants.SUPER_ADMIN or not self.__is_super_admin(message.chat.id) and status == constants.ADMIN:
+            self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.", markup=self.__get_markup(message.chat.id))
             return
 
         # delete user
         self.__send_message(message.chat.id, "Аккаунт успешно удалён.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_add_admin(self, message):
-        if not self.__is_super_admin(message.chat.id):
-            self.wait_mode[message.chat.id] = None
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
-            return
-
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_admin)
             self.__send_message(message.chat.id, "Введите логин аккаунта для выдачи прав администратора:", markup=self.__get_markup(message.chat.id))
@@ -244,7 +228,7 @@ class TelegramClient:
 
         login = message.text
         self.wait_mode[message.chat.id] = None
-        if not self.__is_valid_login(message.text):
+        if self.data_base.get_user_by_login(login) is None:
             self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -256,11 +240,6 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_admin(self, message):
-        if not self.__is_super_admin(message.chat.id):
-            self.wait_mode[message.chat.id] = None
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
-            return
-
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_admin)
             self.__send_message(message.chat.id, "Введите логин аккаунта для лишения прав администратора:", markup=self.__get_markup(message.chat.id))
@@ -268,7 +247,7 @@ class TelegramClient:
 
         login = message.text
         self.wait_mode[message.chat.id] = None
-        if not self.__is_valid_login(message.text):
+        if self.data_base.get_user_by_login(login) is None:
             self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -283,20 +262,56 @@ class TelegramClient:
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
 
+    def __compute_keyboard_add(self, message):
+        if self.wait_mode[message.chat.id] is None:
+            if self.__is_super_admin(message.chat.id):
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="SUPER_ADMIN_ACTION")
+            else:
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="ADMIN_ACTION")
+
+            self.__send_message(message.chat.id, "Выберите объект модификации.", markup=self.__get_markup(message.chat.id))
+            return
+
+        self.wait_mode[message.chat.id] = None
+        if message.text == "Аккаунт" and self.__is_admin(message.chat.id):
+            self.__compute_keyboard_add_account(message)
+        elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
+            self.__compute_keyboard_add_admin(message)
+        else:
+            self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.", markup=self.__get_markup(message.chat.id))
+
+    def __compute_keyboard_delete(self, message):
+        if self.wait_mode[message.chat.id] is None:
+            if self.__is_super_admin(message.chat.id):
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="SUPER_ADMIN_ACTION")
+            else:
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="ADMIN_ACTION")
+
+            self.__send_message(message.chat.id, "Выберите объект модификации.", markup=self.__get_markup(message.chat.id))
+            return
+
+        self.wait_mode[message.chat.id] = None
+        if message.text == "Аккаунт" and self.__is_admin(message.chat.id):
+            self.__compute_keyboard_delete_account(message)
+        elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
+            self.__compute_keyboard_delete_admin(message)
+        else:
+            self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.", markup=self.__get_markup(message.chat.id))
+
     def __handler(self):
         print("TG client started.")
 
         @self.client.message_handler(commands=['start'])
         def start(message):
-            self.__add_user(message.chat.id)
             self.__compute_command_start(message)
 
         @self.client.message_handler(content_types=["text"])
         def on_message(message):
-            # If message from chat -> skip
             if message.chat.id != message.from_user.id:
                 return
-            self.__add_user(message.chat.id)
+
+            if message.chat.id not in self.wait_mode:
+                self.wait_mode[message.chat.id] = None
 
             if self.wait_mode[message.chat.id] is not None:
                 self.wait_mode[message.chat.id].function(message)
@@ -304,14 +319,10 @@ class TelegramClient:
                 self.__compute_keyboard_sign_up(message)
             elif message.text == "Выйти":
                 self.__compute_keyboard_sign_out(message)
-            elif message.text == "Добавить аккаунт":
-                self.__compute_keyboard_add_account(message)
-            elif message.text == "Удалить аккаунт":
-                self.__compute_keyboard_delete_account(message)
-            elif message.text == "Добавить адм.":
-                self.__compute_keyboard_add_admin(message)
-            elif message.text == "Удалить адм.":
-                self.__compute_keyboard_delete_admin(message)
+            elif message.text == "Добавить" and self.__is_admin(message.chat.id):
+                self.__compute_keyboard_add(message)
+            elif message.text == "Удалить" and self.__is_admin(message.chat.id):
+                self.__compute_keyboard_delete(message)
             else:
                 self.__send_message(message.chat.id, "Неизвестная команда.")
 
