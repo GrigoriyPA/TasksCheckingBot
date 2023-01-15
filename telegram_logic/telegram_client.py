@@ -66,6 +66,8 @@ class TelegramClient:
         if id in self.wait_mode and self.wait_mode[id] is not None:
             if self.wait_mode[id].status == "ADMIN_ACTION" or self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
                 markup.add(types.KeyboardButton(text="Аккаунт"))
+                if self.wait_mode[id].data == "ADD":
+                    markup.add(types.KeyboardButton(text="Задание"))
             if self.wait_mode[id].status == "SUPER_ADMIN_ACTION":
                 markup.add(types.KeyboardButton(text="Администратор"))
 
@@ -239,6 +241,18 @@ class TelegramClient:
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
 
+    def __compute_keyboard_add_exercise(self, message):
+        if self.wait_mode[message.chat.id] is None:
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise)
+            self.__send_message(message.chat.id, "Введите через запятую правильный ответ к каждому заданию соответственно.", markup=self.__get_markup(message.chat.id))
+            return
+
+        answers = list(map(str.strip, message.text.split(",")))
+        self.wait_mode[message.chat.id] = None
+
+        # add exercise
+        self.__send_message(message.chat.id, "Задание успешно добавленно.", markup=self.__get_markup(message.chat.id))
+
     def __compute_keyboard_delete_admin(self, message):
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_admin)
@@ -265,9 +279,9 @@ class TelegramClient:
     def __compute_keyboard_add(self, message):
         if self.wait_mode[message.chat.id] is None:
             if self.__is_super_admin(message.chat.id):
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="SUPER_ADMIN_ACTION")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="SUPER_ADMIN_ACTION", data="ADD")
             else:
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="ADMIN_ACTION")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="ADMIN_ACTION", data="ADD")
 
             self.__send_message(message.chat.id, "Выберите объект модификации.", markup=self.__get_markup(message.chat.id))
             return
@@ -275,6 +289,8 @@ class TelegramClient:
         self.wait_mode[message.chat.id] = None
         if message.text == "Аккаунт" and self.__is_admin(message.chat.id):
             self.__compute_keyboard_add_account(message)
+        elif message.text == "Задание" and self.__is_admin(message.chat.id):
+            self.__compute_keyboard_add_exercise(message)
         elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
             self.__compute_keyboard_add_admin(message)
         else:
@@ -283,9 +299,9 @@ class TelegramClient:
     def __compute_keyboard_delete(self, message):
         if self.wait_mode[message.chat.id] is None:
             if self.__is_super_admin(message.chat.id):
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="SUPER_ADMIN_ACTION")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="SUPER_ADMIN_ACTION", data="DELETE")
             else:
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="ADMIN_ACTION")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="ADMIN_ACTION", data="DELETE")
 
             self.__send_message(message.chat.id, "Выберите объект модификации.", markup=self.__get_markup(message.chat.id))
             return
