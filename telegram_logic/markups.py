@@ -19,11 +19,13 @@ def get_all_homeworks(homework_list, callback_data):
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_results_table(results, homework_name, homework_size):
+def get_results_table(results, homework_name, homework_size, first_task_id):
+    number_tasks = min(homework_size - first_task_id + 1, constants.TASKS_ON_ONE_PAGE)
+
     keyboard = []
     row = [types.InlineKeyboardButton(text=" ", callback_data="NONE"), types.InlineKeyboardButton(text="Σ", callback_data="NONE")]
-    for i in range(1, homework_size + 1):
-        row.append(types.InlineKeyboardButton(text=str(i), callback_data="NONE"))
+    for i in range(number_tasks):
+        row.append(types.InlineKeyboardButton(text=str(i + first_task_id), callback_data="NONE"))
     keyboard.append(row)
 
     amount = 0
@@ -37,14 +39,17 @@ def get_results_table(results, homework_name, homework_size):
         current_sum = 0
         for answer in result[1]:
             task_id += 1
-            if answer[0] is None or answer[0] == '':
-                row.append(types.InlineKeyboardButton(text=" ", callback_data="NONE"))
-            elif answer[0] == answer[1]:
+            if answer[0] == answer[1]:
                 current_sum += 1
                 sum_in_column[task_id - 1] += 1
-                row.append(types.InlineKeyboardButton(text="✅", callback_data="SHOW_TASK_IN_TABLE$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
-            else:
-                row.append(types.InlineKeyboardButton(text="❌", callback_data="SHOW_TASK_IN_TABLE$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
+
+            if first_task_id <= task_id < first_task_id + number_tasks:
+                if answer[0] is None or answer[0] == '':
+                    row.append(types.InlineKeyboardButton(text=" ", callback_data="NONE"))
+                elif answer[0] == answer[1]:
+                    row.append(types.InlineKeyboardButton(text="✅", callback_data="SHOW_TASK_IN_TABLE$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
+                else:
+                    row.append(types.InlineKeyboardButton(text="❌", callback_data="SHOW_TASK_IN_TABLE$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
 
         row = row[:1] + [types.InlineKeyboardButton(text=str(current_sum), callback_data="NONE")] + row[1:]
         rows_order.append((-current_sum, result[0].login, row_id))
@@ -58,11 +63,23 @@ def get_results_table(results, homework_name, homework_size):
         keyboard.append(rows[element[2]])
 
     row = [types.InlineKeyboardButton(text="Σ", callback_data="NONE"), types.InlineKeyboardButton(text=str(amount), callback_data="NONE")]
-    for i in range(homework_size):
-        row.append(types.InlineKeyboardButton(text=str(sum_in_column[i]), callback_data="NONE"))
+    for i in range(number_tasks):
+        row.append(types.InlineKeyboardButton(text=str(sum_in_column[i + first_task_id - 1]), callback_data="NONE"))
     keyboard.append(row)
 
-    keyboard.append([types.InlineKeyboardButton(text="Обновить", callback_data="REFRESH_RESULTS_TABLE$" + homework_name)])
+    left1 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
+    left2 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
+    if first_task_id > 1:
+        left1 = types.InlineKeyboardButton(text="<", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id - 1))
+        left2 = types.InlineKeyboardButton(text="<<", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(max(first_task_id - constants.TASKS_ON_ONE_PAGE, 1)))
+
+    right1 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
+    right2 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
+    if first_task_id + number_tasks - 1 < homework_size:
+        right1 = types.InlineKeyboardButton(text=">", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id + 1))
+        right2 = types.InlineKeyboardButton(text=">>", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(min(first_task_id + constants.TASKS_ON_ONE_PAGE, homework_size - constants.TASKS_ON_ONE_PAGE + 1)))
+
+    keyboard.append([left2, left1, types.InlineKeyboardButton(text="Обновить", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id)), right1, right2])
 
     return types.InlineKeyboardMarkup(keyboard)
 

@@ -204,7 +204,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers))
+        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers), 1)
         self.__send_message(message.chat.id, "Текущие результаты по работе \'" + homework_name + "\':", markup=markup)
 
     def __compute_callback_show_task(self, data, message):
@@ -273,13 +273,13 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
             return
 
-        homework_name = data[0]
+        homework_name, first_task_id = data[0], int(data[1])
         homework = self.data_base.get_homework_by_name(homework_name)
         if homework is None:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers))
+        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers), first_task_id)
         try:
             self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text, reply_markup=markup)
         except:
@@ -557,7 +557,7 @@ class TelegramClient:
         if self.__is_super_admin(message.chat.id):
             users = self.data_base.get_all_users_with_status(constants.SUPER_ADMIN)
             if len(users) > 0:
-                self.__send_message(message.chat.id, "Зафиксированные администраторы:", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id, "Супер-администраторы:", markup=self.__get_markup(message.chat.id))
                 for user in users:
                     markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="SHOW_PASSWORD$" + user.login)]])
                     self.__send_message(message.chat.id, user.login, markup=markup)
