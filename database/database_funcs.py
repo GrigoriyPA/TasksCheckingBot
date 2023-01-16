@@ -1,6 +1,7 @@
 import sqlite3
 from user import User
 from homework import Homework
+from constants import SUPER_ADMIN, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID
 
 
 class DatabaseHelper:
@@ -52,6 +53,10 @@ class DatabaseHelper:
                     "FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,"
                     "FOREIGN KEY (task_id) REFERENCES tasks (task_id) ON DELETE CASCADE,"
                     "PRIMARY KEY (user_id, task_id));")
+
+        # Creating super-admin
+        super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN, UNAUTHORIZED_TELEGRAM_ID)
+        self.add_user(super_admin_user)
 
         # Saving changes
         con.commit()
@@ -226,6 +231,7 @@ class DatabaseHelper:
         # Writes info about user answer for the particular task
 
         # If user has already given an answer to this task we should raise an exception
+        # TODO should we compare != ''?
         current_answer = self.get_user_answer_for_the_task(login, homework_name, task_number)
         if current_answer is not None and current_answer != '':
             raise RuntimeError
