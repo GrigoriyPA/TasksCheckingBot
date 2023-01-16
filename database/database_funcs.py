@@ -110,6 +110,24 @@ class DatabaseHelper:
         # Returning user id with the given parameters
         return user_id[0]
 
+    def get_login_by_user_id(self, user_id: str):
+        con, cur = self.__create_connection_and_cursor()
+
+        # Getting user login with the corresponding user id
+
+        cur.execute("SELECT login "
+                    "FROM users "
+                    "WHERE user_id = ?", (user_id,))
+
+        login = cur.fetchone()
+
+        # If there is no such user just return None
+        if login is None:
+            return None
+
+        # Returning user login with the given parameters
+        return login[0]
+
     def get_user_by_telegram_id(self, telegram_id: int):
         con, cur = self.__create_connection_and_cursor()
 
