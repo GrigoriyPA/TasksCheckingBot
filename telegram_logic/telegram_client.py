@@ -268,6 +268,22 @@ class TelegramClient:
         except:
             self.__send_message(message.chat.id, "Информация актуальна.", markup=self.__get_markup(message.chat.id))
 
+    def __compute_callback_describe_exercise(self, data, message):
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            return
+
+        homework_name = data[0]
+        homework = self.data_base.get_homework_by_name(homework_name)
+        if homework is None:
+            self.__send_message(message.chat.id, "Выбранное задание было удалено.", markup=self.__get_markup(message.chat.id))
+            return
+
+        text = "Всего задач " + str(len(homework.right_answers)) + ". Правильные ответы:\n"
+        for i in range(len(homework.right_answers)):
+            text += str(i + 1) + ": " + homework.right_answers[i] + "\n"
+        self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
+
     def __compute_keyboard_back(self, message):
         self.wait_mode[message.chat.id] = None
         self.__send_message(message.chat.id, "Выход выполнен.", markup=self.__get_markup(message.chat.id))
@@ -464,7 +480,11 @@ class TelegramClient:
             return
 
         homework_name = message.text
+        homework = self.data_base.get_homework_by_name(homework_name)
         self.wait_mode[message.chat.id] = None
+        if homework is None:
+            self.__send_message(message.chat.id, "Задания с введённым именем не существует, удаление отменено.", markup=self.__get_markup(message.chat.id))
+            return
 
         self.data_base.delete_homework_by_name(homework_name)
         self.__send_message(message.chat.id, "Задание успешно удалено.", markup=self.__get_markup(message.chat.id))
@@ -519,29 +539,33 @@ class TelegramClient:
     def __compute_keyboard_get_list_of_logins(self, message):
         if self.__is_super_admin(message.chat.id):
             users = self.data_base.get_all_users_with_status(constants.SUPER_ADMIN)
-            self.__send_message(message.chat.id, "Зафиксированные администраторы:", markup=self.__get_markup(message.chat.id))
-            for user in users:
-                self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
+            if len(users) > 0:
+                self.__send_message(message.chat.id, "Зафиксированные администраторы:", markup=self.__get_markup(message.chat.id))
+                for user in users:
+                    self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
 
         users = self.data_base.get_all_users_with_status(constants.ADMIN)
-        if self.__is_super_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Администраторы (логин | пароль):", markup=self.__get_markup(message.chat.id))
-            for user in users:
-                self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
-        else:
-            self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
-            for user in users:
-                self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
+        if len(users) > 0:
+            if self.__is_super_admin(message.chat.id):
+                self.__send_message(message.chat.id, "Администраторы (логин | пароль):", markup=self.__get_markup(message.chat.id))
+                for user in users:
+                    self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
+            else:
+                self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
+                for user in users:
+                    self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
 
         users = self.data_base.get_all_users_with_status(constants.USER)
-        self.__send_message(message.chat.id, "Ученики (логин | пароль):", markup=self.__get_markup(message.chat.id))
-        for user in users:
-            self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
+        if len(users) > 0:
+            self.__send_message(message.chat.id, "Ученики (логин | пароль):", markup=self.__get_markup(message.chat.id))
+            for user in users:
+                self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_get_list_of_exercises(self, message):
         homework_names = self.data_base.get_all_homeworks_names()
         for name in homework_names:
-            self.__send_message(message.chat.id, name, markup=self.__get_markup(message.chat.id))
+            markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Результаты", callback_data="SHOW_HOMEWORK$" + name), types.InlineKeyboardButton(text="Описание", callback_data="DESCRIBE_EXERCISE$" + name)]])
+            self.__send_message(message.chat.id, name, markup=markup)
 
     def __compute_keyboard_send_answer(self, message):
         user = self.data_base.get_user_by_telegram_id(message.chat.id)
@@ -582,6 +606,8 @@ class TelegramClient:
                 self.__compute_callback_show_task_in_table(data[1:], call.message)
             elif data[0] == "REFRESH_RESULTS_TABLE":
                 self.__compute_callback_refresh_results_table(data[1:], call.message)
+            elif data[0] == "DESCRIBE_EXERCISE":
+                self.__compute_callback_describe_exercise(data[1:], call.message)
             else:
                 add_error_to_log("Unknown callback: " + data[0])
 
