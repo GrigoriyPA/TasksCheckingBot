@@ -301,6 +301,24 @@ class TelegramClient:
             text += str(i + 1) + ": " + homework.right_answers[i] + "\n"
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
+    def __compute_callback_change_results_table(self, data, message):
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            return
+
+        homework_name, first_task_id = data[0], int(data[1])
+        homework = self.data_base.get_homework_by_name(homework_name)
+        if homework is None:
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            return
+
+        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers), first_task_id)
+        try:
+            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text, reply_markup=markup)
+        except:
+            pass
+
     def __compute_keyboard_back(self, message):
         self.wait_mode[message.chat.id] = None
         self.__send_message(message.chat.id, "Выход выполнен.", markup=self.__get_markup(message.chat.id))
@@ -625,6 +643,8 @@ class TelegramClient:
                 self.__compute_callback_refresh_results_table(data[1:], call.message)
             elif data[0] == "DESCRIBE_EXERCISE":
                 self.__compute_callback_describe_exercise(data[1:], call.message)
+            elif data[0] == "CHANGE_RESULTS_TABLE":
+                self.__compute_callback_change_results_table(data[1:], call.message)
             else:
                 add_error_to_log("Unknown callback: " + data[0])
 

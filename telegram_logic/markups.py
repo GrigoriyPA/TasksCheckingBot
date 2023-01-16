@@ -70,14 +70,14 @@ def get_results_table(results, homework_name, homework_size, first_task_id):
     left1 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
     left2 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
     if first_task_id > 1:
-        left1 = types.InlineKeyboardButton(text="<", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id - 1))
-        left2 = types.InlineKeyboardButton(text="<<", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(max(first_task_id - constants.TASKS_ON_ONE_PAGE, 1)))
+        left1 = types.InlineKeyboardButton(text="<", callback_data="CHANGE_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id - 1))
+        left2 = types.InlineKeyboardButton(text="<<", callback_data="CHANGE_RESULTS_TABLE$" + homework_name + "$" + str(max(first_task_id - constants.TASKS_ON_ONE_PAGE, 1)))
 
     right1 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
     right2 = types.InlineKeyboardButton(text=" ", callback_data="NONE")
     if first_task_id + number_tasks - 1 < homework_size:
-        right1 = types.InlineKeyboardButton(text=">", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id + 1))
-        right2 = types.InlineKeyboardButton(text=">>", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(min(first_task_id + constants.TASKS_ON_ONE_PAGE, homework_size - constants.TASKS_ON_ONE_PAGE + 1)))
+        right1 = types.InlineKeyboardButton(text=">", callback_data="CHANGE_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id + 1))
+        right2 = types.InlineKeyboardButton(text=">>", callback_data="CHANGE_RESULTS_TABLE$" + homework_name + "$" + str(min(first_task_id + constants.TASKS_ON_ONE_PAGE, homework_size - constants.TASKS_ON_ONE_PAGE + 1)))
 
     keyboard.append([left2, left1, types.InlineKeyboardButton(text="Обновить", callback_data="REFRESH_RESULTS_TABLE$" + homework_name + "$" + str(first_task_id)), right1, right2])
 
