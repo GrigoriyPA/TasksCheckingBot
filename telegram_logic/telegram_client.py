@@ -30,23 +30,15 @@ class TelegramClient:
         self.data_base = DatabaseHelper(constants.PATH_TO_DATABASE, constants.DATABASE_NAME)
         # self.data_base.create_database()
 
-    def __check_homework(self, login, homework_name):
-        user = self.data_base.get_user_by_login(login)
-        if user is None:
-            return False
-
-        homework = self.data_base.get_homework_by_name(homework_name)
-        if homework is None:
-            return False
-
-        return len(self.data_base.get_list_of_unsolved_tasks(login, homework_name)) > 0
-
     def __check_task(self, login, homework_name, task_id):
         user = self.data_base.get_user_by_login(login)
         if user is None:
             return False
 
-        return self.data_base.get_user_answer_for_the_task(login, homework_name, task_id) == ""
+        user_answer = self.data_base.get_user_answer_for_the_task(login, homework_name, task_id)
+        if user_answer is None or user_answer == '':
+            return None
+        return self.data_base.get_right_answer_for_the_task(homework_name, task_id) == user_answer
 
     def __is_super_admin(self, id):
         user = self.data_base.get_user_by_telegram_id(id)
@@ -69,7 +61,7 @@ class TelegramClient:
             add_error_to_log("Invalid login in function __get_id_by_login")
             return None
 
-        if user.telegram_id == constants.UNAUTHORIZED_TELEGREM_ID:
+        if user.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
             return None
         return user.telegram_id
 
@@ -121,11 +113,15 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
             return
 
-        if not self.__check_task(user.login, homework_name, task_id):
+        if self.__check_task(user.login, homework_name, task_id) is not None:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
         answer = message.text
+        if answer == '':
+            self.__send_message(message.chat.id, "Введён некорректный ответ, сдача задания отменена.", markup=self.__get_markup(message.chat.id))
+            return
+
         correct_answer = self.data_base.send_answer_for_the_task(user.login, homework_name, task_id, answer)
         if answer == correct_answer:
             self.__send_message(message.chat.id, "Ваш ответ правильный!", markup=self.__get_markup(message.chat.id))
@@ -139,7 +135,7 @@ class TelegramClient:
             return
 
         homework_name = data[0]
-        if not self.__check_homework(user.login, homework_name):
+        if self.data_base.get_homework_by_name(homework_name) is None:
             self.__send_message(message.chat.id, "Выбранная работа недоступна.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -154,7 +150,7 @@ class TelegramClient:
             return
 
         homework_name, task_id = data[0], int(data[1])
-        if not self.__check_task(user.login, homework_name, task_id):
+        if self.__check_task(user.login, homework_name, task_id) is not None:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
@@ -168,7 +164,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = self.__get_markup(message.chat.id)
+        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), len(homework.right_answers))
         self.__send_message(message.chat.id, "Текущие результаты по работе \'" + homework_name + "\':", markup=markup)
 
     def __compute_keyboard_back(self, message):
@@ -220,7 +216,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        self.data_base.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGREM_ID)
+        self.data_base.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)
         self.__send_message(message.chat.id, "Вы вышли из аккаунта.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_add_account(self, message):
@@ -244,7 +240,7 @@ class TelegramClient:
         password = message.text
         self.wait_mode[message.chat.id] = None
 
-        self.data_base.add_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGREM_ID))
+        self.data_base.add_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGRAM_ID))
         self.__send_message(message.chat.id, "Аккаунт успешно создан.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_account(self, message):
@@ -413,7 +409,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_get_results(self, message):
-        markup = markups.get_all_homeworks(self.data_base.get_all_homeworks_names())
+        markup = markups.get_all_homeworks(self.data_base.get_all_homeworks_names(), "SHOW_HOMEWORK")
         if markup is None:
             self.__send_message(message.chat.id, "На данный момент нет открытых работ.", markup=markup)
         else:
@@ -425,7 +421,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_homework_list(user.login, self.data_base.get_all_homeworks_names(), self.__check_homework)
+        markup = markups.get_all_homeworks(self.data_base.get_all_homeworks_names(), "SELECT_HOMEWORK")
         if markup is None:
             self.__send_message(message.chat.id, "На данный момент для вас нет открытых задач.", markup=markup)
         else:
@@ -442,6 +438,10 @@ class TelegramClient:
         def callback_inline(call):
             self.client.answer_callback_query(callback_query_id=call.id)
             data = call.data.split("$")
+
+            if data[0] == "NONE":
+                return
+
             if data[0] == "SELECT_HOMEWORK":
                 self.__compute_callback_select_homework(data[1:], call.message)
             elif data[0] == "SELECT_TASK":

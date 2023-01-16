@@ -226,7 +226,8 @@ class DatabaseHelper:
         # Writes info about user answer for the particular task
 
         # If user has already given an answer to this task we should raise an exception
-        if self.get_user_answer_for_the_task(login, homework_name, task_number) is not None:
+        current_answer = self.get_user_answer_for_the_task(login, homework_name, task_number)
+        if current_answer is not None and current_answer != '':
             raise RuntimeError
 
         user_id = self.get_user_id_by_login(login)
