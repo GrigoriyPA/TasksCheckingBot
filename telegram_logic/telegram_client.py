@@ -89,6 +89,7 @@ class TelegramClient:
             markup.add(types.KeyboardButton(text="Список заданий"))
         else:
             markup.add(types.KeyboardButton(text="Сдать задачу"))
+            markup.add(types.KeyboardButton(text="Вывести результаты"))
 
         markup.add(types.KeyboardButton(text="Выйти"))
         return markup
@@ -192,8 +193,9 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":", markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_homework(self, data, message):
-        if not self.__is_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name = data[0]
@@ -227,23 +229,31 @@ class TelegramClient:
         else:
             self.__send_message(message.chat.id, "Ваш правильный ответ: " + answer, markup=self.__get_markup(message.chat.id))
 
-    def __compute_callback_show_task_for_admin(self, data, message):
-        if not self.__is_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+    def __compute_callback_show_task_in_table(self, data, message):
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
             return
 
         login, homework_name, task_id = data[0], data[1], int(data[2])
+        if not self.__is_admin(message.chat.id) and login != user.login:
+            return
+
         answer = self.data_base.get_user_answer_for_the_task(login, homework_name, task_id)
         correct_answer = self.data_base.get_right_answer_for_the_task(homework_name, task_id)
         if answer is None or correct_answer is None:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
-        self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nОтвет " + login + " на задание: " + answer, markup=self.__get_markup(message.chat.id))
+        if self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nОтвет " + login + " на задание: " + answer, markup=self.__get_markup(message.chat.id))
+        else:
+            self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nВаш ответ на задание: " + answer, markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_refresh_results_table(self, data, message):
-        if not self.__is_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name = data[0]
@@ -568,8 +578,8 @@ class TelegramClient:
                 self.__compute_callback_show_homework(data[1:], call.message)
             elif data[0] == "SHOW_TASK":
                 self.__compute_callback_show_task(data[1:], call.message)
-            elif data[0] == "SHOW_TASK_FOR_ADMIN":
-                self.__compute_callback_show_task_for_admin(data[1:], call.message)
+            elif data[0] == "SHOW_TASK_IN_TABLE":
+                self.__compute_callback_show_task_in_table(data[1:], call.message)
             elif data[0] == "REFRESH_RESULTS_TABLE":
                 self.__compute_callback_refresh_results_table(data[1:], call.message)
             else:
@@ -598,7 +608,7 @@ class TelegramClient:
                 self.__compute_keyboard_add(message)
             elif message.text == "Удалить" and self.__is_admin(message.chat.id):
                 self.__compute_keyboard_delete(message)
-            elif message.text == "Вывести результаты" and self.__is_admin(message.chat.id):
+            elif message.text == "Вывести результаты":
                 self.__compute_keyboard_get_results(message)
             elif message.text == "Список аккаунтов" and self.__is_admin(message.chat.id):
                 self.__compute_keyboard_get_list_of_logins(message)

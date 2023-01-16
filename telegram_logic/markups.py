@@ -42,9 +42,9 @@ def get_results_table(results, homework_name, homework_size):
             elif answer[0] == answer[1]:
                 current_sum += 1
                 sum_in_column[task_id - 1] += 1
-                row.append(types.InlineKeyboardButton(text="✅", callback_data="SHOW_TASK_FOR_ADMIN$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
+                row.append(types.InlineKeyboardButton(text="✅", callback_data="SHOW_TASK_IN_TABLE$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
             else:
-                row.append(types.InlineKeyboardButton(text="❌", callback_data="SHOW_TASK_FOR_ADMIN$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
+                row.append(types.InlineKeyboardButton(text="❌", callback_data="SHOW_TASK_IN_TABLE$" + result[0].login + "$" + homework_name + "$" + str(task_id)))
 
         row = row[:1] + [types.InlineKeyboardButton(text=str(current_sum), callback_data="NONE")] + row[1:]
         rows_order.append((-current_sum, result[0].login, row_id))
