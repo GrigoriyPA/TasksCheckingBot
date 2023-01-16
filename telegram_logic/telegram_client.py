@@ -250,6 +250,23 @@ class TelegramClient:
         else:
             self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nВаш ответ на задание: " + answer, markup=self.__get_markup(message.chat.id))
 
+    def __compute_callback_show_password(self, data, message):
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            return
+
+        login = data[0]
+        user = self.data_base.get_user_by_login(login)
+        if user is None:
+            self.__send_message(message.chat.id, "Выбранный пользователь был удалён.", markup=self.__get_markup(message.chat.id))
+            return
+
+        if login != self.data_base.get_user_by_telegram_id(message.chat.id).login and not self.__is_super_admin(message.chat.id) and not user.status == constants.USER:
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            return
+
+        self.__send_message(message.chat.id, "Пароль пользователя \'" + login + "\': " + user.password, markup=self.__get_markup(message.chat.id))
+
     def __compute_callback_refresh_results_table(self, data, message):
         user = self.data_base.get_user_by_telegram_id(message.chat.id)
         if user is None:
@@ -542,24 +559,22 @@ class TelegramClient:
             if len(users) > 0:
                 self.__send_message(message.chat.id, "Зафиксированные администраторы:", markup=self.__get_markup(message.chat.id))
                 for user in users:
-                    self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
+                    markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="SHOW_PASSWORD$" + user.login)]])
+                    self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.data_base.get_all_users_with_status(constants.ADMIN)
         if len(users) > 0:
-            if self.__is_super_admin(message.chat.id):
-                self.__send_message(message.chat.id, "Администраторы (логин | пароль):", markup=self.__get_markup(message.chat.id))
-                for user in users:
-                    self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
-            else:
-                self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
-                for user in users:
-                    self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
+            for user in users:
+                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="SHOW_PASSWORD$" + user.login)]])
+                self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.data_base.get_all_users_with_status(constants.USER)
         if len(users) > 0:
-            self.__send_message(message.chat.id, "Ученики (логин | пароль):", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Ученики:", markup=self.__get_markup(message.chat.id))
             for user in users:
-                self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
+                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="SHOW_PASSWORD$" + user.login)]])
+                self.__send_message(message.chat.id, user.login, markup=markup)
 
     def __compute_keyboard_get_list_of_exercises(self, message):
         homework_names = self.data_base.get_all_homeworks_names()
@@ -604,6 +619,8 @@ class TelegramClient:
                 self.__compute_callback_show_task(data[1:], call.message)
             elif data[0] == "SHOW_TASK_IN_TABLE":
                 self.__compute_callback_show_task_in_table(data[1:], call.message)
+            elif data[0] == "SHOW_PASSWORD":
+                self.__compute_callback_show_password(data[1:], call.message)
             elif data[0] == "REFRESH_RESULTS_TABLE":
                 self.__compute_callback_refresh_results_table(data[1:], call.message)
             elif data[0] == "DESCRIBE_EXERCISE":
