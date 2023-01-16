@@ -62,7 +62,7 @@ def get_results_table(results, homework_name, homework_size):
         row.append(types.InlineKeyboardButton(text=str(sum_in_column[i]), callback_data="NONE"))
     keyboard.append(row)
 
-    #keyboard.append([types.InlineKeyboardButton(text="Σ", callback_data="NONE")])
+    keyboard.append([types.InlineKeyboardButton(text="Обновить", callback_data="REFRESH_RESULTS_TABLE$" + homework_name)])
 
     return types.InlineKeyboardMarkup(keyboard)
 

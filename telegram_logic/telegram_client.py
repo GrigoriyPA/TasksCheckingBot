@@ -173,6 +173,17 @@ class TelegramClient:
             return
 
         homework_name, task_id = data[0], int(data[1])
+        homework = self.data_base.get_homework_by_name(homework_name)
+        if self.data_base.get_homework_by_name(homework_name) is None:
+            self.__send_message(message.chat.id, "Выбранная работа недоступна.", markup=self.__get_markup(message.chat.id))
+            return
+
+        markup = markups.get_task_list(user.login, len(homework.right_answers), homework.name, self.__check_task)
+        try:
+            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text, reply_markup=markup)
+        except:
+            pass
+
         if self.__check_task(user.login, homework_name, task_id) is not None:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
@@ -229,6 +240,23 @@ class TelegramClient:
             return
 
         self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nОтвет " + login + " на задание: " + answer, markup=self.__get_markup(message.chat.id))
+
+    def __compute_callback_refresh_results_table(self, data, message):
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            return
+
+        homework_name = data[0]
+        homework = self.data_base.get_homework_by_name(homework_name)
+        if homework is None:
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            return
+
+        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers))
+        try:
+            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text, reply_markup=markup)
+        except:
+            self.__send_message(message.chat.id, "Информация актуальна.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_back(self, message):
         self.wait_mode[message.chat.id] = None
@@ -542,6 +570,8 @@ class TelegramClient:
                 self.__compute_callback_show_task(data[1:], call.message)
             elif data[0] == "SHOW_TASK_FOR_ADMIN":
                 self.__compute_callback_show_task_for_admin(data[1:], call.message)
+            elif data[0] == "REFRESH_RESULTS_TABLE":
+                self.__compute_callback_refresh_results_table(data[1:], call.message)
             else:
                 add_error_to_log("Unknown callback: " + data[0])
 
