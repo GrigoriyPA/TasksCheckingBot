@@ -57,7 +57,7 @@ class TelegramClient:
             add_error_to_log("Invalid login in function __get_id_by_login")
             return None
 
-        if user.telegram_id == constants.UNAUTHORIZED_TELEGREM_ID:
+        if user.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
             return None
         return user.telegram_id
 
@@ -90,7 +90,7 @@ class TelegramClient:
             add_error_to_log("Invalid id in function __sign_out")
             return None
 
-        self.data_base.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGREM_ID)
+        self.data_base.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)
 
     def __sign_up(self, login, id):
         user = self.data_base.get_user_by_login(login)
@@ -201,7 +201,7 @@ class TelegramClient:
         password = message.text
         self.wait_mode[message.chat.id] = None
 
-        self.data_base.create_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGREM_ID))
+        self.data_base.create_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGRAM_ID))
         self.__send_message(message.chat.id, "Аккаунт успешно создан.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_account(self, message):
