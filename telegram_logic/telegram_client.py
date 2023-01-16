@@ -124,9 +124,18 @@ class TelegramClient:
 
         correct_answer = self.data_base.send_answer_for_the_task(user.login, homework_name, task_id, answer)
         if answer == correct_answer:
+            result = "✅"
             self.__send_message(message.chat.id, "Ваш ответ правильный!", markup=self.__get_markup(message.chat.id))
         else:
+            result = "❌"
             self.__send_message(message.chat.id, "Ваш ответ неправильный. Правильный ответ: " + correct_answer, markup=self.__get_markup(message.chat.id))
+
+        for admin in self.data_base.get_all_users_with_status(constants.ADMIN) + self.data_base.get_all_users_with_status(constants.SUPER_ADMIN):
+            id = self.__get_id_by_login(admin.login)
+            if id is None:
+                continue
+
+            self.__send_message(id, user.login + " добавил ответ к заданию " + str(task_id) + " в работе \'" + homework_name + "\'\nПравильный ответ: " + correct_answer + "\nОтвет ученика: " + answer + "\nРезультат: " + result, markup=self.__get_markup(id))
 
     def __compute_callback_select_homework(self, data, message):
         user = self.data_base.get_user_by_telegram_id(message.chat.id)
