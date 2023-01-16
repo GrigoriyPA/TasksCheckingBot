@@ -79,7 +79,7 @@ class DatabaseHelper:
 
         # Getting user with the given login
 
-        cur.execute("SELECT login, password, status, telegram_id "
+        cur.execute("SELECT login, password, status, telegram_id, user_id "
                     "FROM users "
                     "WHERE login = ?", (login,))
 
