@@ -105,10 +105,14 @@ class TelegramClient:
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
     def __compute_wait_answer(self, message):
-        user = self.data_base.get_user_by_telegram_id(message.chat.id)
         homework_name = self.wait_mode[message.chat.id].data["homework_name"]
         task_id = self.wait_mode[message.chat.id].data["task_id"]
         self.wait_mode[message.chat.id] = None
+        if self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Сдача задания невозможна.", markup=self.__get_markup(message.chat.id))
+            return
+
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
         if user is None:
             self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
             return
@@ -138,6 +142,10 @@ class TelegramClient:
             self.__send_message(id, user.login + " добавил ответ к заданию " + str(task_id) + " в работе \'" + homework_name + "\'\nПравильный ответ: " + correct_answer + "\nОтвет ученика: " + answer + "\nРезультат: " + result, markup=self.__get_markup(id))
 
     def __compute_callback_select_homework(self, data, message):
+        if self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Выбор задания невозможен.", markup=self.__get_markup(message.chat.id))
+            return
+
         user = self.data_base.get_user_by_telegram_id(message.chat.id)
         if user is None:
             self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
@@ -153,6 +161,10 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Выберите задание.", markup=markup)
 
     def __compute_callback_select_task(self, data, message):
+        if self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Выбор задания невозможен.", markup=self.__get_markup(message.chat.id))
+            return
+
         user = self.data_base.get_user_by_telegram_id(message.chat.id)
         if user is None:
             self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
@@ -167,14 +179,54 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":", markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_homework(self, data, message):
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            return
+
         homework_name = data[0]
         homework = self.data_base.get_homework_by_name(homework_name)
         if homework is None:
             self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), len(homework.right_answers))
+        markup = markups.get_results_table(self.data_base.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers))
         self.__send_message(message.chat.id, "Текущие результаты по работе \'" + homework_name + "\':", markup=markup)
+
+    def __compute_callback_show_task(self, data, message):
+        if self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Просмотр задания невозможен.", markup=self.__get_markup(message.chat.id))
+            return
+
+        user = self.data_base.get_user_by_telegram_id(message.chat.id)
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            return
+
+        homework_name, task_id = data[0], int(data[1])
+        answer = self.data_base.get_user_answer_for_the_task(user.login, homework_name, task_id)
+        correct_answer = self.data_base.get_right_answer_for_the_task(homework_name, task_id)
+        if answer is None or correct_answer is None:
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            return
+
+        if answer != correct_answer:
+            self.__send_message(message.chat.id, "Ваш ответ: " + answer + "\nПравильный ответ: " + correct_answer, markup=self.__get_markup(message.chat.id))
+        else:
+            self.__send_message(message.chat.id, "Ваш правильный ответ: " + answer, markup=self.__get_markup(message.chat.id))
+
+    def __compute_callback_show_task_for_admin(self, data, message):
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            return
+
+        login, homework_name, task_id = data[0], data[1], int(data[2])
+        answer = self.data_base.get_user_answer_for_the_task(login, homework_name, task_id)
+        correct_answer = self.data_base.get_right_answer_for_the_task(homework_name, task_id)
+        if answer is None or correct_answer is None:
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            return
+
+        self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nОтвет " + login + " на задание: " + answer, markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_back(self, message):
         self.wait_mode[message.chat.id] = None
@@ -457,6 +509,10 @@ class TelegramClient:
                 self.__compute_callback_select_task(data[1:], call.message)
             elif data[0] == "SHOW_HOMEWORK":
                 self.__compute_callback_show_homework(data[1:], call.message)
+            elif data[0] == "SHOW_TASK":
+                self.__compute_callback_show_task(data[1:], call.message)
+            elif data[0] == "SHOW_TASK_FOR_ADMIN":
+                self.__compute_callback_show_task_for_admin(data[1:], call.message)
             else:
                 add_error_to_log("Unknown callback: " + data[0])
 
