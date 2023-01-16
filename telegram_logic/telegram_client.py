@@ -30,6 +30,13 @@ class TelegramClient:
         self.database = DatabaseHelper(constants.PATH_TO_DATABASE, constants.DATABASE_NAME)  # Main database
         # self.database.create_database()
 
+    def __check_name(self, name: str):
+        # Check login/homework name, returns True if all ASCII codes are good
+        for symbol in name:
+            if ord(symbol) >= 123:
+                return False
+        return True
+
     def __check_task(self, login: str, homework_name: str, task_id: int):
         user = self.database.get_user_by_login(login)
 
@@ -410,6 +417,16 @@ class TelegramClient:
                 self.__send_message(message.chat.id, "Введённый логин уже существует, создание аккаунта отменено.", markup=self.__get_markup(message.chat.id))
                 return
 
+            if login.count("$") > 0 or not self.__check_name(login):
+                self.wait_mode[message.chat.id] = None
+                self.__send_message(message.chat.id, "Логин содержит запрещённые символы, создание аккаунта отменено.", markup=self.__get_markup(message.chat.id))
+                return
+
+            if len(login) > constants.MAX_LOGIN_SIZE:
+                self.wait_mode[message.chat.id] = None
+                self.__send_message(message.chat.id, "Введённый логин слишком длинный, создание аккаунта отменено.", markup=self.__get_markup(message.chat.id))
+                return
+
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_account, data=login)
             self.__send_message(message.chat.id, "Введите пароль для нового аккаунта:", markup=self.__get_markup(message.chat.id))
             return
@@ -500,9 +517,14 @@ class TelegramClient:
 
         if self.wait_mode[message.chat.id].status == "WAIT_NAME":
             homework_name = message.text
-            if homework_name.count("$") > 0:
+            if homework_name.count("$") > 0 or not self.__check_name(homework_name):
                 self.wait_mode[message.chat.id] = None
-                self.__send_message(message.chat.id, "Имя домашней работы не может содержать символ \'$\', создание задания отменено.", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id, "Имя домашней работы содержит запрещённые символы, создание задания отменено.", markup=self.__get_markup(message.chat.id))
+                return
+
+            if len(homework_name) > constants.MAX_HOMEWORK_NAME_SIZE:
+                self.wait_mode[message.chat.id] = None
+                self.__send_message(message.chat.id, "Имя домашней работы слишком длинное, создание задания отменено.", markup=self.__get_markup(message.chat.id))
                 return
 
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise, data={"name": homework_name, "answers": []}, status="WAIT_NUMBER_OF_EXERCISES")
@@ -601,7 +623,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_all_homeworks(self.database.get_all_homeworks_names(), "SHOW_HOMEWORK")
+        markup = markups.get_all_homeworks(self.database.get_all_homeworks_names(), "C")
         if markup is None:
             self.__send_message(message.chat.id, "На данный момент нет открытых работ.", markup=markup)
         else:
@@ -613,28 +635,28 @@ class TelegramClient:
             if len(users) > 0:
                 self.__send_message(message.chat.id, "Супер-администраторы:", markup=self.__get_markup(message.chat.id))
                 for user in users:
-                    markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="SHOW_PASSWORD$" + user.login)]])
+                    markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                     self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.ADMIN)
         if len(users) > 0:
             self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
             for user in users:
-                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="SHOW_PASSWORD$" + user.login)]])
+                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.USER)
         if len(users) > 0:
             self.__send_message(message.chat.id, "Ученики:", markup=self.__get_markup(message.chat.id))
             for user in users:
-                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="SHOW_PASSWORD$" + user.login)]])
+                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
     def __compute_keyboard_get_list_of_exercises(self, message):
         homework_names = self.database.get_all_homeworks_names()
         if len(homework_names) > 0:
             for name in homework_names:
-                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Результаты", callback_data="SHOW_HOMEWORK$" + name), types.InlineKeyboardButton(text="Описание", callback_data="DESCRIBE_EXERCISE$" + name)]])
+                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Результаты", callback_data="C" + name), types.InlineKeyboardButton(text="Описание", callback_data="H" + name)]])
                 self.__send_message(message.chat.id, name, markup=markup)
         else:
             self.__send_message(message.chat.id, "На данный момент нет открытых работ.", markup=self.__get_markup(message.chat.id))
@@ -645,7 +667,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        markup = markups.get_all_homeworks(self.database.get_all_homeworks_names(), "SELECT_HOMEWORK")
+        markup = markups.get_all_homeworks(self.database.get_all_homeworks_names(), "A")
         if markup is None:
             self.__send_message(message.chat.id, "На данный момент для вас нет открытых задач.", markup=markup)
         else:
@@ -661,31 +683,32 @@ class TelegramClient:
         @self.client.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
             self.client.answer_callback_query(callback_query_id=call.id)
-            data = call.data.split("$")
+            callback_type = call.data[0]
+            data = call.data[1:].split("$")
 
-            if data[0] == "NONE":
+            if callback_type == "0":  # NONE
                 return
 
-            if data[0] == "SELECT_HOMEWORK":
-                self.__compute_callback_select_homework(data[1:], call.message)
-            elif data[0] == "SELECT_TASK":
-                self.__compute_callback_select_task(data[1:], call.message)
-            elif data[0] == "SHOW_HOMEWORK":
-                self.__compute_callback_show_homework(data[1:], call.message)
-            elif data[0] == "SHOW_TASK":
-                self.__compute_callback_show_task(data[1:], call.message)
-            elif data[0] == "SHOW_TASK_IN_TABLE":
-                self.__compute_callback_show_task_in_table(data[1:], call.message)
-            elif data[0] == "SHOW_PASSWORD":
-                self.__compute_callback_show_password(data[1:], call.message)
-            elif data[0] == "REFRESH_RESULTS_TABLE":
-                self.__compute_callback_refresh_results_table(data[1:], call.message)
-            elif data[0] == "DESCRIBE_EXERCISE":
-                self.__compute_callback_describe_exercise(data[1:], call.message)
-            elif data[0] == "CHANGE_RESULTS_TABLE":
-                self.__compute_callback_change_results_table(data[1:], call.message)
+            if callback_type == "A":  # SELECT_HOMEWORK
+                self.__compute_callback_select_homework(data, call.message)
+            elif callback_type == "B":  # SELECT_TASK
+                self.__compute_callback_select_task(data, call.message)
+            elif callback_type == "C":  # SHOW_HOMEWORK
+                self.__compute_callback_show_homework(data, call.message)
+            elif callback_type == "D":  # SHOW_TASK
+                self.__compute_callback_show_task(data, call.message)
+            elif callback_type == "E":  # SHOW_TASK_IN_TABLE
+                self.__compute_callback_show_task_in_table(data, call.message)
+            elif callback_type == "F":  # SHOW_PASSWORD
+                self.__compute_callback_show_password(data, call.message)
+            elif callback_type == "G":  # REFRESH_RESULTS_TABLE
+                self.__compute_callback_refresh_results_table(data, call.message)
+            elif callback_type == "H":  # DESCRIBE_EXERCISE
+                self.__compute_callback_describe_exercise(data, call.message)
+            elif callback_type == "I":  # CHANGE_RESULTS_TABLE
+                self.__compute_callback_change_results_table(data, call.message)
             else:
-                add_error_to_log("Unknown callback: " + data[0])
+                add_error_to_log("Unknown callback: " + callback_type)
 
         @self.client.message_handler(content_types=["text"])
         def on_message(message):
