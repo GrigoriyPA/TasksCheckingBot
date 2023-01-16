@@ -29,12 +29,12 @@ def get_results_table(results, homework_size):
     for result in results:
         row = [types.InlineKeyboardButton(text=result[0].login, callback_data="NONE")]
         for answer in result[1]:
-            if answer[0] is None:
-                row.append(types.InlineKeyboardButton(text="?", callback_data="NONE"))
+            if answer[0] is None or answer[0] == '':
+                row.append(types.InlineKeyboardButton(text=" ", callback_data="NONE"))
             elif answer[0] == answer[1]:
-                row.append(types.InlineKeyboardButton(text="+", callback_data="NONE"))
+                row.append(types.InlineKeyboardButton(text="✅", callback_data="NONE"))
             else:
-                row.append(types.InlineKeyboardButton(text="-", callback_data="NONE"))
+                row.append(types.InlineKeyboardButton(text="❌", callback_data="NONE"))
 
         keyboard.append(row)
 
@@ -48,11 +48,11 @@ def get_task_list(login, homework_size, homework_name, check_task):
         task_state = check_task(login, homework_name, task_id)
 
         if task_state is None:
-            row.append(types.InlineKeyboardButton(text=str(task_id) + " ?", callback_data="SELECT_TASK$" + homework_name + "$" + str(task_id)))
+            row.append(types.InlineKeyboardButton(text=str(task_id), callback_data="SELECT_TASK$" + homework_name + "$" + str(task_id)))
         elif task_state:
-            row.append(types.InlineKeyboardButton(text=str(task_id) + " +", callback_data="NONE"))
+            row.append(types.InlineKeyboardButton(text=str(task_id) + " ✅", callback_data="NONE"))
         else:
-            row.append(types.InlineKeyboardButton(text=str(task_id) + " -", callback_data="NONE"))
+            row.append(types.InlineKeyboardButton(text=str(task_id) + " ❌", callback_data="NONE"))
 
         if len(row) == constants.TASKS_NUMBER_IN_LINE:
             keyboard.append(row)
