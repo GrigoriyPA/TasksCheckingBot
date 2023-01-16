@@ -7,7 +7,7 @@ class DatabaseHelper:
     def __init__(self, path_to_database: str, database_name: str):
         self.database_path: str = path_to_database + database_name
 
-    def create_connection_and_cursor(self):
+    def __create_connection_and_cursor(self):
         # Returns connection and cursor to our database
         con = sqlite3.connect(self.database_path)
         cur = con.cursor()
@@ -19,7 +19,7 @@ class DatabaseHelper:
         return con, cur
 
     def create_database(self):
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         # USE ONLY WHEN CREATING NEW DATABASE
 
@@ -59,16 +59,18 @@ class DatabaseHelper:
     def add_user(self, user: User):
         # Creating new user with the given parameters
 
-        con, cur = self.create_connection_and_cursor()
+        # If we already have user with given login there should be an exception
+        if self.get_user_by_login(user.login) is not None:
+            raise RuntimeError
 
-        # TODO adding same logins
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("INSERT INTO users (login, password, status, telegram_id) "
                     "VALUES (?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id))
         con.commit()
 
     def get_user_by_login(self, login: str):
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the given login
 
@@ -86,7 +88,7 @@ class DatabaseHelper:
         return User(*user_parameters)
 
     def get_user_id_by_login(self, login: str):
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         # Getting user id with the corresponding login
 
@@ -104,7 +106,7 @@ class DatabaseHelper:
         return user_id[0]
 
     def get_user_by_telegram_id(self, telegram_id: int):
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the given telegram_id
 
@@ -122,19 +124,19 @@ class DatabaseHelper:
         return User(*user_parameters)
 
     def change_user_status(self, login: str, new_status: str):
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
         con.commit()
 
     def change_user_telegram_id(self, login: str, new_telegram_id: int):
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("UPDATE users SET telegram_id = ? WHERE login = ?", (new_telegram_id, login))
         con.commit()
 
     def delete_user_by_login(self, login: str):
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
@@ -142,12 +144,15 @@ class DatabaseHelper:
     def add_homework(self, homework: Homework):
         # Creating new homework with the given parameters
 
-        con, cur = self.create_connection_and_cursor()
+        # If there is already a homework with given name we should raise an exception
+        if self.get_homework_by_name(homework.name) is not None:
+            raise RuntimeError
+
+        con, cur = self.__create_connection_and_cursor()
 
         # There is a line in the database for each task in the homework
         for i in range(len(homework.right_answers)):
             right_answer = homework.right_answers[i]
-            # TODO unique constraint
             cur.execute("INSERT INTO tasks (homework_name, task_number, right_answer) "
                         "VALUES (?, ?, ?)", (homework.name, i + 1, right_answer))
 
@@ -156,7 +161,7 @@ class DatabaseHelper:
     def delete_homework_by_name(self, homework_name: str):
         # Deletes all the tasks in the homework by it's name
 
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("DELETE FROM tasks WHERE homework_name = ?", (homework_name,))
         con.commit()
@@ -164,7 +169,7 @@ class DatabaseHelper:
     def get_task_id(self, homework_name: str, task_number: int):
         # Returns task id with given homework name and task number
 
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("SELECT task_id FROM tasks WHERE homework_name = ? AND task_number = ?",
                     (homework_name, task_number))
@@ -179,7 +184,7 @@ class DatabaseHelper:
     def get_right_answer_for_the_task(self, homework_name: str, task_number: int):
         # Returns right answer for the task with given homework name and task number
 
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ? AND task_number = ?",
                     (homework_name, task_number))
@@ -206,7 +211,7 @@ class DatabaseHelper:
         if task_id is None:
             return None
 
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("SELECT user_answer FROM results WHERE user_id = ? AND task_id = ?", (user_id, task_id))
         answer = cur.fetchone()
@@ -220,6 +225,10 @@ class DatabaseHelper:
     def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int, answer: str):
         # Writes info about user answer for the particular task
 
+        # If user has already given an answer to this task we should raise an exception
+        if self.get_user_answer_for_the_task(login, homework_name, task_number) is not None:
+            raise RuntimeError
+
         user_id = self.get_user_id_by_login(login)
 
         # If there is no such user, we just return None
@@ -232,10 +241,7 @@ class DatabaseHelper:
         if task_id is None:
             return None
 
-        con, cur = self.create_connection_and_cursor()
-
-        # TODO empty answer
-        # TODO unique constraint
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("INSERT INTO results (user_id, task_id, user_answer) VALUES (?, ?, ?)", (user_id, task_id, answer))
         con.commit()
@@ -245,7 +251,7 @@ class DatabaseHelper:
     def get_all_homeworks_names(self) -> list[str]:
         # Returns list of homeworks names
 
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("SELECT DISTINCT homework_name FROM tasks")
 
@@ -255,7 +261,7 @@ class DatabaseHelper:
     def get_homework_by_name(self, homework_name: str):
         # Returns the object of class Homework corresponding to the given homework name
 
-        con, cur = self.create_connection_and_cursor()
+        con, cur = self.__create_connection_and_cursor()
 
         cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ?", (homework_name,))
 
@@ -290,3 +296,69 @@ class DatabaseHelper:
                 unsolved_tasks.append(i + 1)
 
         return unsolved_tasks
+
+    def get_all_users_with_status(self, status) -> list[User]:
+        # Returns list of all the users with given status in the database
+
+        con, cur = self.__create_connection_and_cursor()
+
+        # Get list of logins with given status
+        cur.execute("SELECT login FROM users WHERE status = ?", (status,))
+
+        # We need only the first element in the tuple
+        logins = [data[0] for data in cur.fetchall()]
+
+        # Getting users from logins
+        users = [self.get_user_by_login(login) for login in logins]
+
+        return users
+
+    def get_results(self, status, homework_name: str):
+        """
+        Returns list of the next pairs:
+        First element - User object
+        Second element - list of the pairs: (user_answer, right_answer)
+        Second element has the length of the amount of tasks in the homework with the given name
+        """
+
+        users = self.get_all_users_with_status(status)
+        homework = self.get_homework_by_name(homework_name)
+
+        # If there is no such homework just return None
+        if homework is None:
+            return None
+
+        results: list[tuple[User, list[tuple[str, str]]]] = []
+        for user in users:
+            # Going through all the tasks and collecting info about given answers
+            answers: list[tuple[str, str]] = []
+            for i in range(len(homework.right_answers)):
+                user_answer = self.get_user_answer_for_the_task(user.login, homework_name, i + 1)
+                right_answer = homework.right_answers[i]
+                answers.append((user_answer, right_answer))
+            results.append((user, answers))
+
+        return results
+
+
+# dh = DatabaseHelper('', 'database.db')
+# dh.create_database()
+# a = User('a', 'a', 'a', 1)
+# b = User('b', 'b', 'b', 2)
+# c = User('c', 'c', 'c', 3)
+# d = User('d', 'd', 'd', 4)
+# dh.add_user(a)
+# dh.add_user(b)
+# dh.add_user(c)
+# dh.add_user(d)
+# x = Homework('x', ['1', '2', '3'])
+# y = Homework('y', ['a', 'b', 'c'])
+# z = Homework('z', ['t', 'h', 'j'])
+# dh.add_homework(x)
+# dh.add_homework(y)
+# dh.add_homework(z)
+# dh.send_answer_for_the_task('c', 'z', 1, 'abra')
+# res = dh.get_results('a', 'z')
+# for user, answers in res:
+#     print(user)
+#     print(answers)
