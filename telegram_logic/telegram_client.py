@@ -85,6 +85,8 @@ class TelegramClient:
         if self.__is_admin(id):
             markup.add(types.KeyboardButton(text="Добавить"), types.KeyboardButton(text="Удалить"))
             markup.add(types.KeyboardButton(text="Вывести результаты"))
+            markup.add(types.KeyboardButton(text="Список аккаунтов"))
+            markup.add(types.KeyboardButton(text="Список заданий"))
         else:
             markup.add(types.KeyboardButton(text="Сдать задачу"))
 
@@ -476,6 +478,33 @@ class TelegramClient:
         else:
             self.__send_message(message.chat.id, "Выберите имя работы.", markup=markup)
 
+    def __compute_keyboard_get_list_of_logins(self, message):
+        if self.__is_super_admin(message.chat.id):
+            users = self.data_base.get_all_users_with_status(constants.SUPER_ADMIN)
+            self.__send_message(message.chat.id, "Зафиксированные администраторы:", markup=self.__get_markup(message.chat.id))
+            for user in users:
+                self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
+
+        users = self.data_base.get_all_users_with_status(constants.ADMIN)
+        if self.__is_super_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Администраторы (логин | пароль):", markup=self.__get_markup(message.chat.id))
+            for user in users:
+                self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
+        else:
+            self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
+            for user in users:
+                self.__send_message(message.chat.id, user.login, markup=self.__get_markup(message.chat.id))
+
+        users = self.data_base.get_all_users_with_status(constants.USER)
+        self.__send_message(message.chat.id, "Ученики (логин | пароль):", markup=self.__get_markup(message.chat.id))
+        for user in users:
+            self.__send_message(message.chat.id, user.login + " | " + user.password, markup=self.__get_markup(message.chat.id))
+
+    def __compute_keyboard_get_list_of_exercises(self, message):
+        homework_names = self.data_base.get_all_homeworks_names()
+        for name in homework_names:
+            self.__send_message(message.chat.id, name, markup=self.__get_markup(message.chat.id))
+
     def __compute_keyboard_send_answer(self, message):
         user = self.data_base.get_user_by_telegram_id(message.chat.id)
         if user is None:
@@ -541,6 +570,10 @@ class TelegramClient:
                 self.__compute_keyboard_delete(message)
             elif message.text == "Вывести результаты" and self.__is_admin(message.chat.id):
                 self.__compute_keyboard_get_results(message)
+            elif message.text == "Список аккаунтов" and self.__is_admin(message.chat.id):
+                self.__compute_keyboard_get_list_of_logins(message)
+            elif message.text == "Список заданий" and self.__is_admin(message.chat.id):
+                self.__compute_keyboard_get_list_of_exercises(message)
             else:
                 self.__send_message(message.chat.id, "Неизвестная команда.")
 
