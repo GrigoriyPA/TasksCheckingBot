@@ -8,7 +8,7 @@ import constants
 
 
 def add_error_to_log(text: str) -> None:
-    error_log = open(constants.PATH_TO_ERROR_LOG + constants.ERROR_LOG_NAME, "a")
+    error_log = open(constants.ERROR_LOG_NAME, "a")
     error_log.write(text + "\n\n")
     error_log.close()
 
@@ -646,6 +646,7 @@ class TelegramClient:
 
         # Send notification for last user on current login if he exists
         if id is not None:
+            self.wait_mode[id] = None  # Drop waiting mode
             self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.",
                                 markup=self.__get_markup(id))
 
@@ -763,6 +764,7 @@ class TelegramClient:
 
         # Send notification to last user if he exists
         if id is not None:
+            self.wait_mode[id] = None  # Drop waiting mode
             self.__send_message(id, "Ваш аккаунт был удалён.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Аккаунт успешно удалён.", markup=self.__get_markup(message.chat.id))
@@ -807,6 +809,7 @@ class TelegramClient:
 
         # Send notification to user on current login if he exists
         if id is not None:
+            self.wait_mode[id] = None  # Drop waiting mode
             self.__send_message(id, "Вам выданы права администратора.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
@@ -850,6 +853,7 @@ class TelegramClient:
 
         # Send notification to user on current login if he exists
         if id is not None:
+            self.wait_mode[id] = None  # Drop waiting mode
             self.__send_message(id, "Вы лишены прав администратора.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
@@ -1219,7 +1223,7 @@ class TelegramClient:
 
             # Add wait mode to user
             if message.chat.id not in self.wait_mode:
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
 
             # If waiting mode is active, compute it
             if self.wait_mode[message.chat.id] is not None:
