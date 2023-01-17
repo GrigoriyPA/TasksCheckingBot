@@ -486,67 +486,102 @@ class TelegramClient:
         self.wait_mode[message.chat.id] = None  # Drop waiting mode
         self.__send_message(message.chat.id, "Выход выполнен.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_get_state(self, message):
+    def __compute_keyboard_get_state(self, message) -> None:
+        # This function is called when user wants to see his login, password and status
+
         user = self.database.get_user_by_telegram_id(message.chat.id)
+
+        # If user is not authorized, reject command
         if user is None:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
+        # Send login, password and status
         self.__send_message(message.chat.id,
                             "Логин: " + user.login + "\nПароль: " + user.password + "\nСтатус: " + user.status,
                             markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_sign_up(self, message):
-        if self.database.get_user_by_telegram_id(message.chat.id) is not None:
-            self.wait_mode[message.chat.id] = None
+    def __compute_keyboard_sign_up(self, message) -> None:
+        # This function is called when user wants to authorize
+
+        user = self.database.get_user_by_telegram_id(message.chat.id)
+
+        # If user already authorized, reject command
+        if user is not None:
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of login for authorizing (WaitModeDescription status is WAIT_LOGIN)
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_sign_up, status="WAIT_LOGIN")
             self.__send_message(message.chat.id, "Введите логин аккаунта для авторизации:",
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the second call of this function (waiting input login)
         if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
             login = message.text
+
+            # If there is no such login, stop authorization
             if self.database.get_user_by_login(login) is None:
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
                 self.__send_message(message.chat.id, "Введённый логин не существует, авторизация отменена.",
                                     markup=self.__get_markup(message.chat.id))
                 return
 
+            # Start waiting of password for authorizing in current login (login saved in WaitModeDescription data)
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_sign_up, data=login)
             self.__send_message(message.chat.id, "Введите пароль:", markup=self.__get_markup(message.chat.id))
             return
 
-        login = self.wait_mode[message.chat.id].data
+        # If it is the third call of this function (waiting input login)
+        login = self.wait_mode[message.chat.id].data  # Getting stored current login
         password = message.text
-        self.wait_mode[message.chat.id] = None
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
+
+        # If password is incorrect, stop authorization
         if self.database.get_user_by_login(login).password != password:
             self.__send_message(message.chat.id, "Введён неправильный пароль, авторизация отменена.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        id = self.__get_id_by_login(login)
-        self.database.change_user_telegram_id(login, message.chat.id)
+        id = self.__get_id_by_login(login)  # Getting last user on current login
+        self.database.change_user_telegram_id(login, message.chat.id)  # Authorize current user
+
+        # Send notification for last user on current login if he exists
         if id is not None:
             self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.",
                                 markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Успешная авторизация!", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_sign_out(self, message):
+    def __compute_keyboard_sign_out(self, message) -> None:
+        # This function is called when user wants to sign out from current account
+
         user = self.database.get_user_by_telegram_id(message.chat.id)
+
+        # If user is not authorized, reject command
         if user is None:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        self.database.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)
+        self.database.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)  # Sign out current user
         self.__send_message(message.chat.id, "Вы вышли из аккаунта.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_add_account(self, message):
+    def __compute_keyboard_add_account(self, message) -> None:
+        # This function is called when admin wants to create new account
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of login for creating new account (WaitModeDescription status is WAIT_LOGIN)
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_account,
                                                                   status="WAIT_LOGIN")
             self.__send_message(message.chat.id,
@@ -554,121 +589,187 @@ class TelegramClient:
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the second call of this function (waiting input login)
         if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
             login = message.text
+
+            # If login already exists, stop creating
             if self.database.get_user_by_login(login) is not None:
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
                 self.__send_message(message.chat.id, "Введённый логин уже существует, создание аккаунта отменено.",
                                     markup=self.__get_markup(message.chat.id))
                 return
 
+            # If login is incorrect, stop creating
             if login.count("$") > 0 or not self.__check_name(login):
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
                 self.__send_message(message.chat.id, "Логин содержит запрещённые символы, создание аккаунта отменено.",
                                     markup=self.__get_markup(message.chat.id))
                 return
 
+            # If login too long, stop creating
             if len(login) > constants.MAX_LOGIN_SIZE:
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
                 self.__send_message(message.chat.id, "Введённый логин слишком длинный, создание аккаунта отменено.",
                                     markup=self.__get_markup(message.chat.id))
                 return
 
+            # Start waiting of password for create account with current login (login saved in WaitModeDescription data)
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_account, data=login)
             self.__send_message(message.chat.id, "Введите пароль для нового аккаунта:",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        login = self.wait_mode[message.chat.id].data
+        # If it is the third call of this function (waiting input password)
+        login = self.wait_mode[message.chat.id].data  # Getting stored current login
         password = message.text
-        self.wait_mode[message.chat.id] = None
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
 
-        self.database.add_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGRAM_ID))
+        self.database.add_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGRAM_ID))  # Creating new user
         self.__send_message(message.chat.id, "Аккаунт успешно создан.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_delete_account(self, message):
+    def __compute_keyboard_delete_account(self, message) -> None:
+        # This function is called when admin wants to delete existing account
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of login for deleting account
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_account)
             self.__send_message(message.chat.id, "Введите логин аккаунта для удаления:",
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the second call of this function (waiting input login)
         login = message.text
-        self.wait_mode[message.chat.id] = None
-        if self.database.get_user_by_login(login) is None:
+        user = self.database.get_user_by_login(login)
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
+
+        # If there is no such login, stop deleting
+        if user is None:
             self.__send_message(message.chat.id, "Введённый логин не существует, удаление аккаунта отменено.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        status = self.database.get_user_by_login(login).status
-        if status == constants.SUPER_ADMIN or not self.__is_super_admin(message.chat.id) and status == constants.ADMIN:
+        # Admin can delete only users accounts
+        if user.status == constants.SUPER_ADMIN or not self.__is_super_admin(message.chat.id) and user.status == constants.ADMIN:
             self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        id = self.__get_id_by_login(login)
-        self.database.delete_user_by_login(login)
+        id = self.__get_id_by_login(login)  # Getting id of last user on current account
+        self.database.delete_user_by_login(login)  # Deleting account
+
+        # Send notification to last user if he exists
         if id is not None:
             self.__send_message(id, "Ваш аккаунт был удалён.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Аккаунт успешно удалён.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_add_admin(self, message):
+    def __compute_keyboard_add_admin(self, message) -> None:
+        # This function is called when super-admin wants to put admin rights on existing user account
+
+        # If user is not super-admin, reject command
+        if not self.__is_super_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of login for put admin rights
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_admin)
             self.__send_message(message.chat.id, "Введите логин аккаунта для выдачи прав администратора:",
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the second call of this function (waiting input login)
         login = message.text
         user = self.database.get_user_by_login(login)
-        self.wait_mode[message.chat.id] = None
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
+
+        # If there is no such login, stop modification
         if user is None:
             self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If user already have admin rights, stop modification
         if user.status == constants.SUPER_ADMIN or user.status == constants.ADMIN:
             self.__send_message(message.chat.id,
                                 "Пользователь уже обладает правами администратора, модификация прав отменена.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        self.database.change_user_status(login, constants.ADMIN)
-        id = self.__get_id_by_login(login)
+        self.database.change_user_status(login, constants.ADMIN)  # Modify current user rights
+        id = self.__get_id_by_login(login)  # Getting id of user on current login
+
+        # Send notification to user on current login if he exists
         if id is not None:
             self.__send_message(id, "Вам выданы права администратора.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_delete_admin(self, message):
+    def __compute_keyboard_delete_admin(self, message) -> None:
+        # This function is called when super-admin wants to remove admin rights of existing admin account
+
+        # If user is not super-admin, reject command
+        if not self.__is_super_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of login for remove admin rights
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_admin)
             self.__send_message(message.chat.id, "Введите логин аккаунта для лишения прав администратора:",
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the second call of this function (waiting input login)
         login = message.text
-        self.wait_mode[message.chat.id] = None
-        if self.database.get_user_by_login(login) is None:
+        user = self.database.get_user_by_login(login)
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
+
+        # If there is no such login, stop modification
+        if user is None:
             self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        if self.database.get_user_by_login(login).status == constants.SUPER_ADMIN:
+        # Super-admin rights can not be modified
+        if user.status == constants.SUPER_ADMIN:
             self.__send_message(message.chat.id, "Запрещено менять права доступа этого пользователя.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        self.database.change_user_status(login, constants.USER)
-        id = self.__get_id_by_login(login)
+        self.database.change_user_status(login, constants.USER)  # Modify current user rights
+        id = self.__get_id_by_login(login)  # Getting id of user on current login
+
+        # Send notification to user on current login if he exists
         if id is not None:
             self.__send_message(id, "Вы лишены прав администратора.", markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Команда успешно выполненна.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_add_exercise(self, message):
+    def __compute_keyboard_add_exercise(self, message) -> None:
+        # This function is called when admin wants to add new exercise
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of name for create new exercise (WaitModeDescription status is WAIT_NAME)
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise,
                                                                   status="WAIT_NAME")
             self.__send_message(message.chat.id,
@@ -676,21 +777,33 @@ class TelegramClient:
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the second call of this function (waiting input exercise name)
         if self.wait_mode[message.chat.id].status == "WAIT_NAME":
             homework_name = message.text
+
+            # If exercise with same name already exists, stop creating
+            if self.database.get_homework_by_name(homework_name) is not None:
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
+                self.__send_message(message.chat.id, "Работа с таким именем уже существует, создание задания отменено.",
+                                    markup=self.__get_markup(message.chat.id))
+                return
+
+            # If exercise name is incorrect, stop creating
             if homework_name.count("$") > 0 or not self.__check_name(homework_name):
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
                 self.__send_message(message.chat.id,
                                     "Имя домашней работы содержит запрещённые символы, создание задания отменено.",
                                     markup=self.__get_markup(message.chat.id))
                 return
 
+            # If exercise name too long, stop creating
             if len(homework_name) > constants.MAX_HOMEWORK_NAME_SIZE:
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
                 self.__send_message(message.chat.id, "Имя домашней работы слишком длинное, создание задания отменено.",
                                     markup=self.__get_markup(message.chat.id))
                 return
 
+            # Start waiting of number of tasks for create new exercise (WaitModeDescription status is WAIT_NUMBER_OF_EXERCISES, exercise name saved in WaitModeDescription data["name"])
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise,
                                                                   data={"name": homework_name, "answers": []},
                                                                   status="WAIT_NUMBER_OF_EXERCISES")
@@ -698,59 +811,90 @@ class TelegramClient:
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the third call of this function (waiting input number of tasks)
         if self.wait_mode[message.chat.id].status == "WAIT_NUMBER_OF_EXERCISES":
+            # Try to extract number of tasks from the message text
             success = True
             number = 0
             try:
                 number = int(message.text)
             except:
                 success = False
+
+            # If number of tasks is incorrect or not positive, stop creating
             if not success or number <= 0:
-                self.wait_mode[message.chat.id] = None
+                self.wait_mode[message.chat.id] = None  # Drop waiting mode
                 self.__send_message(message.chat.id, "Введено некорректное число задач, создание задания отменено.",
                                     markup=self.__get_markup(message.chat.id))
                 return
 
+            # Start waiting right answer for each task (WaitModeDescription status is description of input state, exercise name and right answers saved in WaitModeDescription data)
             self.wait_mode[message.chat.id].status = {"current_number": 0, "amount": number}
 
+        # If already taken exercise name and number of tasks
+
+        # Waiting right answer starts when current_number > 0 and stop when current_number == amount
         if self.wait_mode[message.chat.id].status["current_number"] > 0:
-            self.wait_mode[message.chat.id].data["answers"].append(message.text)
+            self.wait_mode[message.chat.id].data["answers"].append(message.text)  # Add right answer to WaitModeDescription data
             self.__send_message(message.chat.id, "Ответ принят.", markup=self.__get_markup(message.chat.id))
 
         if self.wait_mode[message.chat.id].status["current_number"] < self.wait_mode[message.chat.id].status["amount"]:
-            self.wait_mode[message.chat.id].status["current_number"] += 1
+            self.wait_mode[message.chat.id].status["current_number"] += 1  # Update number of given answers
             self.__send_message(message.chat.id, "Введите ответ к задаче номер " + str(
                 self.wait_mode[message.chat.id].status["current_number"]) + ":",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        homework_name = self.wait_mode[message.chat.id].data["name"]
-        answers = self.wait_mode[message.chat.id].data["answers"]
-        self.wait_mode[message.chat.id] = None
+        homework_name = self.wait_mode[message.chat.id].data["name"]  # Getting stored exercise name
+        answers = self.wait_mode[message.chat.id].data["answers"]  # Getting stored right answers for each task
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
 
-        self.database.add_homework(Homework(homework_name, answers))
+        self.database.add_homework(Homework(homework_name, answers))  # Add new exercise
         self.__send_message(message.chat.id, "Задание успешно добавленно.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_delete_exercise(self, message):
+    def __compute_keyboard_delete_exercise(self, message) -> None:
+        # This function is called when admin wants to delete exercise
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of name for delete exercise
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_exercise)
             self.__send_message(message.chat.id, "Введите имя задания для удаления.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
+        # If it is the second call of this function (waiting input exercise name)
         homework_name = message.text
         homework = self.database.get_homework_by_name(homework_name)
-        self.wait_mode[message.chat.id] = None
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
+
+        # If there is no such exercise, stop deleting
         if homework is None:
             self.__send_message(message.chat.id, "Задания с введённым именем не существует, удаление отменено.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        self.database.delete_homework_by_name(homework_name)
+        self.database.delete_homework_by_name(homework_name)  # Delete exercise
         self.__send_message(message.chat.id, "Задание успешно удалено.", markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_add(self, message):
+    def __compute_keyboard_add(self, message) -> None:
+        # This function is called when admin wants to add something
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of action type (WaitModeDescription status describe current user status, WaitModeDescription data describe action class (ADD/DELETE))
             if self.__is_super_admin(message.chat.id):
                 self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add,
                                                                       status="SUPER_ADMIN_ACTION", data="ADD")
@@ -762,19 +906,32 @@ class TelegramClient:
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        self.wait_mode[message.chat.id] = None
-        if message.text == "Аккаунт" and self.__is_admin(message.chat.id):
+        # If it is the second call of this function (waiting input action type)
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
+
+        # Finding value of current action type
+        if message.text == "Аккаунт":  # Add new account
             self.__compute_keyboard_add_account(message)
-        elif message.text == "Задание" and self.__is_admin(message.chat.id):
+        elif message.text == "Задание":  # Add new exercise
             self.__compute_keyboard_add_exercise(message)
-        elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
+        elif message.text == "Администратор":  # Put admin rights on some existing user
             self.__compute_keyboard_add_admin(message)
-        else:
+        else:  # Unknown command type
             self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.",
                                 markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_delete(self, message):
+    def __compute_keyboard_delete(self, message) -> None:
+        # This function is called when admin wants to delete something
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.wait_mode[message.chat.id] = None  # Drop waiting mode
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # If it is the first call of this function
         if self.wait_mode[message.chat.id] is None:
+            # Start waiting of action type (WaitModeDescription status describe current user status, WaitModeDescription data describe action class (ADD/DELETE))
             if self.__is_super_admin(message.chat.id):
                 self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete,
                                                                       status="SUPER_ADMIN_ACTION", data="DELETE")
@@ -786,81 +943,120 @@ class TelegramClient:
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        self.wait_mode[message.chat.id] = None
-        if message.text == "Аккаунт" and self.__is_admin(message.chat.id):
+        # If it is the second call of this function (waiting input action type)
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
+
+        # Finding value of current action type
+        if message.text == "Аккаунт":  # Delete existing account
             self.__compute_keyboard_delete_account(message)
-        elif message.text == "Задание" and self.__is_admin(message.chat.id):
+        elif message.text == "Задание":  # Delete existing exercise
             self.__compute_keyboard_delete_exercise(message)
-        elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
+        elif message.text == "Администратор":  # Remove admin rights from some existing user
             self.__compute_keyboard_delete_admin(message)
-        else:
+        else:  # Unknown command type
             self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.",
                                 markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_get_results(self, message):
+    def __compute_keyboard_get_results(self, message) -> None:
+        # This function is called when user wants to see results table
+
+        # If user is not authorized, reject command
         user = self.database.get_user_by_telegram_id(message.chat.id)
         if user is None:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
+        # Create homeworks list (user must choose homework name for see results table of it)
         markup = markups.get_all_homeworks(self.database.get_all_homeworks_names(), "C")
         if markup is None:
+            # There is no homeworks created
             self.__send_message(message.chat.id, "На данный момент нет открытых работ.", markup=markup)
         else:
             self.__send_message(message.chat.id, "Выберите имя работы.", markup=markup)
 
-    def __compute_keyboard_get_list_of_logins(self, message):
+    def __compute_keyboard_get_list_of_logins(self, message) -> None:
+        # This function is called when admin wants to see list of accounts
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
+        # Admins can see only other admins and users (not super-admins)
         if self.__is_super_admin(message.chat.id):
             users = self.database.get_all_users_with_status(constants.SUPER_ADMIN)
             if len(users) > 0:
+                # Send list of super-admins
                 self.__send_message(message.chat.id, "Супер-администраторы:", markup=self.__get_markup(message.chat.id))
                 for user in users:
+                    # Create buttons under login
                     markup = types.InlineKeyboardMarkup(
                         [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                     self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.ADMIN)
         if len(users) > 0:
+            # Send list of admins
             self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
             for user in users:
+                # Create buttons under login
                 markup = types.InlineKeyboardMarkup(
                     [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.USER)
         if len(users) > 0:
+            # Send list of users
             self.__send_message(message.chat.id, "Ученики:", markup=self.__get_markup(message.chat.id))
             for user in users:
+                # Create buttons under login
                 markup = types.InlineKeyboardMarkup(
                     [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
-    def __compute_keyboard_get_list_of_exercises(self, message):
+    def __compute_keyboard_get_list_of_exercises(self, message) -> None:
+        # This function is called when admin wants to see list of exercises
+
+        # If user is not admin, reject command
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
+            return
+
         homework_names = self.database.get_all_homeworks_names()
         if len(homework_names) > 0:
+            # Send list of homeworks
             for name in homework_names:
+                # Create buttons under homework name
                 markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Результаты",
                                                                                  callback_data="C" + name),
                                                       types.InlineKeyboardButton(text="Описание",
                                                                                  callback_data="H" + name)]])
                 self.__send_message(message.chat.id, name, markup=markup)
         else:
+            # There is no homeworks created
             self.__send_message(message.chat.id, "На данный момент нет открытых работ.",
                                 markup=self.__get_markup(message.chat.id))
 
-    def __compute_keyboard_send_answer(self, message):
+    def __compute_keyboard_send_answer(self, message) -> None:
+        # This function is called when user wants to send answer on some task
+
+        # If user is not authorized or his status is admin, reject command
         user = self.database.get_user_by_telegram_id(message.chat.id)
-        if user is None:
+        if user is None or self.__is_admin(message.chat.id):
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
+        # Create list of homeworks
         markup = markups.get_all_homeworks(self.database.get_all_homeworks_names(), "A")
         if markup is None:
+            # There is no homeworks created
             self.__send_message(message.chat.id, "На данный момент для вас нет открытых задач.", markup=markup)
         else:
             self.__send_message(message.chat.id, "Выберите имя работы.", markup=markup)
 
-    def __handler(self):
+    def __handler(self) -> None:
+        # This function is called on all events
+
         print("TG client started.")
 
         @self.client.message_handler(commands=['start'])
@@ -869,15 +1065,21 @@ class TelegramClient:
 
         @self.client.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
-            self.client.answer_callback_query(callback_query_id=call.id)
-            callback_type = call.data[0]
+            # Computing callback from inline button
+
+            self.client.answer_callback_query(callback_query_id=call.id)  # Answer on callback (required to continue working with the button)
+            callback_type = call.data[0]  # Special type of pressed button
             data = call.data[1:].split("$")
 
+            # NONE - type of empty button
             if callback_type == "0":  # NONE
                 return
 
-            if call.message.chat.id in self.wait_mode and self.wait_mode[call.message.chat.id]
+            # Drop current waiting mode if button was pressed
+            if call.message.chat.id in self.wait_mode and self.wait_mode[call.message.chat.id] is not None:
+                self.__compute_keyboard_back(call.message)
 
+            # Finding value of current action type
             if callback_type == "A":  # SELECT_HOMEWORK
                 self.__compute_callback_select_homework(data, call.message)
             elif callback_type == "B":  # SELECT_TASK
@@ -896,45 +1098,52 @@ class TelegramClient:
                 self.__compute_callback_describe_exercise(data, call.message)
             elif callback_type == "I":  # CHANGE_RESULTS_TABLE
                 self.__compute_callback_change_results_table(data, call.message)
-            else:
+            else:  # Unknown action type
                 add_error_to_log("Unknown callback: " + callback_type)
 
         @self.client.message_handler(content_types=["text"])
         def on_message(message):
+            # Computing user input (from keyboard)
+
+            # Skip all message from chats
             if message.chat.id != message.from_user.id:
                 return
 
+            # Add wait mode to user
             if message.chat.id not in self.wait_mode:
                 self.wait_mode[message.chat.id] = None
 
+            # If waiting mode is active, compute it
             if self.wait_mode[message.chat.id] is not None:
-                if message.text == "Назад":
+                if message.text == "Назад":  # Go back from wait mode
                     self.__compute_keyboard_back(message)
-                else:
+                else:  # Compute wait mode
                     self.wait_mode[message.chat.id].function(message)
-            elif message.text == "Авторизоваться":
+            elif message.text == "Авторизоваться":  # Authorize to existing account
                 self.__compute_keyboard_sign_up(message)
-            elif message.text == "Статус":
+            elif message.text == "Статус":  # Get login, password and status of current account
                 self.__compute_keyboard_get_state(message)
-            elif message.text == "Выйти":
+            elif message.text == "Выйти":  # Exit from current account
                 self.__compute_keyboard_sign_out(message)
-            elif message.text == "Сдать задачу" and not self.__is_admin(message.chat.id):
+            elif message.text == "Сдать задачу":  # Solve unsolved exercise
                 self.__compute_keyboard_send_answer(message)
-            elif message.text == "Добавить" and self.__is_admin(message.chat.id):
+            elif message.text == "Добавить":  # Action add something
                 self.__compute_keyboard_add(message)
-            elif message.text == "Удалить" and self.__is_admin(message.chat.id):
+            elif message.text == "Удалить":  # Action delete something
                 self.__compute_keyboard_delete(message)
-            elif message.text == "Вывести результаты":
+            elif message.text == "Вывести результаты":  # Show results table
                 self.__compute_keyboard_get_results(message)
-            elif message.text == "Список аккаунтов" and self.__is_admin(message.chat.id):
+            elif message.text == "Список аккаунтов":  # Show accounts list
                 self.__compute_keyboard_get_list_of_logins(message)
-            elif message.text == "Список заданий" and self.__is_admin(message.chat.id):
+            elif message.text == "Список заданий":  # Show exercises list
                 self.__compute_keyboard_get_list_of_exercises(message)
-            else:
-                self.__send_message(message.chat.id, "Неизвестная команда.")
+            else:  # Unknown keyboard command
+                self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
 
-        self.client.infinity_polling()
+        self.client.infinity_polling()  # Launch bot
 
-    def run(self):
-        self.client = TeleBot(config.TELEGRAM_TOKEN)
-        self.__handler()
+    def run(self) -> None:
+        # This function launch bot
+
+        self.client = TeleBot(config.TELEGRAM_TOKEN)  # Create telebot client object
+        self.__handler()  # Launch bot
