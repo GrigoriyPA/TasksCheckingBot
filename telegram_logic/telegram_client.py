@@ -363,7 +363,7 @@ class TelegramClient:
         # Show right answer
         if self.__is_admin(message.chat.id):
             self.__send_message(message.chat.id, "Правильный ответ на задание " + str(
-                task_id) + ": " + correct_answer + "\nОтвет " + login + " на задание: " + answer,
+                task_id) + ": " + correct_answer + "\nОтвет \'" + login + "\' на задание: " + answer,
                                 markup=self.__get_markup(message.chat.id))
         else:
             self.__send_message(message.chat.id, "Правильный ответ на задание " + str(
@@ -437,7 +437,7 @@ class TelegramClient:
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        homework_name = data[0]
+        homework_name = data[0]  # Getting chooses homework name
         homework = self.database.get_homework_by_name(homework_name)
 
         # If homework was blocked or deleted, reject choice
@@ -462,7 +462,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
-        homework_name, first_task_id = data[0], int(data[1])
+        homework_name, first_task_id = data[0], int(data[1])  # Getting chooses homework name and new first task id
         homework = self.database.get_homework_by_name(homework_name)
 
         # If homework was blocked or deleted, reject choice
@@ -479,6 +479,101 @@ class TelegramClient:
                                           reply_markup=markup)
         except:
             pass
+
+    def __compute_callback_get_user_statistic_in_table(self, data: list[str], message) -> None:
+        # This function is called when user wants to see statistic of one user in results table
+
+        user = self.database.get_user_by_telegram_id(message.chat.id)
+
+        # If user is not authorized, reject command
+        if user is None:
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
+            return
+
+        login, homework_name = data[0], data[1]  # Getting chooses login and homework name
+        homework = self.database.get_homework_by_name(homework_name)
+
+        # If homework was blocked or deleted, reject choice
+        if homework is None:
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
+            return
+
+        # Calculation number of right solved tasks
+        tasks_number = len(homework.right_answers)
+        solved_tasks_number = 0
+        for i in range(1, tasks_number + 1):
+            solved_tasks_number += self.database.get_user_answer_for_the_task(login, homework_name, i) == \
+                                   homework.right_answers[i - 1]
+
+        # Send statistic
+        self.__send_message(message.chat.id,
+                            login + "\nРешено " + str(solved_tasks_number) + " / " + str(tasks_number) + " задач.",
+                            markup=self.__get_markup(message.chat.id))
+
+    def __compute_callback_get_current_user_on_login(self, data: list[str], message) -> None:
+        # This function is called when admin wants to see current user on chooses login (in list of logins)
+
+        # If user is not admin, reject choice
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.",
+                                markup=self.__get_markup(message.chat.id))
+            return
+
+        login = data[0]  # Getting chooses user login
+        user = self.database.get_user_by_login(login)
+
+        # If current user was deleted, reject choice
+        if user is None:
+            self.__send_message(message.chat.id, "Выбранный пользователь был удалён.",
+                                markup=self.__get_markup(message.chat.id))
+            return
+
+        # If there is no user on chooses login
+        if user.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
+            self.__send_message(message.chat.id, "В этот аккаунт никто не вошёл.",
+                                markup=self.__get_markup(message.chat.id))
+            return
+
+        # Show user telegram info
+        info = self.client.get_chat_member(user.telegram_id, user.telegram_id).user
+        self.__send_message(message.chat.id, "Имя: " + info.first_name + "\nФамилия: " + info.last_name + "\nХэндл: @" + info.username, markup=self.__get_markup(message.chat.id))
+
+    def __compute_callback_get_user_results(self, data: list[str], message) -> None:
+        # This function is called when admin wants to see results of chooses user (in list of logins)
+
+        # If user is not admin, reject choice
+        if not self.__is_admin(message.chat.id):
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.",
+                                markup=self.__get_markup(message.chat.id))
+            return
+
+        login = data[0]  # Getting chooses user login
+        user = self.database.get_user_by_login(login)
+
+        # If current user was deleted, reject choice
+        if user is None:
+            self.__send_message(message.chat.id, "Выбранный пользователь был удалён.",
+                                markup=self.__get_markup(message.chat.id))
+            return
+
+        # Calculate user results
+        user_results = []  # List of pairs (solved tasks number, tasks number)
+        homeworks_names = self.database.get_all_homeworks_names()
+        for homework_name in homeworks_names:
+            homework = self.database.get_homework_by_name(homework_name)
+            tasks_number = len(homework.right_answers)
+
+            # Calculate solved tasks number in current homework
+            solved_tasks_number = 0
+            for i in range(1, tasks_number + 1):
+                solved_tasks_number += self.database.get_user_answer_for_the_task(login, homework_name, i) == homework.right_answers[i - 1]
+
+            user_results.append((solved_tasks_number, tasks_number))
+
+        # Create table of user results and send results
+        markup = markups.get_user_results_table(homeworks_names, user_results)
+        self.__send_message(message.chat.id, "Результаты \'" + login + "\':", markup)
 
     def __compute_keyboard_back(self, message) -> None:
         # This function is called when user wants to stop waiting input
@@ -625,7 +720,8 @@ class TelegramClient:
         password = message.text
         self.wait_mode[message.chat.id] = None  # Drop waiting mode
 
-        self.database.add_user(User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGRAM_ID))  # Creating new user
+        self.database.add_user(
+            User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGRAM_ID))  # Creating new user
         self.__send_message(message.chat.id, "Аккаунт успешно создан.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_account(self, message) -> None:
@@ -657,7 +753,8 @@ class TelegramClient:
             return
 
         # Admin can delete only users accounts
-        if user.status == constants.SUPER_ADMIN or not self.__is_super_admin(message.chat.id) and user.status == constants.ADMIN:
+        if user.status == constants.SUPER_ADMIN or not self.__is_super_admin(
+                message.chat.id) and user.status == constants.ADMIN:
             self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.",
                                 markup=self.__get_markup(message.chat.id))
             return
@@ -835,7 +932,8 @@ class TelegramClient:
 
         # Waiting right answer starts when current_number > 0 and stop when current_number == amount
         if self.wait_mode[message.chat.id].status["current_number"] > 0:
-            self.wait_mode[message.chat.id].data["answers"].append(message.text)  # Add right answer to WaitModeDescription data
+            self.wait_mode[message.chat.id].data["answers"].append(
+                message.text)  # Add right answer to WaitModeDescription data
             self.__send_message(message.chat.id, "Ответ принят.", markup=self.__get_markup(message.chat.id))
 
         if self.wait_mode[message.chat.id].status["current_number"] < self.wait_mode[message.chat.id].status["amount"]:
@@ -991,7 +1089,8 @@ class TelegramClient:
                 for user in users:
                     # Create buttons under login
                     markup = types.InlineKeyboardMarkup(
-                        [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
+                        [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + user.login),
+                          types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login)]])
                     self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.ADMIN)
@@ -1001,7 +1100,8 @@ class TelegramClient:
             for user in users:
                 # Create buttons under login
                 markup = types.InlineKeyboardMarkup(
-                    [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
+                    [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + user.login),
+                      types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.USER)
@@ -1011,7 +1111,9 @@ class TelegramClient:
             for user in users:
                 # Create buttons under login
                 markup = types.InlineKeyboardMarkup(
-                    [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
+                    [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + user.login),
+                      types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login),
+                      types.InlineKeyboardButton(text="Результаты", callback_data="L" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
     def __compute_keyboard_get_list_of_exercises(self, message) -> None:
@@ -1067,7 +1169,8 @@ class TelegramClient:
         def callback_inline(call):
             # Computing callback from inline button
 
-            self.client.answer_callback_query(callback_query_id=call.id)  # Answer on callback (required to continue working with the button)
+            self.client.answer_callback_query(
+                callback_query_id=call.id)  # Answer on callback (required to continue working with the button)
             callback_type = call.data[0]  # Special type of pressed button
             data = call.data[1:].split("$")
 
@@ -1098,6 +1201,12 @@ class TelegramClient:
                 self.__compute_callback_describe_exercise(data, call.message)
             elif callback_type == "I":  # CHANGE_RESULTS_TABLE
                 self.__compute_callback_change_results_table(data, call.message)
+            elif callback_type == "J":  # GET_USER_STATISTIC_IN_TABLE
+                self.__compute_callback_get_user_statistic_in_table(data, call.message)
+            elif callback_type == "K":  # GET_CURRENT_USER_ON_LOGIN
+                self.__compute_callback_get_current_user_on_login(data, call.message)
+            elif callback_type == "L":  # GET_USER_RESULTS
+                self.__compute_callback_get_user_results(data, call.message)
             else:  # Unknown action type
                 add_error_to_log("Unknown callback: " + callback_type)
 
