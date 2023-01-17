@@ -114,7 +114,8 @@ class TelegramClient:
         # Buttons in the normal situation
         if self.__is_admin(id):
             # Buttons for admins
-            markup.add(types.KeyboardButton(text="Добавить"), types.KeyboardButton(text="Удалить"))  # Buttons for select action type
+            markup.add(types.KeyboardButton(text="Добавить"),
+                       types.KeyboardButton(text="Удалить"))  # Buttons for select action type
             markup.add(types.KeyboardButton(text="Вывести результаты"))  # Show results table
             markup.add(types.KeyboardButton(text="Список аккаунтов"))  # Show accounts list
             markup.add(types.KeyboardButton(text="Список заданий"))  # Show exercises list
@@ -166,14 +167,16 @@ class TelegramClient:
 
         # If task was blocked or deleted, reject answer
         if self.__check_task(user.login, homework_name, task_id) is not None:
-            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         answer = message.text
 
         # Empty answer are banned
         if answer == '':
-            self.__send_message(message.chat.id, "Введён некорректный ответ, сдача задания отменена.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введён некорректный ответ, сдача задания отменена.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         correct_answer = self.database.send_answer_for_the_task(user.login, homework_name, task_id, answer)
@@ -182,17 +185,21 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Ваш ответ правильный!", markup=self.__get_markup(message.chat.id))
         else:
             result = "❌"
-            self.__send_message(message.chat.id, "Ваш ответ неправильный. Правильный ответ: " + correct_answer, markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Ваш ответ неправильный. Правильный ответ: " + correct_answer,
+                                markup=self.__get_markup(message.chat.id))
 
         # Sending notifications to all admins
-        for admin in self.database.get_all_users_with_status(constants.ADMIN) + self.database.get_all_users_with_status(constants.SUPER_ADMIN):
+        for admin in self.database.get_all_users_with_status(constants.ADMIN) + self.database.get_all_users_with_status(
+                constants.SUPER_ADMIN):
             id = self.__get_id_by_login(admin.login)
 
             # Scip all not authorized admins
             if id is None:
                 continue
 
-            self.__send_message(id, user.login + " добавил ответ к заданию " + str(task_id) + " в работе \'" + homework_name + "\'\nПравильный ответ: " + correct_answer + "\nОтвет ученика: " + answer + "\nРезультат: " + result, markup=self.__get_markup(id))
+            self.__send_message(id, user.login + " добавил ответ к заданию " + str(
+                task_id) + " в работе \'" + homework_name + "\'\nПравильный ответ: " + correct_answer + "\nОтвет ученика: " + answer + "\nРезультат: " + result,
+                                markup=self.__get_markup(id))
 
     def __compute_callback_select_homework(self, data: list[str], message) -> None:
         # This function is called when user chooses homework for solve (in list of homeworks)
@@ -213,7 +220,8 @@ class TelegramClient:
 
         # If homework was blocked or deleted, reject choice
         if self.database.get_homework_by_name(homework_name) is None:
-            self.__send_message(message.chat.id, "Выбранная работа недоступна.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранная работа недоступна.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         homework = self.database.get_homework_by_name(homework_name)
@@ -242,24 +250,29 @@ class TelegramClient:
 
         # If homework was blocked or deleted, reject choice
         if self.database.get_homework_by_name(homework_name) is None:
-            self.__send_message(message.chat.id, "Выбранная работа недоступна.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранная работа недоступна.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Update table of tasks
         markup = markups.get_task_list(user.login, len(homework.right_answers), homework.name, self.__check_task)
         try:
-            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text, reply_markup=markup)
+            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text,
+                                          reply_markup=markup)
         except:
             pass
 
         # If task was blocked or deleted, reject choice
         if self.__check_task(user.login, homework_name, task_id) is not None:
-            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Start waiting of answer for current task in current homework (they saved in WaitModeDescription.data)
-        self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_wait_answer, data={"homework_name": homework_name, "task_id": task_id})
-        self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":", markup=self.__get_markup(message.chat.id))
+        self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_wait_answer,
+                                                              data={"homework_name": homework_name, "task_id": task_id})
+        self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":",
+                            markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_homework(self, data: list[str], message) -> None:
         # This function is called when user chooses homework for show results (in list of homeworks)
@@ -276,11 +289,13 @@ class TelegramClient:
 
         # If homework was blocked or deleted, reject choice
         if homework is None:
-            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Creating table of results
-        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers), 1)
+        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name,
+                                           len(homework.right_answers), 1)
         self.__send_message(message.chat.id, "Текущие результаты по работе \'" + homework_name + "\':", markup=markup)
 
     def __compute_callback_show_task(self, data: list[str], message) -> None:
@@ -288,7 +303,8 @@ class TelegramClient:
 
         # If user is admin, reject choice
         if self.__is_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Просмотр задания невозможен.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Просмотр задания невозможен.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         user = self.database.get_user_by_telegram_id(message.chat.id)
@@ -299,19 +315,23 @@ class TelegramClient:
             return
 
         homework_name, task_id = data[0], int(data[1])  # Getting chooses homework name and task id
-        answer = self.database.get_user_answer_for_the_task(user.login, homework_name, task_id)  # Getting user answer on current task
+        answer = self.database.get_user_answer_for_the_task(user.login, homework_name,
+                                                            task_id)  # Getting user answer on current task
         correct_answer = self.database.get_right_answer_for_the_task(homework_name, task_id)
 
         # If task was blocked or deleted, reject choice
         if answer is None or correct_answer is None:
-            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Compare answers and show right answer
         if answer != correct_answer:
-            self.__send_message(message.chat.id, "Ваш ответ: " + answer + "\nПравильный ответ: " + correct_answer, markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Ваш ответ: " + answer + "\nПравильный ответ: " + correct_answer,
+                                markup=self.__get_markup(message.chat.id))
         else:
-            self.__send_message(message.chat.id, "Ваш правильный ответ: " + answer, markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Ваш правильный ответ: " + answer,
+                                markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_task_in_table(self, data: list[str], message) -> None:
         # This function is called when user chooses task for see right answer on this task (in results table)
@@ -323,32 +343,40 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
-        login, homework_name, task_id = data[0], data[1], int(data[2])  # Getting chooses user login, homework name and task id
+        login, homework_name, task_id = data[0], data[1], int(
+            data[2])  # Getting chooses user login, homework name and task id
 
         # If user is not admin, and he want to see someone else's answer, reject choice
         if not self.__is_admin(message.chat.id) and login != user.login:
             return
 
-        answer = self.database.get_user_answer_for_the_task(login, homework_name, task_id)  # Getting user answer on current task
+        answer = self.database.get_user_answer_for_the_task(login, homework_name,
+                                                            task_id)  # Getting user answer on current task
         correct_answer = self.database.get_right_answer_for_the_task(homework_name, task_id)
 
         # If task was blocked or deleted, reject choice
         if answer is None or correct_answer is None:
-            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Show right answer
         if self.__is_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nОтвет " + login + " на задание: " + answer, markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Правильный ответ на задание " + str(
+                task_id) + ": " + correct_answer + "\nОтвет " + login + " на задание: " + answer,
+                                markup=self.__get_markup(message.chat.id))
         else:
-            self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nВаш ответ на задание: " + answer, markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Правильный ответ на задание " + str(
+                task_id) + ": " + correct_answer + "\nВаш ответ на задание: " + answer,
+                                markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_password(self, data: list[str], message) -> None:
         # This function is called when admin chooses some user for see his password (in list of logins)
 
         # If user is not admin, reject choice
         if not self.__is_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         login = data[0]  # Getting chooses user login
@@ -356,16 +384,20 @@ class TelegramClient:
 
         # If current user was deleted, reject choice
         if user is None:
-            self.__send_message(message.chat.id, "Выбранный пользователь был удалён.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранный пользователь был удалён.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Not super-admin can not see passwords of other admins
-        if login != self.database.get_user_by_telegram_id(message.chat.id).login and not self.__is_super_admin(message.chat.id) and not user.status == constants.USER:
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+        if login != self.database.get_user_by_telegram_id(message.chat.id).login and not self.__is_super_admin(
+                message.chat.id) and not user.status == constants.USER:
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Show user password
-        self.__send_message(message.chat.id, "Пароль пользователя \'" + login + "\': " + user.password, markup=self.__get_markup(message.chat.id))
+        self.__send_message(message.chat.id, "Пароль пользователя \'" + login + "\': " + user.password,
+                            markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_refresh_results_table(self, data: list[str], message) -> None:
         # This function is called when user wants to refresh results table
@@ -382,13 +414,16 @@ class TelegramClient:
 
         # If homework was blocked or deleted, reject choice
         if homework is None:
-            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Update results table
-        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers), first_task_id)
+        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name,
+                                           len(homework.right_answers), first_task_id)
         try:
-            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text, reply_markup=markup)
+            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text,
+                                          reply_markup=markup)
         except:
             # Table already updated
             self.__send_message(message.chat.id, "Информация актуальна.", markup=self.__get_markup(message.chat.id))
@@ -398,7 +433,8 @@ class TelegramClient:
 
         # If user is not admin, reject choice
         if not self.__is_admin(message.chat.id):
-            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         homework_name = data[0]
@@ -406,7 +442,8 @@ class TelegramClient:
 
         # If homework was blocked or deleted, reject choice
         if homework is None:
-            self.__send_message(message.chat.id, "Выбранное задание было удалено.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание было удалено.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Create and send description of current task
@@ -430,13 +467,16 @@ class TelegramClient:
 
         # If homework was blocked or deleted, reject choice
         if homework is None:
-            self.__send_message(message.chat.id, "Выбранное задание недоступно.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выбранное задание недоступно.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         # Update results table
-        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name, len(homework.right_answers), first_task_id)
+        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name,
+                                           len(homework.right_answers), first_task_id)
         try:
-            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text, reply_markup=markup)
+            self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text,
+                                          reply_markup=markup)
         except:
             pass
 
@@ -452,7 +492,9 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
             return
 
-        self.__send_message(message.chat.id, "Логин: " + user.login + "\nПароль: " + user.password + "\nСтатус: " + user.status, markup=self.__get_markup(message.chat.id))
+        self.__send_message(message.chat.id,
+                            "Логин: " + user.login + "\nПароль: " + user.password + "\nСтатус: " + user.status,
+                            markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_sign_up(self, message):
         if self.database.get_user_by_telegram_id(message.chat.id) is not None:
@@ -489,7 +531,8 @@ class TelegramClient:
         id = self.__get_id_by_login(login)
         self.database.change_user_telegram_id(login, message.chat.id)
         if id is not None:
-            self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.", markup=self.__get_markup(id))
+            self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.",
+                                markup=self.__get_markup(id))
 
         self.__send_message(message.chat.id, "Успешная авторизация!", markup=self.__get_markup(message.chat.id))
 
@@ -504,29 +547,36 @@ class TelegramClient:
 
     def __compute_keyboard_add_account(self, message):
         if self.wait_mode[message.chat.id] is None:
-            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_account, status="WAIT_LOGIN")
-            self.__send_message(message.chat.id, "Введите логин для нового аккаунта (доступны латинские символы, цифры и знаки препинания):", markup=self.__get_markup(message.chat.id))
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_account,
+                                                                  status="WAIT_LOGIN")
+            self.__send_message(message.chat.id,
+                                "Введите логин для нового аккаунта (доступны латинские символы, цифры и знаки препинания):",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
             login = message.text
             if self.database.get_user_by_login(login) is not None:
                 self.wait_mode[message.chat.id] = None
-                self.__send_message(message.chat.id, "Введённый логин уже существует, создание аккаунта отменено.", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id, "Введённый логин уже существует, создание аккаунта отменено.",
+                                    markup=self.__get_markup(message.chat.id))
                 return
 
             if login.count("$") > 0 or not self.__check_name(login):
                 self.wait_mode[message.chat.id] = None
-                self.__send_message(message.chat.id, "Логин содержит запрещённые символы, создание аккаунта отменено.", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id, "Логин содержит запрещённые символы, создание аккаунта отменено.",
+                                    markup=self.__get_markup(message.chat.id))
                 return
 
             if len(login) > constants.MAX_LOGIN_SIZE:
                 self.wait_mode[message.chat.id] = None
-                self.__send_message(message.chat.id, "Введённый логин слишком длинный, создание аккаунта отменено.", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id, "Введённый логин слишком длинный, создание аккаунта отменено.",
+                                    markup=self.__get_markup(message.chat.id))
                 return
 
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_account, data=login)
-            self.__send_message(message.chat.id, "Введите пароль для нового аккаунта:", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введите пароль для нового аккаунта:",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         login = self.wait_mode[message.chat.id].data
@@ -539,18 +589,21 @@ class TelegramClient:
     def __compute_keyboard_delete_account(self, message):
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_account)
-            self.__send_message(message.chat.id, "Введите логин аккаунта для удаления:", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введите логин аккаунта для удаления:",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         login = message.text
         self.wait_mode[message.chat.id] = None
         if self.database.get_user_by_login(login) is None:
-            self.__send_message(message.chat.id, "Введённый логин не существует, удаление аккаунта отменено.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введённый логин не существует, удаление аккаунта отменено.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         status = self.database.get_user_by_login(login).status
         if status == constants.SUPER_ADMIN or not self.__is_super_admin(message.chat.id) and status == constants.ADMIN:
-            self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         id = self.__get_id_by_login(login)
@@ -563,18 +616,22 @@ class TelegramClient:
     def __compute_keyboard_add_admin(self, message):
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_admin)
-            self.__send_message(message.chat.id, "Введите логин аккаунта для выдачи прав администратора:", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введите логин аккаунта для выдачи прав администратора:",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         login = message.text
         user = self.database.get_user_by_login(login)
         self.wait_mode[message.chat.id] = None
         if user is None:
-            self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         if user.status == constants.SUPER_ADMIN or user.status == constants.ADMIN:
-            self.__send_message(message.chat.id, "Пользователь уже обладает правами администратора, модификация прав отменена.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id,
+                                "Пользователь уже обладает правами администратора, модификация прав отменена.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         self.database.change_user_status(login, constants.ADMIN)
@@ -587,17 +644,20 @@ class TelegramClient:
     def __compute_keyboard_delete_admin(self, message):
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_admin)
-            self.__send_message(message.chat.id, "Введите логин аккаунта для лишения прав администратора:", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введите логин аккаунта для лишения прав администратора:",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         login = message.text
         self.wait_mode[message.chat.id] = None
         if self.database.get_user_by_login(login) is None:
-            self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введённый логин не существует, модификация прав отменена.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         if self.database.get_user_by_login(login).status == constants.SUPER_ADMIN:
-            self.__send_message(message.chat.id, "Запрещено менять права доступа этого пользователя.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Запрещено менять права доступа этого пользователя.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         self.database.change_user_status(login, constants.USER)
@@ -609,24 +669,33 @@ class TelegramClient:
 
     def __compute_keyboard_add_exercise(self, message):
         if self.wait_mode[message.chat.id] is None:
-            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise, status="WAIT_NAME")
-            self.__send_message(message.chat.id, "Введите имя нового задания (доступны латинские символы, цифры и знаки препинания):", markup=self.__get_markup(message.chat.id))
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise,
+                                                                  status="WAIT_NAME")
+            self.__send_message(message.chat.id,
+                                "Введите имя нового задания (доступны латинские символы, цифры и знаки препинания):",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         if self.wait_mode[message.chat.id].status == "WAIT_NAME":
             homework_name = message.text
             if homework_name.count("$") > 0 or not self.__check_name(homework_name):
                 self.wait_mode[message.chat.id] = None
-                self.__send_message(message.chat.id, "Имя домашней работы содержит запрещённые символы, создание задания отменено.", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id,
+                                    "Имя домашней работы содержит запрещённые символы, создание задания отменено.",
+                                    markup=self.__get_markup(message.chat.id))
                 return
 
             if len(homework_name) > constants.MAX_HOMEWORK_NAME_SIZE:
                 self.wait_mode[message.chat.id] = None
-                self.__send_message(message.chat.id, "Имя домашней работы слишком длинное, создание задания отменено.", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id, "Имя домашней работы слишком длинное, создание задания отменено.",
+                                    markup=self.__get_markup(message.chat.id))
                 return
 
-            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise, data={"name": homework_name, "answers": []}, status="WAIT_NUMBER_OF_EXERCISES")
-            self.__send_message(message.chat.id, "Введите количество заданий:", markup=self.__get_markup(message.chat.id))
+            self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_exercise,
+                                                                  data={"name": homework_name, "answers": []},
+                                                                  status="WAIT_NUMBER_OF_EXERCISES")
+            self.__send_message(message.chat.id, "Введите количество заданий:",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         if self.wait_mode[message.chat.id].status == "WAIT_NUMBER_OF_EXERCISES":
@@ -638,7 +707,8 @@ class TelegramClient:
                 success = False
             if not success or number <= 0:
                 self.wait_mode[message.chat.id] = None
-                self.__send_message(message.chat.id, "Введено некорректное число задач, создание задания отменено.", markup=self.__get_markup(message.chat.id))
+                self.__send_message(message.chat.id, "Введено некорректное число задач, создание задания отменено.",
+                                    markup=self.__get_markup(message.chat.id))
                 return
 
             self.wait_mode[message.chat.id].status = {"current_number": 0, "amount": number}
@@ -649,7 +719,9 @@ class TelegramClient:
 
         if self.wait_mode[message.chat.id].status["current_number"] < self.wait_mode[message.chat.id].status["amount"]:
             self.wait_mode[message.chat.id].status["current_number"] += 1
-            self.__send_message(message.chat.id, "Введите ответ к задаче номер " + str(self.wait_mode[message.chat.id].status["current_number"]) + ":", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введите ответ к задаче номер " + str(
+                self.wait_mode[message.chat.id].status["current_number"]) + ":",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         homework_name = self.wait_mode[message.chat.id].data["name"]
@@ -662,14 +734,16 @@ class TelegramClient:
     def __compute_keyboard_delete_exercise(self, message):
         if self.wait_mode[message.chat.id] is None:
             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_exercise)
-            self.__send_message(message.chat.id, "Введите имя задания для удаления.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Введите имя задания для удаления.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         homework_name = message.text
         homework = self.database.get_homework_by_name(homework_name)
         self.wait_mode[message.chat.id] = None
         if homework is None:
-            self.__send_message(message.chat.id, "Задания с введённым именем не существует, удаление отменено.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Задания с введённым именем не существует, удаление отменено.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         self.database.delete_homework_by_name(homework_name)
@@ -678,11 +752,14 @@ class TelegramClient:
     def __compute_keyboard_add(self, message):
         if self.wait_mode[message.chat.id] is None:
             if self.__is_super_admin(message.chat.id):
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="SUPER_ADMIN_ACTION", data="ADD")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add,
+                                                                      status="SUPER_ADMIN_ACTION", data="ADD")
             else:
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="ADMIN_ACTION", data="ADD")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add,
+                                                                      status="ADMIN_ACTION", data="ADD")
 
-            self.__send_message(message.chat.id, "Выберите объект модификации.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выберите объект модификации.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         self.wait_mode[message.chat.id] = None
@@ -693,16 +770,20 @@ class TelegramClient:
         elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
             self.__compute_keyboard_add_admin(message)
         else:
-            self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.",
+                                markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete(self, message):
         if self.wait_mode[message.chat.id] is None:
             if self.__is_super_admin(message.chat.id):
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="SUPER_ADMIN_ACTION", data="DELETE")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete,
+                                                                      status="SUPER_ADMIN_ACTION", data="DELETE")
             else:
-                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="ADMIN_ACTION", data="DELETE")
+                self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete,
+                                                                      status="ADMIN_ACTION", data="DELETE")
 
-            self.__send_message(message.chat.id, "Выберите объект модификации.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Выберите объект модификации.",
+                                markup=self.__get_markup(message.chat.id))
             return
 
         self.wait_mode[message.chat.id] = None
@@ -713,7 +794,8 @@ class TelegramClient:
         elif message.text == "Администратор" and self.__is_super_admin(message.chat.id):
             self.__compute_keyboard_delete_admin(message)
         else:
-            self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.",
+                                markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_get_results(self, message):
         user = self.database.get_user_by_telegram_id(message.chat.id)
@@ -733,31 +815,38 @@ class TelegramClient:
             if len(users) > 0:
                 self.__send_message(message.chat.id, "Супер-администраторы:", markup=self.__get_markup(message.chat.id))
                 for user in users:
-                    markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
+                    markup = types.InlineKeyboardMarkup(
+                        [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                     self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.ADMIN)
         if len(users) > 0:
             self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
             for user in users:
-                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
+                markup = types.InlineKeyboardMarkup(
+                    [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
         users = self.database.get_all_users_with_status(constants.USER)
         if len(users) > 0:
             self.__send_message(message.chat.id, "Ученики:", markup=self.__get_markup(message.chat.id))
             for user in users:
-                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
+                markup = types.InlineKeyboardMarkup(
+                    [[types.InlineKeyboardButton(text="Показать пароль", callback_data="F" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
     def __compute_keyboard_get_list_of_exercises(self, message):
         homework_names = self.database.get_all_homeworks_names()
         if len(homework_names) > 0:
             for name in homework_names:
-                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Результаты", callback_data="C" + name), types.InlineKeyboardButton(text="Описание", callback_data="H" + name)]])
+                markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Результаты",
+                                                                                 callback_data="C" + name),
+                                                      types.InlineKeyboardButton(text="Описание",
+                                                                                 callback_data="H" + name)]])
                 self.__send_message(message.chat.id, name, markup=markup)
         else:
-            self.__send_message(message.chat.id, "На данный момент нет открытых работ.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "На данный момент нет открытых работ.",
+                                markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_send_answer(self, message):
         user = self.database.get_user_by_telegram_id(message.chat.id)
@@ -786,6 +875,8 @@ class TelegramClient:
 
             if callback_type == "0":  # NONE
                 return
+
+            if call.message.chat.id in self.wait_mode and self.wait_mode[call.message.chat.id]
 
             if callback_type == "A":  # SELECT_HOMEWORK
                 self.__compute_callback_select_homework(data, call.message)
