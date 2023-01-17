@@ -136,6 +136,8 @@ class TelegramClient:
             self.client.send_message(id, text=text, reply_markup=markup)
 
     def __compute_command_start(self, message) -> None:
+        # This function is called on command '/start'
+
         text = "С возвращением!"
         if self.database.get_user_by_telegram_id(message.chat.id) is None:
             text = "Пожалуйста, авторизуйтесь."
@@ -144,7 +146,7 @@ class TelegramClient:
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
     def __compute_wait_answer(self, message) -> None:
-        # The function is called on user input during waiting answer on some exercise
+        # This function is called on user input during waiting answer on some exercise
 
         homework_name = self.wait_mode[message.chat.id].data["homework_name"]  # Getting stored current homework name
         task_id = self.wait_mode[message.chat.id].data["task_id"]  # Getting stored current task id
@@ -159,7 +161,7 @@ class TelegramClient:
 
         # If user is not authorized, reject answer
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         # If task was blocked or deleted, reject answer
@@ -193,7 +195,7 @@ class TelegramClient:
             self.__send_message(id, user.login + " добавил ответ к заданию " + str(task_id) + " в работе \'" + homework_name + "\'\nПравильный ответ: " + correct_answer + "\nОтвет ученика: " + answer + "\nРезультат: " + result, markup=self.__get_markup(id))
 
     def __compute_callback_select_homework(self, data: list[str], message) -> None:
-        # The function is called when user chooses homework for solve (in list of homeworks)
+        # This function is called when user chooses homework for solve (in list of homeworks)
 
         # If user is admin, reject choice
         if self.__is_admin(message.chat.id):
@@ -204,7 +206,7 @@ class TelegramClient:
 
         # If user is not authorized, reject choice
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name = data[0]  # Getting chooses homework name
@@ -221,7 +223,7 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Выберите задание.", markup=markup)
 
     def __compute_callback_select_task(self, data: list[str], message) -> None:
-        # The function is called when user chooses task for solve (in list of tasks)
+        # This function is called when user chooses task for solve (in list of tasks)
 
         # If user is admin, reject choice
         if self.__is_admin(message.chat.id):
@@ -232,7 +234,7 @@ class TelegramClient:
 
         # If user is not authorized, reject choice
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name, task_id = data[0], int(data[1])  # Getting chooses homework name and task id
@@ -260,13 +262,13 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":", markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_homework(self, data: list[str], message) -> None:
-        # The function is called when user chooses homework for show results (in list of homeworks)
+        # This function is called when user chooses homework for show results (in list of homeworks)
 
         user = self.database.get_user_by_telegram_id(message.chat.id)
 
         # If user is not authorized, reject choice
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name = data[0]
@@ -282,7 +284,7 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Текущие результаты по работе \'" + homework_name + "\':", markup=markup)
 
     def __compute_callback_show_task(self, data: list[str], message) -> None:
-        # The function is called when user chooses task for see right answer on this task (in list of tasks)
+        # This function is called when user chooses task for see right answer on this task (in list of tasks)
 
         # If user is admin, reject choice
         if self.__is_admin(message.chat.id):
@@ -293,7 +295,7 @@ class TelegramClient:
 
         # If user is not authorized, reject choice
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name, task_id = data[0], int(data[1])  # Getting chooses homework name and task id
@@ -312,13 +314,13 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Ваш правильный ответ: " + answer, markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_task_in_table(self, data: list[str], message) -> None:
-        # The function is called when user chooses task for see right answer on this task (in results table)
+        # This function is called when user chooses task for see right answer on this task (in results table)
 
         user = self.database.get_user_by_telegram_id(message.chat.id)
 
         # If user is not authorized, reject choice
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         login, homework_name, task_id = data[0], data[1], int(data[2])  # Getting chooses user login, homework name and task id
@@ -342,7 +344,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Правильный ответ на задание " + str(task_id) + ": " + correct_answer + "\nВаш ответ на задание: " + answer, markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_show_password(self, data: list[str], message) -> None:
-        # The function is called when admin chooses some user for see his password (in list of logins)
+        # This function is called when admin chooses some user for see his password (in list of logins)
 
         # If user is not admin, reject choice
         if not self.__is_admin(message.chat.id):
@@ -366,13 +368,13 @@ class TelegramClient:
         self.__send_message(message.chat.id, "Пароль пользователя \'" + login + "\': " + user.password, markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_refresh_results_table(self, data: list[str], message) -> None:
-        # The function is called when user want to refresh results table
+        # This function is called when user wants to refresh results table
 
         user = self.database.get_user_by_telegram_id(message.chat.id)
 
         # If user is not authorized, reject attempt
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name, first_task_id = data[0], int(data[1])  # Getting chooses homework name and last first task id
@@ -392,7 +394,7 @@ class TelegramClient:
             self.__send_message(message.chat.id, "Информация актуальна.", markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_describe_exercise(self, data: list[str], message) -> None:
-        # The function is called when admin chooses some exercise for see its description (in list of exercises)
+        # This function is called when admin chooses some exercise for see its description (in list of exercises)
 
         # If user is not admin, reject choice
         if not self.__is_admin(message.chat.id):
@@ -414,13 +416,13 @@ class TelegramClient:
         self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
 
     def __compute_callback_change_results_table(self, data: list[str], message) -> None:
-        # The function is called when user want to switch page in results table
+        # This function is called when user wants to switch page in results table
 
         user = self.database.get_user_by_telegram_id(message.chat.id)
 
         # If user is not authorized, reject attempt
         if user is None:
-            self.__send_message(message.chat.id, "Вы не авторизованны.", markup=self.__get_markup(message.chat.id))
+            self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
             return
 
         homework_name, first_task_id = data[0], int(data[1])
@@ -438,8 +440,10 @@ class TelegramClient:
         except:
             pass
 
-    def __compute_keyboard_back(self, message):
-        self.wait_mode[message.chat.id] = None
+    def __compute_keyboard_back(self, message) -> None:
+        # This function is called when user wants to stop waiting input
+
+        self.wait_mode[message.chat.id] = None  # Drop waiting mode
         self.__send_message(message.chat.id, "Выход выполнен.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_get_state(self, message):
