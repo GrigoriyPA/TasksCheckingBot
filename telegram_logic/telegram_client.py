@@ -28,7 +28,6 @@ class TelegramClient:
         self.wait_mode = dict()  # Dict of { telegram_id -> WaitModeDescription }
 
         self.database = DatabaseHelper(constants.PATH_TO_DATABASE, constants.DATABASE_NAME)  # Main database
-        # self.database.create_database()
 
     def __check_name(self, name: str) -> bool:
         # Check login/homework name, returns True if all ASCII codes are good

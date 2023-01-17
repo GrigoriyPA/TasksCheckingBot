@@ -7,6 +7,7 @@ from constants import SUPER_ADMIN, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAU
 class DatabaseHelper:
     def __init__(self, path_to_database: str, database_name: str):
         self.database_path: str = path_to_database + database_name
+        self.create_database()
 
     def __create_connection_and_cursor(self):
         # Returns connection and cursor to our database
@@ -27,8 +28,7 @@ class DatabaseHelper:
         # Creates database with particular tables and relationships between them
 
         # Creating table with info about the users
-        cur.execute("DROP TABLE IF EXISTS users")
-        cur.execute("CREATE TABLE users("
+        cur.execute("CREATE TABLE IF NOT EXISTS users("
                     "user_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                     "login TEXT NOT NULL UNIQUE,"
                     "password TEXT NOT NULL,"
@@ -36,8 +36,7 @@ class DatabaseHelper:
                     "telegram_id INTEGER NOT NULL);")
 
         # Creating table with info about the tasks
-        cur.execute("DROP TABLE IF EXISTS tasks")
-        cur.execute("CREATE TABLE tasks("
+        cur.execute("CREATE TABLE IF NOT EXISTS tasks("
                     "task_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                     "homework_name TEXT NOT NULL,"
                     "task_number INTEGER NOT NULL,"
@@ -45,8 +44,7 @@ class DatabaseHelper:
                     "UNIQUE(homework_name, task_number))")
 
         # Creating table with results of solving tasks by users
-        cur.execute("DROP TABLE IF EXISTS results")
-        cur.execute("CREATE TABLE results("
+        cur.execute("CREATE TABLE IF NOT EXISTS results("
                     "user_id INTEGER NOT NULL,"
                     "task_id INTEGER NOT NULL,"
                     "user_answer TEXT NOT NULL,"
@@ -55,8 +53,9 @@ class DatabaseHelper:
                     "PRIMARY KEY (user_id, task_id));")
 
         # Creating super-admin
-        super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN, UNAUTHORIZED_TELEGRAM_ID)
-        self.add_user(super_admin_user)
+        if self.get_user_by_login(SUPER_ADMIN_LOGIN) is None:
+            super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN, UNAUTHORIZED_TELEGRAM_ID)
+            self.add_user(super_admin_user)
 
         # Saving changes
         con.commit()
