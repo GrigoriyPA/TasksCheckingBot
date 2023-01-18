@@ -33,7 +33,8 @@ class DatabaseHelper:
                     "login TEXT NOT NULL UNIQUE,"
                     "password TEXT NOT NULL,"
                     "status TEXT NOT NULL,"
-                    "telegram_id INTEGER NOT NULL);")
+                    "telegram_id INTEGER NOT NULL,"
+                    "grade INTEGER);")
 
         # Creating table with info about the tasks
         cur.execute("CREATE TABLE IF NOT EXISTS tasks("
@@ -41,6 +42,7 @@ class DatabaseHelper:
                     "homework_name TEXT NOT NULL,"
                     "task_number INTEGER NOT NULL,"
                     "right_answer TEXT NOT NULL,"
+                    "grade INTEGER NOT NULL"
                     "UNIQUE(homework_name, task_number))")
 
         # Creating table with results of solving tasks by users
@@ -75,8 +77,8 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("INSERT INTO users (login, password, status, telegram_id) "
-                    "VALUES (?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id))
+        cur.execute("INSERT INTO users (login, password, status, telegram_id, grade) "
+                    "VALUES (?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id, user.grade))
         con.commit()
 
     def get_user_by_login(self, login: str):
@@ -84,7 +86,7 @@ class DatabaseHelper:
 
         # Getting user with the given login
 
-        cur.execute("SELECT login, password, status, telegram_id, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
                     "FROM users "
                     "WHERE login = ?", (login,))
 
@@ -120,7 +122,7 @@ class DatabaseHelper:
 
         # Getting user with the corresponding user id
 
-        cur.execute("SELECT login, password, status, telegram_id, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
                     "FROM users "
                     "WHERE user_id = ?", (user_id,))
 
@@ -138,7 +140,7 @@ class DatabaseHelper:
 
         # Getting user with the given telegram_id
 
-        cur.execute("SELECT login, password, status, telegram_id "
+        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
                     "FROM users "
                     "WHERE telegram_id = ?", (telegram_id,))
 
@@ -181,8 +183,8 @@ class DatabaseHelper:
         # There is a line in the database for each task in the homework
         for i in range(len(homework.right_answers)):
             right_answer = homework.right_answers[i]
-            cur.execute("INSERT INTO tasks (homework_name, task_number, right_answer) "
-                        "VALUES (?, ?, ?)", (homework.name, i + 1, right_answer))
+            cur.execute("INSERT INTO tasks (homework_name, task_number, right_answer, grade) "
+                        "VALUES (?, ?, ?)", (homework.name, i + 1, right_answer, homework.grade))
 
         con.commit()
 
@@ -254,7 +256,6 @@ class DatabaseHelper:
         # Writes info about user answer for the particular task
 
         # If user has already given an answer to this task we should raise an exception
-        # TODO should we compare != ''?
         current_answer = self.get_user_answer_for_the_task(login, homework_name, task_number)
         if current_answer is not None and current_answer != '':
             raise RuntimeError
