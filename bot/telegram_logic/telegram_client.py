@@ -208,7 +208,7 @@ class TelegramClient:
             if id is None:
                 continue
 
-            self.__send_message(id, user.login + " добавил ответ к заданию " + str(
+            self.__send_message(id, user.login + ", " + str(user.grade) + " класс добавил ответ к заданию " + str(
                 task_id) + " в работе \'" + homework_name + "\'\nПравильный ответ: " + correct_answer + "\nОтвет ученика: " + answer + "\nРезультат: " + result,
                                 markup=self.__get_markup(id))
 
