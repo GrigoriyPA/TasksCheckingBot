@@ -1,7 +1,8 @@
 import sqlite3
 from bot.user import User
 from bot.homework import Homework
-from bot.constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, ADMINS, ADMIN_STATUS
+from bot.constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, \
+    ADMINS, ADMIN_STATUS
 
 
 class DatabaseHelper:
@@ -56,7 +57,8 @@ class DatabaseHelper:
 
         # Creating super-admin
         if self.get_user_by_login(SUPER_ADMIN_LOGIN) is None:
-            super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN_STATUS, UNAUTHORIZED_TELEGRAM_ID)
+            super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN_STATUS,
+                                    UNAUTHORIZED_TELEGRAM_ID)
             self.add_user(super_admin_user)
 
         # Creating admins
@@ -189,7 +191,7 @@ class DatabaseHelper:
         con.commit()
 
     def delete_homework_by_name(self, homework_name: str):
-        # Deletes all the tasks in the homework by it's name
+        # Deletes all the tasks in the homework by its name
 
         con, cur = self.__create_connection_and_cursor()
 
@@ -304,16 +306,17 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ?", (homework_name,))
-
-        # We need to take the first element in each list
-        right_answers = [data[0] for data in cur.fetchall()]
+        cur.execute("SELECT right_answer, grade FROM tasks WHERE homework_name = ?", (homework_name,))
+        info = cur.fetchall()
 
         # If there is no such tasks with given homework name we return None
-        if len(right_answers) == 0:
+        if len(info) == 0:
             return None
 
-        return Homework(homework_name, right_answers)
+        grade = info[0][1]
+        right_answers = [data[0] for data in info]
+
+        return Homework(homework_name, grade, right_answers)
 
     def get_list_of_unsolved_tasks(self, login: str, homework_name: str):
         # Returns a list of tasks in particular homework on which user didn't give any answer
