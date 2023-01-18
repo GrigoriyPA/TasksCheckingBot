@@ -56,13 +56,13 @@ class TelegramClient:
         user = self.database.get_user_by_telegram_id(id)
 
         # Returns True if user exists and his status is SUPER_ADMIN
-        return user is not None and user.status == constants.SUPER_ADMIN
+        return user is not None and user.status == constants.SUPER_ADMIN_STATUS
 
     def __is_admin(self, id: int) -> bool:
         user = self.database.get_user_by_telegram_id(id)
 
         # Returns True if user exists and his status is ADMIN or SUPER_ADMIN
-        return user is not None and (user.status == constants.ADMIN or user.status == constants.SUPER_ADMIN)
+        return user is not None and (user.status == constants.ADMIN_STATUS or user.status == constants.SUPER_ADMIN_STATUS)
 
     def __get_login_by_id(self, id: int):
         user = self.database.get_user_by_telegram_id(id)
@@ -188,8 +188,8 @@ class TelegramClient:
                                 markup=self.__get_markup(message.chat.id))
 
         # Sending notifications to all admins
-        for admin in self.database.get_all_users_with_status(constants.ADMIN) + self.database.get_all_users_with_status(
-                constants.SUPER_ADMIN):
+        for admin in self.database.get_all_users_with_status(constants.ADMIN_STATUS) + self.database.get_all_users_with_status(
+                constants.SUPER_ADMIN_STATUS):
             id = self.__get_id_by_login(admin.login)
 
             # Scip all not authorized admins
@@ -293,7 +293,7 @@ class TelegramClient:
             return
 
         # Creating table of results
-        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name,
+        markup = markups.get_results_table(self.database.get_results(constants.USER_STATUS, homework_name), homework_name,
                                            len(homework.right_answers), 1)
         self.__send_message(message.chat.id, "Текущие результаты по работе \'" + homework_name + "\':", markup=markup)
 
@@ -389,7 +389,7 @@ class TelegramClient:
 
         # Not super-admin can not see passwords of other admins
         if login != self.database.get_user_by_telegram_id(message.chat.id).login and not self.__is_super_admin(
-                message.chat.id) and not user.status == constants.USER:
+                message.chat.id) and not user.status == constants.USER_STATUS:
             self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.",
                                 markup=self.__get_markup(message.chat.id))
             return
@@ -418,7 +418,7 @@ class TelegramClient:
             return
 
         # Update results table
-        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name,
+        markup = markups.get_results_table(self.database.get_results(constants.USER_STATUS, homework_name), homework_name,
                                            len(homework.right_answers), first_task_id)
         try:
             self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text,
@@ -471,7 +471,7 @@ class TelegramClient:
             return
 
         # Update results table
-        markup = markups.get_results_table(self.database.get_results(constants.USER, homework_name), homework_name,
+        markup = markups.get_results_table(self.database.get_results(constants.USER_STATUS, homework_name), homework_name,
                                            len(homework.right_answers), first_task_id)
         try:
             self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text,
@@ -721,7 +721,7 @@ class TelegramClient:
         self.wait_mode[message.chat.id] = None  # Drop waiting mode
 
         self.database.add_user(
-            User(login, password, constants.USER, constants.UNAUTHORIZED_TELEGRAM_ID))  # Creating new user
+            User(login, password, constants.USER_STATUS, constants.UNAUTHORIZED_TELEGRAM_ID))  # Creating new user
         self.__send_message(message.chat.id, "Аккаунт успешно создан.", markup=self.__get_markup(message.chat.id))
 
     def __compute_keyboard_delete_account(self, message) -> None:
@@ -753,8 +753,8 @@ class TelegramClient:
             return
 
         # Admin can delete only users accounts
-        if user.status == constants.SUPER_ADMIN or not self.__is_super_admin(
-                message.chat.id) and user.status == constants.ADMIN:
+        if user.status == constants.SUPER_ADMIN_STATUS or not self.__is_super_admin(
+                message.chat.id) and user.status == constants.ADMIN_STATUS:
             self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.",
                                 markup=self.__get_markup(message.chat.id))
             return
@@ -798,13 +798,13 @@ class TelegramClient:
             return
 
         # If user already have admin rights, stop modification
-        if user.status == constants.SUPER_ADMIN or user.status == constants.ADMIN:
+        if user.status == constants.SUPER_ADMIN_STATUS or user.status == constants.ADMIN_STATUS:
             self.__send_message(message.chat.id,
                                 "Пользователь уже обладает правами администратора, модификация прав отменена.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        self.database.change_user_status(login, constants.ADMIN)  # Modify current user rights
+        self.database.change_user_status(login, constants.ADMIN_STATUS)  # Modify current user rights
         id = self.__get_id_by_login(login)  # Getting id of user on current login
 
         # Send notification to user on current login if he exists
@@ -843,12 +843,12 @@ class TelegramClient:
             return
 
         # Super-admin rights can not be modified
-        if user.status == constants.SUPER_ADMIN:
+        if user.status == constants.SUPER_ADMIN_STATUS:
             self.__send_message(message.chat.id, "Запрещено менять права доступа этого пользователя.",
                                 markup=self.__get_markup(message.chat.id))
             return
 
-        self.database.change_user_status(login, constants.USER)  # Modify current user rights
+        self.database.change_user_status(login, constants.USER_STATUS)  # Modify current user rights
         id = self.__get_id_by_login(login)  # Getting id of user on current login
 
         # Send notification to user on current login if he exists
@@ -1085,7 +1085,7 @@ class TelegramClient:
 
         # Admins can see only other admins and users (not super-admins)
         if self.__is_super_admin(message.chat.id):
-            users = self.database.get_all_users_with_status(constants.SUPER_ADMIN)
+            users = self.database.get_all_users_with_status(constants.SUPER_ADMIN_STATUS)
             if len(users) > 0:
                 # Send list of super-admins
                 self.__send_message(message.chat.id, "Супер-администраторы:", markup=self.__get_markup(message.chat.id))
@@ -1096,7 +1096,7 @@ class TelegramClient:
                           types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login)]])
                     self.__send_message(message.chat.id, user.login, markup=markup)
 
-        users = self.database.get_all_users_with_status(constants.ADMIN)
+        users = self.database.get_all_users_with_status(constants.ADMIN_STATUS)
         if len(users) > 0:
             # Send list of admins
             self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
@@ -1107,7 +1107,7 @@ class TelegramClient:
                       types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login)]])
                 self.__send_message(message.chat.id, user.login, markup=markup)
 
-        users = self.database.get_all_users_with_status(constants.USER)
+        users = self.database.get_all_users_with_status(constants.USER_STATUS)
         if len(users) > 0:
             # Send list of users
             self.__send_message(message.chat.id, "Ученики:", markup=self.__get_markup(message.chat.id))

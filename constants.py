@@ -1,15 +1,24 @@
+# DO NOT CHANGE ALL OF THESE CONSTANTS
+
+SUPER_ADMIN_LOGIN = "super_admin_login"
+SUPER_ADMIN_PASSWORD = "super_admin_password"
+
+ADMINS = [
+    ['admin1_login', 'admin1_password'],
+    ['admin2_login', 'admin2_password'],
+    ['admin3_login', 'admin3_password']
+]
+
 PATH_TO_DATABASE = "database/"
 
 DATABASE_NAME = "database.db"
 ERROR_LOG_NAME = "error_log.txt"
 
-SUPER_ADMIN = "SUPER_ADMIN"
-ADMIN = "ADMIN"
-USER = "USER"
-UNAUTHORIZED_TELEGRAM_ID = -1
+SUPER_ADMIN_STATUS = "SUPER_ADMIN"
+ADMIN_STATUS = "ADMIN"
+USER_STATUS = "USER"
 
-SUPER_ADMIN_LOGIN = "super_admin_login"
-SUPER_ADMIN_PASSWORD = "super_admin_password"
+UNAUTHORIZED_TELEGRAM_ID = -1
 
 MAX_LOGIN_SIZE = 25  # less than 30
 MAX_HOMEWORK_NAME_SIZE = 25  # less than 30

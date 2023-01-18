@@ -1,7 +1,7 @@
 import sqlite3
 from user import User
 from homework import Homework
-from constants import SUPER_ADMIN, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID
+from constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, ADMINS, ADMIN_STATUS
 
 
 class DatabaseHelper:
@@ -54,8 +54,14 @@ class DatabaseHelper:
 
         # Creating super-admin
         if self.get_user_by_login(SUPER_ADMIN_LOGIN) is None:
-            super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN, UNAUTHORIZED_TELEGRAM_ID)
+            super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN_STATUS, UNAUTHORIZED_TELEGRAM_ID)
             self.add_user(super_admin_user)
+
+        # Creating admins
+        for admin_login, admin_password in ADMINS:
+            if self.get_user_by_login(admin_login) is None:
+                admin_user = User(admin_login, admin_password, ADMIN_STATUS, UNAUTHORIZED_TELEGRAM_ID)
+                self.add_user(admin_user)
 
         # Saving changes
         con.commit()
