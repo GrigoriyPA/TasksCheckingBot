@@ -1,5 +1,5 @@
 import locale
-from telegram_logic.telegram_client import TelegramClient
+from bot.telegram_logic.telegram_client import TelegramClient
 
 
 def main():

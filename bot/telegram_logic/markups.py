@@ -1,5 +1,5 @@
 from telebot import types
-import constants
+import bot.constants
 
 
 def get_all_homeworks(homework_list: list[str], callback_data: str):

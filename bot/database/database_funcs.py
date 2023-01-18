@@ -1,7 +1,7 @@
 import sqlite3
-from user import User
-from homework import Homework
-from constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, ADMINS, ADMIN_STATUS
+from bot.user import User
+from bot.homework import Homework
+from bot.constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, ADMINS, ADMIN_STATUS
 
 
 class DatabaseHelper:
@@ -369,26 +369,3 @@ class DatabaseHelper:
             results.append((user, answers))
 
         return results
-
-
-# dh = DatabaseHelper('', 'database.db')
-# dh.create_database()
-# a = User('a', 'a', 'a', 1)
-# b = User('b', 'b', 'b', 2)
-# c = User('c', 'c', 'c', 3)
-# d = User('d', 'd', 'd', 4)
-# dh.add_user(a)
-# dh.add_user(b)
-# dh.add_user(c)
-# dh.add_user(d)
-# x = Homework('x', ['1', '2', '3'])
-# y = Homework('y', ['a', 'b', 'c'])
-# z = Homework('z', ['t', 'h', 'j'])
-# dh.add_homework(x)
-# dh.add_homework(y)
-# dh.add_homework(z)
-# dh.send_answer_for_the_task('c', 'z', 1, 'abra')
-# res = dh.get_results('a', 'z')
-# for user, answers in res:
-#     print(user)
-#     print(answers)

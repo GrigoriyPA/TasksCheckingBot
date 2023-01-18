@@ -1,10 +1,10 @@
 from telebot import types, TeleBot
-from user import User
-from homework import Homework
-from database.database_funcs import DatabaseHelper
-from telegram_logic import markups
-import config
-import constants
+from bot.user import User
+from bot.homework import Homework
+from bot.database.database_funcs import DatabaseHelper
+from bot.telegram_logic import markups
+from bot.config import TELEGRAM_TOKEN
+import bot.constants as constants
 
 
 def add_error_to_log(text: str) -> None:
@@ -1257,5 +1257,5 @@ class TelegramClient:
     def run(self) -> None:
         # This function launch bot
 
-        self.client = TeleBot(config.TELEGRAM_TOKEN)  # Create telebot client object
+        self.client = TeleBot(TELEGRAM_TOKEN)  # Create telebot client object
         self.__handler()  # Launch bot
