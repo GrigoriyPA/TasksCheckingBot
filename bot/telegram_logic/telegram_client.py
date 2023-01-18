@@ -101,7 +101,7 @@ class TelegramClient:
             if self.wait_mode[id].status == "ADD" or self.wait_mode[id].status == "DELETE":
                 if self.__is_admin(id):
                     if self.wait_mode[id].status == "ADD":
-                        markup.add(types.KeyboardButton(text="Студент"))  # Add new student account
+                        markup.add(types.KeyboardButton(text="Ученик"))  # Add new student account
                     else:
                         markup.add(types.KeyboardButton(text="Аккаунт"))  # Delete exists account
 
@@ -1018,7 +1018,7 @@ class TelegramClient:
         self.wait_mode[message.chat.id] = None  # Drop waiting mode
 
         # Finding value of current action type
-        if message.text == "Студент":  # Add new account
+        if message.text == "Ученик":  # Add new account
             self.__compute_keyboard_add_student(message)
         elif message.text == "Администратор":  # Add new account
             self.__compute_keyboard_add_admin(message)
