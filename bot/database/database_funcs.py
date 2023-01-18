@@ -289,6 +289,16 @@ class DatabaseHelper:
         # We need to take the first element in each list
         return [data[0] for data in cur.fetchall()]
 
+    def get_all_homeworks_names_for_grade(self, grade: int) -> list[str]:
+        # Returns list of homeworks names for given grade
+
+        con, cur = self.__create_connection_and_cursor()
+
+        cur.execute("SELECT DISTINCT homework_name FROM tasks WHERE grade = ?", (grade,))
+
+        # We need to take the first element in each list
+        return [data[0] for data in cur.fetchall()]
+
     def get_homework_by_name(self, homework_name: str):
         # Returns the object of class Homework corresponding to the given homework name
 
