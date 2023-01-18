@@ -43,7 +43,7 @@ class DatabaseHelper:
                     "homework_name TEXT NOT NULL,"
                     "task_number INTEGER NOT NULL,"
                     "right_answer TEXT NOT NULL,"
-                    "grade INTEGER NOT NULL"
+                    "grade INTEGER NOT NULL,"
                     "UNIQUE(homework_name, task_number))")
 
         # Creating table with results of solving tasks by users
@@ -80,7 +80,7 @@ class DatabaseHelper:
         con, cur = self.__create_connection_and_cursor()
 
         cur.execute("INSERT INTO users (login, password, status, telegram_id, grade) "
-                    "VALUES (?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id, user.grade))
+                    "VALUES (?, ?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id, user.grade))
         con.commit()
 
     def get_user_by_login(self, login: str):
@@ -186,7 +186,7 @@ class DatabaseHelper:
         for i in range(len(homework.right_answers)):
             right_answer = homework.right_answers[i]
             cur.execute("INSERT INTO tasks (homework_name, task_number, right_answer, grade) "
-                        "VALUES (?, ?, ?)", (homework.name, i + 1, right_answer, homework.grade))
+                        "VALUES (?, ?, ?, ?)", (homework.name, i + 1, right_answer, homework.grade))
 
         con.commit()
 
