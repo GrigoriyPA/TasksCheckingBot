@@ -1,5 +1,5 @@
 from telebot import types
-import bot.constants
+from bot import constants
 
 
 def get_all_homeworks(homework_list: list[str], callback_data: str):
@@ -149,6 +149,26 @@ def get_task_list(login: str, homework_size: int, homework_name: str, check_task
             row.append(types.InlineKeyboardButton(text=str(task_id) + " ❌", callback_data="D" + homework_name + "$" + str(task_id)))
 
         # End current row on length TASKS_NUMBER_IN_LINE
+        if len(row) == constants.TASKS_NUMBER_IN_LINE:
+            keyboard.append(row)
+            row = []
+
+    # Add last row to table
+    if len(row) > 0:
+        keyboard.append(row)
+
+    # Returns created keyboard
+    return types.InlineKeyboardMarkup(keyboard)
+
+
+def get_list_of_grades(login: str, callback_data: str):
+    keyboard = []  # Final keyboard storage
+    row = []  # Temporary storage for current row
+    for grade_id in range(1, 12):
+        # Add for current grade
+        row.append(types.InlineKeyboardButton(text=str(grade_id), callback_data=callback_data + login + "$" + str(grade_id)))
+
+        # End current row on length GRADES_IN_LINE
         if len(row) == constants.TASKS_NUMBER_IN_LINE:
             keyboard.append(row)
             row = []
