@@ -374,6 +374,10 @@ class DatabaseHelper:
 
         results: list[tuple[User, list[tuple[str, str]]]] = []
         for user in users:
+            # We need only user with the same grade as in the homework
+            if user.grade != homework.grade:
+                continue
+
             # Going through all the tasks and collecting info about given answers
             answers: list[tuple[str, str]] = []
             for i in range(len(homework.right_answers)):
