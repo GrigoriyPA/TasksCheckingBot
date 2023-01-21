@@ -4,7 +4,8 @@ from bot.telegram_logic.user_handler import UserHandler, MARKUP_TYPES
 from typing import Any, Optional, Callable
 
 # Special text messages
-MESSAGE_ON_EXIT_FROM_CURRENT_STATE = "Отмена..."
+MESSAGE_ON_EXIT_FROM_CURRENT_STATE = "Отмена...\n"
+MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT = "Вы вышли из текущего аккаунта.\n"
 
 # default_state
 WELCOME_MESSAGE_FOR_ADMIN = "С возвращением. Статус аккаунта: администратор."
@@ -28,16 +29,26 @@ MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION = "Успешная авторизац�
 
 # Checking back button
 def __compute_button_back(handler: UserHandler, from_id: int, text: str, markup: MARKUP_TYPES = None,
-                          message_info: Optional[str] = None) -> bool:
+                          message_info: str = '') -> bool:
     if text != keyboard_markups.BUTTON_BACK:
         # There is no back button pressed
         return False
 
-    if message_info is None:
-        message_info = MESSAGE_ON_EXIT_FROM_CURRENT_STATE
-
     # Back button have pressed, go back from current state
-    handler.send_message(send_id=from_id, text=message_info, markup=markup)
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_EXIT_FROM_CURRENT_STATE + message_info, markup=markup)
+    return True
+
+
+# Checking exit button
+def __compute_button_exit(handler: UserHandler, from_id: int, text: str, markup: MARKUP_TYPES = None,
+                          message_info: str = '') -> bool:
+    if text != keyboard_markups.BUTTON_EXIT:
+        # There is no exit button pressed
+        return False
+
+    # Back exit have pressed, exit from current account
+    handler.sign_out_user(from_id)
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT + message_info, markup=markup)
     return True
 
 
@@ -101,12 +112,12 @@ def unauthorized_user_waiting_password(handler: UserHandler, from_id: int, text:
     user = handler.get_user_info_by_login(login)
 
     # Send notification for last user on current login, if he exists
-    if user.user_id != constants.UNAUTHORIZED_TELEGRAM_ID:
-        handler.send_message(send_id=user.user_id, text=NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT,
+    if user.telegram_id != constants.UNAUTHORIZED_TELEGRAM_ID:
+        handler.send_message(send_id=user.telegram_id, text=NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT,
                              markup=keyboard_markups.remove_keyboard())
-        handler.update_user_state(user.user_id, unauthorized_user_waiting_login, None)
+        handler.update_user_state(user.telegram_id, unauthorized_user_waiting_login, None)
 
-    handler.authorize_user(login, from_id)  # Authorize current user
+    handler.sign_in_user(login, from_id)  # Authorize current user
 
     if handler.is_admin(from_id):
         handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION,
@@ -120,11 +131,19 @@ def unauthorized_user_waiting_password(handler: UserHandler, from_id: int, text:
 
 # Initial student state
 def default_student_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
+                             message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
+        return unauthorized_user_waiting_login, None
+
     handler.send_message(send_id=from_id, text="BOB!")
     return default_state, None
 
 
 # Initial admin state
 def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
+                             message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
+        return unauthorized_user_waiting_login, None
+
     handler.send_message(send_id=from_id, text="BOB!")
     return default_state, None

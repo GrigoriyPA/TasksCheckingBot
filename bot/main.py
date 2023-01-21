@@ -617,12 +617,6 @@ if __name__ == "__main__":
     #                                                                 "answers": []}, status="WAIT_NUMBER_OF_EXERCISES")
     #     self.__send_message(message.chat.id, "Введите количество заданий:", markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_keyboard_back(self, message) -> None:
-    #     # This function is called when user wants to stop waiting input
-    #
-    #     self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #     self.__send_message(message.chat.id, "Выход выполнен.", markup=self.__get_markup(message.chat.id))
-    #
     # def __compute_keyboard_get_state(self, message) -> None:
     #     # This function is called when user wants to see his login, password and status
     #
@@ -640,19 +634,6 @@ if __name__ == "__main__":
     #
     #     # Send login, password and status
     #     self.__send_message(message.chat.id, description, markup=self.__get_markup(message.chat.id))
-    #
-    # def __compute_keyboard_sign_out(self, message) -> None:
-    #     # This function is called when user wants to sign out from current account
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user is not authorized, reject command
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     self.database.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)  # Sign out current user
-    #     self.__send_message(message.chat.id, "Вы вышли из аккаунта.", markup=self.__get_markup(message.chat.id))
     #
     # def __compute_keyboard_add_student(self, message) -> None:
     #     # This function is called when admin wants to create new account
