@@ -14,6 +14,9 @@ MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT = "Статус: не авторизов�
 MESSAGE_ON_STATUS_ADMIN_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}"
 MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}\nКласс: {grade}"
 
+# __compute_button_admin_add_action
+MESSAGE_ON_ADMIN_ADD_COMMAND = "Выберите объект для добавления:"
+
 # default_state
 WELCOME_MESSAGE_FOR_ADMIN = "С возвращением. Статус аккаунта: администратор."
 WELCOME_MESSAGE_FOR_STUDENT = "С возвращением. Статус аккаунта: ученик."
@@ -77,6 +80,18 @@ def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bo
         handler.send_message(send_id=from_id, text=MESSAGE_ON_STATUS_ADMIN_ACCOUNT.format(login=user_info.login,
                                                                                           password=user_info.password,
                                                                                           status=user_info.status))
+    return True
+
+
+# Checking admin add action button
+def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: str,
+                                      markup: MARKUP_TYPES = None) -> bool:
+    if text != keyboard_markups.BUTTON_ADD:
+        # There is no exit button pressed
+        return False
+
+    # Admin add action button have pressed, update state and keyboard
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_COMMAND, markup=markup)
     return True
 
 
@@ -175,6 +190,21 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
         return unauthorized_user_waiting_login, None
     if __compute_button_status(handler, from_id, text):
         return default_admin_page, None
+    if __compute_button_admin_add_action(handler, from_id, text, keyboard_markups.get_addition_interface_keyboard(
+            handler.is_super_admin(from_id))):
+        return admin_addition_interface, None
 
+    handler.send_message(send_id=from_id, text="BOB!")
+    return default_state, None
+
+
+# Admin addition interface
+def admin_addition_interface(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    handler.send_message(send_id=from_id, text="BOB!")
+    return default_state, None
+
+
+# Admin deletion interface
+def admin_deletion_interface(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     handler.send_message(send_id=from_id, text="BOB!")
     return default_state, None

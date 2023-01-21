@@ -14,6 +14,9 @@ BUTTON_ADD = "Добавить"  # Button for select add action type (admin/supe
 BUTTON_DELETE = "Удалить"  # Button for select delete action type (admin/super-admin)
 BUTTON_ACCOUNTS_LIST = "Список аккаунтов"  # Show accounts list (admin/super-admin)
 BUTTON_EXERCISES_LIST = "Список заданий"  # Show exercises list (admin/super-admin)
+BUTTON_ADD_STUDENT = "Ученик"  # Add new student account
+BUTTON_ADD_ADMIN = "Администратор"  # Add new admin account
+BUTTON_ADD_EXERCISE = "Задание"  # Add new admin exercise
 
 
 def remove_keyboard() -> types.ReplyKeyboardRemove:
@@ -35,6 +38,16 @@ def get_default_admin_keyboard() -> types.ReplyKeyboardMarkup:
                types.KeyboardButton(text=BUTTON_DELETE))
     markup.add(types.KeyboardButton(text=BUTTON_SHOW_STATUS))
     markup.add(types.KeyboardButton(text=BUTTON_EXIT))
+    return markup
+
+
+def get_addition_interface_keyboard(is_super_admin: bool) -> types.ReplyKeyboardMarkup:
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(types.KeyboardButton(text=BUTTON_ADD_STUDENT))
+    if is_super_admin:
+        markup.add(types.KeyboardButton(text=BUTTON_ADD_ADMIN))
+    markup.add(types.KeyboardButton(text=BUTTON_ADD_EXERCISE))
+    markup.add(types.KeyboardButton(text=BUTTON_BACK))
     return markup
 
 
