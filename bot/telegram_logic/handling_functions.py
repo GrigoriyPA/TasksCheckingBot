@@ -1,11 +1,18 @@
 from bot import constants
 from bot.telegram_logic import keyboard_markups
 from bot.telegram_logic.user_handler import UserHandler, MARKUP_TYPES
-from typing import Any, Optional, Callable
+from typing import Any, Callable
 
-# Special text messages
+# __compute_button_back
 MESSAGE_ON_EXIT_FROM_CURRENT_STATE = "Отмена...\n"
+
+# __compute_button_exit
 MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT = "Вы вышли из текущего аккаунта.\n"
+
+# __compute_button_status
+MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT = "Статус: не авторизован"
+MESSAGE_ON_STATUS_ADMIN_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}"
+MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}\nКласс: {grade}"
 
 # default_state
 WELCOME_MESSAGE_FOR_ADMIN = "С возвращением. Статус аккаунта: администратор."
@@ -24,8 +31,7 @@ MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION = "Успешная авторизаци�
 MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: ученик."
 
 
-# Special state computing functions
-
+# Special computing functions
 
 # Checking back button
 def __compute_button_back(handler: UserHandler, from_id: int, text: str, markup: MARKUP_TYPES = None,
@@ -46,14 +52,35 @@ def __compute_button_exit(handler: UserHandler, from_id: int, text: str, markup:
         # There is no exit button pressed
         return False
 
-    # Back exit have pressed, exit from current account
+    # Exit button have pressed, exit from current account
     handler.sign_out_user(from_id)
     handler.send_message(send_id=from_id, text=MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT + message_info, markup=markup)
     return True
 
 
-# Bot state functions
+# Checking status button
+def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bool:
+    if text != keyboard_markups.BUTTON_SHOW_STATUS:
+        # There is no exit button pressed
+        return False
 
+    # Status button have pressed, show status of current account
+    user_info = handler.get_user_info_by_id(from_id)
+    if user_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT)
+    elif user_info.status == constants.STUDENT_STATUS:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_STATUS_STUDENT_ACCOUNT.format(login=user_info.login,
+                                                                                            password=user_info.password,
+                                                                                            status=user_info.status,
+                                                                                            grade=user_info.grade))
+    else:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_STATUS_ADMIN_ACCOUNT.format(login=user_info.login,
+                                                                                          password=user_info.password,
+                                                                                          status=user_info.status))
+    return True
+
+
+# Bot state functions
 
 # Initial state
 def default_state(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
@@ -134,6 +161,8 @@ def default_student_page(handler: UserHandler, from_id: int, text: str, data) ->
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
         return unauthorized_user_waiting_login, None
+    if __compute_button_status(handler, from_id, text):
+        return default_student_page, None
 
     handler.send_message(send_id=from_id, text="BOB!")
     return default_state, None
@@ -144,6 +173,8 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
         return unauthorized_user_waiting_login, None
+    if __compute_button_status(handler, from_id, text):
+        return default_admin_page, None
 
     handler.send_message(send_id=from_id, text="BOB!")
     return default_state, None

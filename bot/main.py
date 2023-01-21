@@ -617,24 +617,6 @@ if __name__ == "__main__":
     #                                                                 "answers": []}, status="WAIT_NUMBER_OF_EXERCISES")
     #     self.__send_message(message.chat.id, "Введите количество заданий:", markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_keyboard_get_state(self, message) -> None:
-    #     # This function is called when user wants to see his login, password and status
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user is not authorized, reject command
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Compute user description
-    #     description = "Логин: " + user.login + "\nПароль: " + user.password + "\nСтатус: " + user.status
-    #     if self.__is_student(message.chat.id):
-    #         description += "\nКласс: " + str(user.grade)
-    #
-    #     # Send login, password and status
-    #     self.__send_message(message.chat.id, description, markup=self.__get_markup(message.chat.id))
-    #
     # def __compute_keyboard_add_student(self, message) -> None:
     #     # This function is called when admin wants to create new account
     #

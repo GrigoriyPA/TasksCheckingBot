@@ -57,6 +57,9 @@ class UserHandler:
     def get_user_info_by_login(self, login: str) -> Optional[User]:
         return self.__database.get_user_by_login(login)
 
+    def get_user_info_by_id(self, user_id: id) -> Optional[User]:
+        return self.__database.get_user_by_telegram_id(user_id)
+
     # Change user data
     def sign_in_user(self, login: str, user_id: int) -> None:
         self.__database.change_user_telegram_id(login, user_id)
@@ -74,10 +77,10 @@ class UserHandler:
     # Bot interface
     def send_message(self, send_id: int, text: str, attachments: Optional[list[Attachment]] = None,
                      markup: MARKUP_TYPES = None) -> None:
-        #try:
+        try:
             self.client.send_message(send_id=send_id, text=text, attachments=attachments, markup=markup)
-        #except Exception as error:
-        #    add_error_to_log("Unknown error while sending the message.\nDescription:\n" + str(error))
+        except Exception as error:
+            add_error_to_log("Unknown error while sending the message.\nDescription:\n" + str(error))
 
     def add_user(self, user_id: int) -> None:
         # Add new user state, if user is not exists
