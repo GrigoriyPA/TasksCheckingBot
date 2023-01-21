@@ -2,9 +2,9 @@ from bot import config
 from bot import constants
 from bot.database.database_funcs import DatabaseHelper
 from bot.telegram_logic import handling_functions
-from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback
+from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Optional
 
 
 def add_error_to_log(text: str) -> None:
@@ -16,7 +16,7 @@ def add_error_to_log(text: str) -> None:
 class UserHandler:
     def __init__(self) -> None:
         # Dict of { telegram_id -> current user state (function on message) }
-        self.__user_state: dict[int, Callable[[UserHandler, int, str], tuple[Any, Any]]] = dict()
+        self.__user_state: dict[int, Callable[[UserHandler, int, str, Any], tuple[Callable, Any]]] = dict()
 
         # Dict of { telegram_id -> user data }
         self.__user_data: dict[int, Any] = dict()
@@ -25,6 +25,29 @@ class UserHandler:
 
         self.client = TelegramClient(action_on_message=self.compute_user_message,
                                      action_on_callback=self.compute_callback)
+
+    def is_super_admin(self, user_id: int) -> bool:
+        user = self.__database.get_user_by_telegram_id(user_id)
+
+        # Returns True if user exists and his status is SUPER_ADMIN
+        return user is not None and user.status == constants.SUPER_ADMIN_STATUS
+
+    def is_admin(self, user_id: int) -> bool:
+        user = self.__database.get_user_by_telegram_id(user_id)
+
+        # Returns True if user exists and his status is ADMIN or SUPER_ADMIN
+        return user is not None and (
+                    user.status == constants.ADMIN_STATUS or user.status == constants.SUPER_ADMIN_STATUS)
+
+    def is_student(self, user_id: int) -> bool:
+        user = self.__database.get_user_by_telegram_id(user_id)
+
+        # Returns True if user exists and his status is STUDENT
+        return user is not None and user.status == constants.STUDENT_STATUS
+
+    def send_message(self, send_id: int, text: str, attachments: Optional[list[Attachment]] = None,
+                     markup: MARKUP_TYPES = None) -> None:
+        self.client.send_message(send_id=send_id, text=text, attachments=attachments, markup=markup)
 
     def add_user(self, user_id: int) -> None:
         # Add new user state, if user is not exists
@@ -38,7 +61,8 @@ class UserHandler:
 
     def compute_user_message(self, message: Message) -> None:
         self.add_user(message.from_id)
-        self.__user_state[message.from_id](self, message.from_id, message.text)
+        self.__user_state[message.from_id], self.__user_data[message.from_id] = \
+            self.__user_state[message.from_id](self, message.from_id, message.text, self.__user_data[message.from_id])
 
     def run(self) -> None:
         # This function launch bot

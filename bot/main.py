@@ -36,25 +36,6 @@ if __name__ == "__main__":
     #     # Returns True if user answer is right
     #     return self.database.get_right_answer_for_the_task(homework_name, task_id) == user_answer
     #
-    # def __is_super_admin(self, id: int) -> bool:
-    #     user = self.database.get_user_by_telegram_id(id)
-    #
-    #     # Returns True if user exists and his status is SUPER_ADMIN
-    #     return user is not None and user.status == constants.SUPER_ADMIN_STATUS
-    #
-    # def __is_admin(self, id: int) -> bool:
-    #     user = self.database.get_user_by_telegram_id(id)
-    #
-    #     # Returns True if user exists and his status is ADMIN or SUPER_ADMIN
-    #     return user is not None and (
-    #                 user.status == constants.ADMIN_STATUS or user.status == constants.SUPER_ADMIN_STATUS)
-    #
-    # def __is_student(self, id: int) -> bool:
-    #     user = self.database.get_user_by_telegram_id(id)
-    #
-    #     # Returns True if user exists and his status is STUDENT
-    #     return user is not None and user.status == constants.STUDENT_STATUS
-    #
     # def __get_login_by_id(self, id: int):
     #     user = self.database.get_user_by_telegram_id(id)
     #

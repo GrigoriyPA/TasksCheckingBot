@@ -179,3 +179,6 @@ def get_list_of_grades(login: str, callback_data: str):
 
     # Returns created keyboard
     return types.InlineKeyboardMarkup(keyboard)
+
+
+

@@ -98,7 +98,7 @@ class TelegramClient:
                      markup: MARKUP_TYPES = None) -> None:
         # If there is no attachments, just send text
         if attachments is None:
-            self.__client.send_message(chat_id=send_id, text=text, reply_markup=markup, parse_mode='html')
+            self.__client.send_message(chat_id=send_id, text=text, reply_markup=markup)
             return None
 
         # Send messages for each attachment
