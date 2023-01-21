@@ -98,7 +98,7 @@ class TelegramClient:
                      markup: MARKUP_TYPES = None) -> None:
         # If there is no attachments, just send text
         if attachments is None:
-            self.__client.send_message(chat_id=send_id, text=text, reply_markup=markup)
+            self.__client.send_message(chat_id=send_id, text=text, reply_markup=markup, parse_mode='html')
             return None
 
         # Send messages for each attachment
@@ -115,7 +115,19 @@ class TelegramClient:
     def run(self, token: str) -> None:
         # Function that launch new session
 
+        # If session already started, stop current session
+        if self.__handler_thread is not None:
+            self.stop()
+
         self.__token = token
         self.__client = TeleBot(token)
         self.__handler_thread = Thread(target=self.__handler)
         self.__handler_thread.start()
+
+    def stop(self) -> None:
+        # Function stops current session
+
+        if self.__handler_thread is not None:
+            self.__client.stop_polling()
+            self.__handler_thread.join()
+            self.__handler_thread: Optional[Thread] = None
