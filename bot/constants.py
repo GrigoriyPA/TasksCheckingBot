@@ -10,6 +10,7 @@ ADMINS = [
 ]
 
 PATH_TO_DATABASE = "bot/database/"
+ERROR_LOG_PATH = "bot/"
 
 DATABASE_NAME = "database.db"
 ERROR_LOG_NAME = "error_log.txt"

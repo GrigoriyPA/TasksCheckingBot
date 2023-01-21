@@ -27,7 +27,7 @@ class Message:
         self.chat_name = chat_name
 
     def is_from_chat(self) -> bool:
-        return self.from_id == self.author.user.id
+        return self.from_id != self.author.user.id
 
 
 class Callback:
@@ -39,4 +39,4 @@ class Callback:
         self.author = author
 
     def is_from_chat(self) -> bool:
-        return self.from_id == self.author.user.id
+        return self.from_id != self.author.user.id

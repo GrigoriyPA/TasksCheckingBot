@@ -3,12 +3,13 @@ from bot import constants
 from bot.database.database_funcs import DatabaseHelper
 from bot.telegram_logic import handling_functions
 from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
+from bot.user import User
 from collections.abc import Callable
 from typing import Any, Optional
 
 
 def add_error_to_log(text: str) -> None:
-    error_log = open(constants.ERROR_LOG_NAME, "a")
+    error_log = open(constants.ERROR_LOG_PATH + constants.ERROR_LOG_NAME, "a")
     error_log.write(text + "\n\n")
     error_log.close()
 
@@ -26,6 +27,7 @@ class UserHandler:
         self.client = TelegramClient(action_on_message=self.compute_user_message,
                                      action_on_callback=self.compute_callback)
 
+    # Access to user statistic
     def is_super_admin(self, user_id: int) -> bool:
         user = self.__database.get_user_by_telegram_id(user_id)
 
@@ -37,7 +39,7 @@ class UserHandler:
 
         # Returns True if user exists and his status is ADMIN or SUPER_ADMIN
         return user is not None and (
-                    user.status == constants.ADMIN_STATUS or user.status == constants.SUPER_ADMIN_STATUS)
+                user.status == constants.ADMIN_STATUS or user.status == constants.SUPER_ADMIN_STATUS)
 
     def is_student(self, user_id: int) -> bool:
         user = self.__database.get_user_by_telegram_id(user_id)
@@ -45,9 +47,32 @@ class UserHandler:
         # Returns True if user exists and his status is STUDENT
         return user is not None and user.status == constants.STUDENT_STATUS
 
+    def is_valid_login(self, login: str) -> bool:
+        return self.__database.get_user_by_login(login) is not None
+
+    def is_valid_password(self, login: str, password: str) -> bool:
+        user = self.__database.get_user_by_login(login)
+        return user is not None and user.password == password
+
+    def get_user_info_by_login(self, login: str) -> Optional[User]:
+        return self.__database.get_user_by_login(login)
+
+    # Change user data
+    def authorize_user(self, login: str, user_id: int) -> None:
+        self.__database.change_user_telegram_id(login, user_id)
+
+    def update_user_state(self, user_id: int, new_state: Callable[[Any, int, str, Any], tuple[Callable, Any]],
+                          new_data) -> None:
+        self.__user_state[user_id] = new_state
+        self.__user_data[user_id] = new_data
+
+    # Bot interface
     def send_message(self, send_id: int, text: str, attachments: Optional[list[Attachment]] = None,
                      markup: MARKUP_TYPES = None) -> None:
-        self.client.send_message(send_id=send_id, text=text, attachments=attachments, markup=markup)
+        try:
+            self.client.send_message(send_id=send_id, text=text, attachments=attachments, markup=markup)
+        except Exception as error:
+            add_error_to_log("Unknown error while sending the message.\nDescription:\n" + str(error))
 
     def add_user(self, user_id: int) -> None:
         # Add new user state, if user is not exists
@@ -57,9 +82,17 @@ class UserHandler:
             self.__user_data[user_id] = None
 
     def compute_callback(self, callback: Callback) -> None:
+        # Skip all callbacks from chats
+        if callback.is_from_chat():
+            return
+
         self.add_user(callback.from_id)
 
     def compute_user_message(self, message: Message) -> None:
+        # Skip all messages from chats
+        if message.is_from_chat():
+            return
+
         self.add_user(message.from_id)
         self.__user_state[message.from_id], self.__user_data[message.from_id] = \
             self.__user_state[message.from_id](self, message.from_id, message.text, self.__user_data[message.from_id])

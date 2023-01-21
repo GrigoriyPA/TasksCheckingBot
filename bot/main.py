@@ -36,29 +36,6 @@ if __name__ == "__main__":
     #     # Returns True if user answer is right
     #     return self.database.get_right_answer_for_the_task(homework_name, task_id) == user_answer
     #
-    # def __get_login_by_id(self, id: int):
-    #     user = self.database.get_user_by_telegram_id(id)
-    #
-    #     # If there is no such user just return None
-    #     if user is None:
-    #         return None
-    #
-    #     return user.login
-    #
-    # def __get_id_by_login(self, login: str):
-    #     user = self.database.get_user_by_login(login)
-    #
-    #     # If there is no such user send error to error log
-    #     if user is None:
-    #         add_error_to_log("Invalid login in function __get_id_by_login")
-    #         return None
-    #
-    #     # If no one is logged in this account just return None
-    #     if user.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
-    #         return None
-    #
-    #     return user.telegram_id
-    #
     # def __get_markup(self, id: int):
     #     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)  # Buttons description on bottom bar
     #
@@ -103,23 +80,6 @@ if __name__ == "__main__":
     #     markup.add(types.KeyboardButton(text="Статус"))  # Get login, password and status of current account
     #     markup.add(types.KeyboardButton(text="Выйти"))  # Exit from current account
     #     return markup
-    #
-    # def __send_message(self, id: int, text: str, markup=None) -> None:
-    #     # If markup is None send just text
-    #     if markup is None:
-    #         self.client.send_message(id, text=text)
-    #     else:
-    #         self.client.send_message(id, text=text, reply_markup=markup)
-    #
-    # def __compute_command_start(self, message) -> None:
-    #     # This function is called on command '/start'
-    #
-    #     text = "С возвращением!"
-    #     if self.database.get_user_by_telegram_id(message.chat.id) is None:
-    #         text = "Пожалуйста, авторизуйтесь."
-    #
-    #     # Send hello phrase and update keyboard
-    #     self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
     #
     # def __compute_wait_answer(self, message) -> None:
     #     # This function is called on user input during waiting answer on some exercise
@@ -680,63 +640,6 @@ if __name__ == "__main__":
     #
     #     # Send login, password and status
     #     self.__send_message(message.chat.id, description, markup=self.__get_markup(message.chat.id))
-    #
-    # def __compute_keyboard_sign_up(self, message) -> None:
-    #     # This function is called when user wants to authorize
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user already authorized, reject command
-    #     if user is not None:
-    #         self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the first call of this function
-    #     if self.wait_mode[message.chat.id] is None:
-    #         # Start waiting of login for authorizing (WaitModeDescription status is WAIT_LOGIN)
-    #         self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_sign_up, status="WAIT_LOGIN")
-    #         self.__send_message(message.chat.id, "Введите логин аккаунта для авторизации:",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the second call of this function (waiting input login)
-    #     if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
-    #         login = message.text
-    #
-    #         # If there is no such login, stop authorization
-    #         if self.database.get_user_by_login(login) is None:
-    #             self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #             self.__send_message(message.chat.id, "Введённый логин не существует, авторизация отменена.",
-    #                                 markup=self.__get_markup(message.chat.id))
-    #             return
-    #
-    #         # Start waiting of password for authorizing in current login (login saved in WaitModeDescription data)
-    #         self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_sign_up, data=login)
-    #         self.__send_message(message.chat.id, "Введите пароль:", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the third call of this function (waiting input login)
-    #     login = self.wait_mode[message.chat.id].data  # Getting stored current login
-    #     password = message.text
-    #     self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #
-    #     # If password is incorrect, stop authorization
-    #     if self.database.get_user_by_login(login).password != password:
-    #         self.__send_message(message.chat.id, "Введён неправильный пароль, авторизация отменена.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     id = self.__get_id_by_login(login)  # Getting last user on current login
-    #     self.database.change_user_telegram_id(login, message.chat.id)  # Authorize current user
-    #
-    #     # Send notification for last user on current login if he exists
-    #     if id is not None:
-    #         self.wait_mode[id] = None  # Drop waiting mode
-    #         self.__send_message(id, "В ваш профиль выполнен вход с другого телеграм аккаунта, вы были разлогинены.",
-    #                             markup=self.__get_markup(id))
-    #
-    #     self.__send_message(message.chat.id, "Успешная авторизация!", markup=self.__get_markup(message.chat.id))
     #
     # def __compute_keyboard_sign_out(self, message) -> None:
     #     # This function is called when user wants to sign out from current account
