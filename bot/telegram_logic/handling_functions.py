@@ -23,6 +23,9 @@ MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удал
 # __compute_button_admin_delete_account
 MESSAGE_ON_ADMIN_DELETE_ACCOUNT = "Введите логин аккаунта для удаления:"
 
+# __compute_button_admin_delete_exercise
+MESSAGE_ON_ADMIN_DELETE_EXERCISE = "Введите название работы для удаления:"
+
 # common
 MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда."
 
@@ -47,6 +50,10 @@ MESSAGE_ON_INVALID_LOGIN_FOR_DELETE = "Введённый логин не сущ
 MESSAGE_ON_FORBIDDEN_LOGIN_FOR_DELETE = "Вы не можете удалить этот аккаунт."
 NOTIFICATION_FOR_LAST_USER_ON_DELETED_ACCOUNT = "Ваш аккаунт был удалён администратором. Введите логин для авторизации."
 MESSAGE_ON_SUCCESS_DELETION_ACCOUNT = "Аккаунт успешно удалён."
+
+# deleting_exercise_waiting_name
+MESSAGE_ON_INVALID_EXERCISE_NAME_FOR_DELETE = "Не существует работы с введённым именем, повторите попытку."
+MESSAGE_ON_SUCCESS_DELETION_EXERCISE = "Работа успешно удалена."
 
 
 # Special computing functions
@@ -122,7 +129,7 @@ def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, tex
     return True
 
 
-# Checking admin delete account button (adding admin interface)
+# Checking admin delete account button (deleting admin interface)
 def __compute_button_admin_delete_account(handler: UserHandler, from_id: int, text: str,
                                           markup: MARKUP_TYPES = None) -> bool:
     if text != keyboard_markups.BUTTON_DELETE_ACCOUNT:
@@ -131,6 +138,18 @@ def __compute_button_admin_delete_account(handler: UserHandler, from_id: int, te
 
     # Admin delete account button have pressed, start waiting login of deletion account
     handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_ACCOUNT, markup=markup)
+    return True
+
+
+# Checking admin delete exercise button (deleting admin interface)
+def __compute_button_admin_delete_exercise(handler: UserHandler, from_id: int, text: str,
+                                           markup: MARKUP_TYPES = None) -> bool:
+    if text != keyboard_markups.BUTTON_DELETE_EXERCISE:
+        # There is no admin delete exercise button pressed
+        return False
+
+    # Admin delete exercise button have pressed, start waiting name of deletion exercise
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_EXERCISE, markup=markup)
     return True
 
 
@@ -165,7 +184,7 @@ def unauthorized_user_waiting_login(handler: UserHandler, from_id: int, text: st
     login: str = text  # Current login
 
     # If there is no such login, reset authorization
-    if not handler.is_valid_login(login):
+    if not handler.is_exists_login(login):
         handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_LOGIN)
         return unauthorized_user_waiting_login, None
 
@@ -210,7 +229,7 @@ def unauthorized_user_waiting_password(handler: UserHandler, from_id: int, text:
     return default_student_page, None
 
 
-# Initial student state
+# TO DO || Initial student state
 def default_student_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
@@ -223,7 +242,7 @@ def default_student_page(handler: UserHandler, from_id: int, text: str, data) ->
     return default_student_page, None
 
 
-# Initial admin state
+# TO DO || Initial admin state
 def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
@@ -243,7 +262,7 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
     return default_admin_page, None
 
 
-# Admin addition interface
+# TO DO || Admin addition interface
 def admin_adding_interface(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_default_admin_keyboard()):
         return default_admin_page, None
@@ -259,6 +278,9 @@ def admin_deletion_interface(handler: UserHandler, from_id: int, text: str, data
 
     if __compute_button_admin_delete_account(handler, from_id, text, keyboard_markups.get_back_button_keyboard()):
         return deleting_account_waiting_login, None
+
+    if __compute_button_admin_delete_exercise(handler, from_id, text, keyboard_markups.get_back_button_keyboard()):
+        return deleting_exercise_waiting_name, None
 
     handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
     return admin_deletion_interface, None
@@ -296,5 +318,27 @@ def deleting_account_waiting_login(handler: UserHandler, from_id: int, text: str
     handler.delete_user(login)  # Deleting account
 
     handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_DELETION_ACCOUNT,
+                         markup=keyboard_markups.get_deleting_interface_keyboard())
+    return admin_deletion_interface, None
+
+
+# Deleting exercise branch
+def deleting_exercise_waiting_name(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called when admin wants to delete exist exercise (waiting homework name)
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_deleting_interface_keyboard(),
+                             message_info=MESSAGE_ON_ADMIN_DELETE_COMMAND):
+        return admin_deletion_interface, None
+
+    exercise_name: str = text  # Current exercise name
+
+    # If there is no such exercise, reset deleting
+    if not handler.is_exists_exercise_name(exercise_name):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_EXERCISE_NAME_FOR_DELETE)
+        return deleting_exercise_waiting_name, None
+
+    handler.delete_exercise(exercise_name)  # Deleting exercise
+
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_DELETION_EXERCISE,
                          markup=keyboard_markups.get_deleting_interface_keyboard())
     return admin_deletion_interface, None

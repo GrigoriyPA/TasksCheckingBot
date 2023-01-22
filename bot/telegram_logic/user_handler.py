@@ -24,8 +24,8 @@ class UserHandler:
 
         self.__database = DatabaseHelper(constants.PATH_TO_DATABASE, constants.DATABASE_NAME)  # Main database
 
-        self.client = TelegramClient(action_on_message=self.compute_user_message,
-                                     action_on_callback=self.compute_callback)
+        self.client = TelegramClient(action_on_message=self.__compute_user_message,
+                                     action_on_callback=self.__compute_callback)
 
     # Access to user statistic
     def is_super_admin(self, user_id: int) -> bool:
@@ -47,7 +47,7 @@ class UserHandler:
         # Returns True if user exists and his status is STUDENT
         return user is not None and user.status == constants.STUDENT_STATUS
 
-    def is_valid_login(self, login: str) -> bool:
+    def is_exists_login(self, login: str) -> bool:
         return self.__database.get_user_by_login(login) is not None
 
     def is_valid_password(self, login: str, password: str) -> bool:
@@ -59,6 +59,10 @@ class UserHandler:
 
     def get_user_info_by_id(self, user_id: id) -> Optional[User]:
         return self.__database.get_user_by_telegram_id(user_id)
+
+    # Access to exercise statistic
+    def is_exists_exercise_name(self, exercise_name: str) -> bool:
+        return self.__database.get_homework_by_name(exercise_name) is not None
 
     # Change user data
     def sign_in_user(self, login: str, user_id: int) -> None:
@@ -77,36 +81,40 @@ class UserHandler:
         self.__user_state[user_id] = new_state
         self.__user_data[user_id] = new_data
 
-    # Bot interface
-    def send_message(self, send_id: int, text: str, attachments: Optional[list[Attachment]] = None,
-                     markup: MARKUP_TYPES = None) -> None:
-        try:
-            self.client.send_message(send_id=send_id, text=text, attachments=attachments, markup=markup)
-        except Exception as error:
-            add_error_to_log("Unknown error while sending the message.\nDescription:\n" + str(error))
+    # Change exercise data
+    def delete_exercise(self, exercise_name: str) -> None:
+        self.__database.delete_homework_by_name(exercise_name)
 
-    def add_user(self, user_id: int) -> None:
+    # Bot interface
+    def __add_user(self, user_id: int) -> None:
         # Add new user state, if user is not exists
 
         if user_id not in self.__user_state:
             self.__user_state[user_id] = handling_functions.default_state
             self.__user_data[user_id] = None
 
-    def compute_callback(self, callback: Callback) -> None:
+    def __compute_callback(self, callback: Callback) -> None:
         # Skip all callbacks from chats
         if callback.is_from_chat():
             return
 
-        self.add_user(callback.from_id)
+        self.__add_user(callback.from_id)
 
-    def compute_user_message(self, message: Message) -> None:
+    def __compute_user_message(self, message: Message) -> None:
         # Skip all messages from chats
         if message.is_from_chat():
             return
 
-        self.add_user(message.from_id)
+        self.__add_user(message.from_id)
         self.__user_state[message.from_id], self.__user_data[message.from_id] = \
             self.__user_state[message.from_id](self, message.from_id, message.text, self.__user_data[message.from_id])
+
+    def send_message(self, send_id: int, text: str, attachments: Optional[list[Attachment]] = None,
+                     markup: MARKUP_TYPES = None) -> None:
+        try:
+            self.client.send_message(send_id=send_id, text=text, attachments=attachments, markup=markup)
+        except Exception as error:
+            add_error_to_log("Unknown error while sending the message.\nDescription:\n" + str(error))
 
     def run(self) -> None:
         # This function launch bot

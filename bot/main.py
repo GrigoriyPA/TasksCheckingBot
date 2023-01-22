@@ -721,37 +721,6 @@ if __name__ == "__main__":
     #     markup = markups.get_list_of_grades(homework_name, "N")
     #     self.__send_message(message.chat.id, "Выберите для какого класса будет доступно новое задание.", markup=markup)
     #
-    # def __compute_keyboard_delete_exercise(self, message) -> None:
-    #     # This function is called when admin wants to delete exercise
-    #
-    #     # If user is not admin, reject command
-    #     if not self.__is_admin(message.chat.id):
-    #         self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the first call of this function
-    #     if self.wait_mode[message.chat.id] is None:
-    #         # Start waiting of name for delete exercise
-    #         self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_exercise)
-    #         self.__send_message(message.chat.id, "Введите имя задания для удаления.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the second call of this function (waiting input exercise name)
-    #     homework_name = message.text
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #     self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #
-    #     # If there is no such exercise, stop deleting
-    #     if homework is None:
-    #         self.__send_message(message.chat.id, "Задания с введённым именем не существует, удаление отменено.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     self.database.delete_homework_by_name(homework_name)  # Delete exercise
-    #     self.__send_message(message.chat.id, "Задание успешно удалено.", markup=self.__get_markup(message.chat.id))
-    #
     # def __compute_keyboard_add(self, message) -> None:
     #     # This function is called when admin wants to add something
     #
@@ -979,44 +948,3 @@ if __name__ == "__main__":
     #             self.__compute_callback_add_exercise(data, call.message)
     #         else:  # Unknown action type
     #             add_error_to_log("Unknown callback: " + callback_type)
-    #
-    #     @self.client.message_handler(content_types=["text"])
-    #     def on_message(message):
-    #         # Computing user input (from keyboard)
-    #
-    #         # Skip all message from chats
-    #         if message.chat.id != message.from_user.id:
-    #             return
-    #
-    #         # Add wait mode to user
-    #         if message.chat.id not in self.wait_mode:
-    #             self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #
-    #         # If waiting mode is active, compute it
-    #         if self.wait_mode[message.chat.id] is not None:
-    #             if message.text == "Назад":  # Go back from wait mode
-    #                 self.__compute_keyboard_back(message)
-    #             else:  # Compute wait mode
-    #                 self.wait_mode[message.chat.id].function(message)
-    #         elif message.text == "Авторизоваться":  # Authorize to existing account
-    #             self.__compute_keyboard_sign_up(message)
-    #         elif message.text == "Статус":  # Get login, password and status of current account
-    #             self.__compute_keyboard_get_state(message)
-    #         elif message.text == "Выйти":  # Exit from current account
-    #             self.__compute_keyboard_sign_out(message)
-    #         elif message.text == "Сдать задачу":  # Solve unsolved exercise
-    #             self.__compute_keyboard_send_answer(message)
-    #         elif message.text == "Добавить":  # Action add something
-    #             self.__compute_keyboard_add(message)
-    #         elif message.text == "Удалить":  # Action delete something
-    #             self.__compute_keyboard_delete(message)
-    #         elif message.text == "Вывести результаты":  # Show results table
-    #             self.__compute_keyboard_get_results(message)
-    #         elif message.text == "Список аккаунтов":  # Show accounts list
-    #             self.__compute_keyboard_get_list_of_logins(message)
-    #         elif message.text == "Список заданий":  # Show exercises list
-    #             self.__compute_keyboard_get_list_of_exercises(message)
-    #         else:  # Unknown keyboard command
-    #             self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #
-    #     self.client.infinity_polling()  # Launch bot
