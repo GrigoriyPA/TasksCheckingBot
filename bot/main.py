@@ -219,32 +219,6 @@ if __name__ == "__main__":
     #     self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":",
     #                         markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_callback_show_homework(self, data: list[str], message) -> None:
-    #     # This function is called when user chooses homework for show results (in list of homeworks)
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user is not authorized, reject choice
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     homework_name = data[0]
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #
-    #     # If homework was blocked or deleted, reject choice
-    #     if homework is None:
-    #         self.__send_message(message.chat.id, "Выбранное задание недоступно.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Creating table of results
-    #     markup = markups.get_results_table(self.database.get_results(constants.STUDENT_STATUS, homework_name),
-    #                                        homework_name,
-    #                                        len(homework.right_answers), 1)
-    #     self.__send_message(message.chat.id, "Текущие результаты по работе \'" + homework_name + "\', " + str(
-    #         homework.grade) + " класс:", markup=markup)
-    #
     # def __compute_callback_show_task(self, data: list[str], message) -> None:
     #     # This function is called when user chooses task for see right answer on this task (in list of tasks)
     #
@@ -431,37 +405,6 @@ if __name__ == "__main__":
     #                                       reply_markup=markup)
     #     except:
     #         pass
-    #
-    # def __compute_callback_get_user_statistic_in_table(self, data: list[str], message) -> None:
-    #     # This function is called when user wants to see statistic of one user in results table
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user is not authorized, reject command
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     login, homework_name = data[0], data[1]  # Getting chooses login and homework name
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #
-    #     # If homework was blocked or deleted, reject choice
-    #     if homework is None:
-    #         self.__send_message(message.chat.id, "Выбранное задание недоступно.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Calculation number of right solved tasks
-    #     tasks_number = len(homework.right_answers)
-    #     solved_tasks_number = 0
-    #     for i in range(1, tasks_number + 1):
-    #         solved_tasks_number += self.database.get_user_answer_for_the_task(login, homework_name, i) == \
-    #                                homework.right_answers[i - 1]
-    #
-    #     # Send statistic
-    #     self.__send_message(message.chat.id,
-    #                         login + "\nРешено " + str(solved_tasks_number) + " / " + str(tasks_number) + " задач.",
-    #                         markup=self.__get_markup(message.chat.id))
     #
     # def __compute_callback_get_current_user_on_login(self, data: list[str], message) -> None:
     #     # This function is called when admin wants to see current user on chooses login (in list of logins)

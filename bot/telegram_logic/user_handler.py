@@ -1,7 +1,7 @@
 from bot import config
 from bot import constants
 from bot.database.database_funcs import DatabaseHelper
-from bot.telegram_logic import handling_functions
+from bot.telegram_logic import handling_functions, callback_functions
 from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
 from bot.user import User
 from bot.homework import Homework
@@ -57,6 +57,9 @@ class UserHandler:
         # Returns True if user exists and his status is STUDENT
         return user is not None and user.status == constants.STUDENT_STATUS
 
+    def is_authorized(self, user_id: int) -> bool:
+        return self.__database.get_user_by_telegram_id(user_id) is not None
+
     def is_exists_login(self, login: str) -> bool:
         return self.__database.get_user_by_login(login) is not None
 
@@ -73,6 +76,15 @@ class UserHandler:
     def get_users_info_by_status(self, status: str) -> list[User]:
         return self.__database.get_all_users_with_status(status)
 
+    def get_number_of_right_answers_on_task(self, login: str, exercise_name: str) -> int:
+        exercise_info = self.__database.get_homework_by_name(exercise_name)
+        tasks_number = len(exercise_info.right_answers)
+        solved_tasks_number = 0
+        for i in range(1, tasks_number + 1):
+            solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) == \
+                                   exercise_info.right_answers[i - 1]
+        return solved_tasks_number
+
     # Access to exercise statistic
     def is_exists_exercise_name(self, exercise_name: str) -> bool:
         return self.__database.get_homework_by_name(exercise_name) is not None
@@ -82,6 +94,9 @@ class UserHandler:
 
     def get_all_exercises_names_for_grade(self, grade: int) -> list[str]:
         return self.__database.get_all_homeworks_names_for_grade(grade)
+
+    def get_results_of_students_by_exercise_name(self, exercise_name: str):
+        return self.__database.get_results(constants.STUDENT_STATUS, exercise_name)
 
     def get_exercise_info_by_name(self, exercise_name: str) -> Optional[Homework]:
         return self.__database.get_homework_by_name(exercise_name)
@@ -125,6 +140,11 @@ class UserHandler:
             return
 
         self.__add_user(callback.from_id)
+        new_state, new_data = \
+            callback_functions.compute_callback(self, callback.from_id, callback.message_id, callback.callback_data)
+
+        if new_state is not None:
+            self.__user_state[callback.from_id], self.__user_data[callback.from_id] = new_state, new_data
 
     def __compute_user_message(self, message: Message) -> None:
         # Skip all messages from chats

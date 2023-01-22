@@ -38,6 +38,16 @@ BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION = "Описание"
 CALLBACK_DATA_SHOW_RESULTS_TABLE = "C"
 CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION = "H"
 
+# get_admin_account_actions_inline_markup
+# get_student_account_actions_inline_markup
+BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD = "Пароль"
+BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER = "Пользователь"
+BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
+
+CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = "F"
+CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = "K"
+CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "L"
+
 
 def get_results_table_inline_markup(results, homework_name: str, homework_size: int,
                                     first_task_id: int) -> types.InlineKeyboardMarkup:
@@ -228,15 +238,20 @@ def get_exercise_actions_inline_markup(exercise_name: str) -> types.InlineKeyboa
 
 
 def get_admin_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
-    keyboard = [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + login),
-                 types.InlineKeyboardButton(text="Пользователь", callback_data="K" + login)]]
+    keyboard = [[types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
+                                            callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD + login),
+                 types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
+                                            callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER + login)]]
     return types.InlineKeyboardMarkup(keyboard)
 
 
 def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
-    keyboard = [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + login),
-                 types.InlineKeyboardButton(text="Пользователь", callback_data="K" + login),
-                 types.InlineKeyboardButton(text="Результаты", callback_data="L" + login)]]
+    keyboard = [[types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
+                                            callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD + login),
+                 types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
+                                            callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER + login),
+                 types.InlineKeyboardButton(text=BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS,
+                                            callback_data=CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS + login)]]
     return types.InlineKeyboardMarkup(keyboard)
 
 
