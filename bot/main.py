@@ -36,51 +36,6 @@ if __name__ == "__main__":
     #     # Returns True if user answer is right
     #     return self.database.get_right_answer_for_the_task(homework_name, task_id) == user_answer
     #
-    # def __get_markup(self, id: int):
-    #     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)  # Buttons description on bottom bar
-    #
-    #     # Buttons in case when waiting input from user
-    #     if id in self.wait_mode and self.wait_mode[id] is not None:
-    #         if self.wait_mode[id].status == "ADD" or self.wait_mode[id].status == "DELETE":
-    #             if self.__is_admin(id):
-    #                 if self.wait_mode[id].status == "ADD":
-    #                     markup.add(types.KeyboardButton(text="Ученик"))  # Add new student account
-    #                 else:
-    #                     markup.add(types.KeyboardButton(text="Аккаунт"))  # Delete exists account
-    #
-    #             if self.__is_super_admin(id) and self.wait_mode[id].status == "ADD":
-    #                 markup.add(types.KeyboardButton(text="Администратор"))  # Add new admin account
-    #
-    #             if self.__is_admin(id):
-    #                 markup.add(types.KeyboardButton(text="Задание"))  # Action with exercise
-    #
-    #         # Default waiting-mode button
-    #         markup.add(types.KeyboardButton(text="Назад"))  # Go back from input waiting
-    #         return markup
-    #
-    #     # Buttons in case when user is not authorized
-    #     if self.database.get_user_by_telegram_id(id) is None:
-    #         markup.add(types.KeyboardButton(text="Авторизоваться"))  # Authorize to existing account
-    #         return markup
-    #
-    #     # Buttons in the normal situation
-    #     if self.__is_admin(id):
-    #         # Buttons for admins
-    #         markup.add(types.KeyboardButton(text="Добавить"),
-    #                    types.KeyboardButton(text="Удалить"))  # Buttons for select action type
-    #         markup.add(types.KeyboardButton(text="Вывести результаты"))  # Show results table
-    #         markup.add(types.KeyboardButton(text="Список аккаунтов"))  # Show accounts list
-    #         markup.add(types.KeyboardButton(text="Список заданий"))  # Show exercises list
-    #     else:
-    #         # Buttons for users
-    #         markup.add(types.KeyboardButton(text="Сдать задачу"))  # Solve unsolved exercise
-    #         markup.add(types.KeyboardButton(text="Вывести результаты"))  # Show results table
-    #
-    #     # Default buttons for authorized users
-    #     markup.add(types.KeyboardButton(text="Статус"))  # Get login, password and status of current account
-    #     markup.add(types.KeyboardButton(text="Выйти"))  # Exit from current account
-    #     return markup
-    #
     # def __compute_wait_answer(self, message) -> None:
     #     # This function is called on user input during waiting answer on some exercise
     #

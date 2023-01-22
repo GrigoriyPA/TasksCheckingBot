@@ -17,6 +17,12 @@ MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {passwor
 # __compute_button_admin_add_action
 MESSAGE_ON_ADMIN_ADD_COMMAND = "Выберите объект для добавления:"
 
+# __compute_button_admin_delete_action
+MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удаления:"
+
+# common
+MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда."
+
 # default_state
 WELCOME_MESSAGE_FOR_ADMIN = "С возвращением. Статус аккаунта: администратор."
 WELCOME_MESSAGE_FOR_STUDENT = "С возвращением. Статус аккаунта: ученик."
@@ -87,11 +93,23 @@ def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bo
 def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: str,
                                       markup: MARKUP_TYPES = None) -> bool:
     if text != keyboard_markups.BUTTON_ADD:
-        # There is no exit button pressed
+        # There is no admin add action button pressed
         return False
 
     # Admin add action button have pressed, update state and keyboard
     handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_COMMAND, markup=markup)
+    return True
+
+
+# Checking admin delete action button
+def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, text: str,
+                                         markup: MARKUP_TYPES = None) -> bool:
+    if text != keyboard_markups.BUTTON_DELETE:
+        # There is no admin delete action button pressed
+        return False
+
+    # Admin delete action button have pressed, update state and keyboard
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_COMMAND, markup=markup)
     return True
 
 
@@ -176,11 +194,12 @@ def default_student_page(handler: UserHandler, from_id: int, text: str, data) ->
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
         return unauthorized_user_waiting_login, None
+
     if __compute_button_status(handler, from_id, text):
         return default_student_page, None
 
-    handler.send_message(send_id=from_id, text="BOB!")
-    return default_state, None
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    return default_student_page, None
 
 
 # Initial admin state
@@ -188,23 +207,34 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
         return unauthorized_user_waiting_login, None
+
     if __compute_button_status(handler, from_id, text):
         return default_admin_page, None
-    if __compute_button_admin_add_action(handler, from_id, text, keyboard_markups.get_addition_interface_keyboard(
-            handler.is_super_admin(from_id))):
-        return admin_addition_interface, None
 
-    handler.send_message(send_id=from_id, text="BOB!")
-    return default_state, None
+    if __compute_button_admin_add_action(handler, from_id, text, keyboard_markups.get_adding_interface_keyboard(
+            handler.is_super_admin(from_id))):
+        return admin_adding_interface, None
+
+    if __compute_button_admin_delete_action(handler, from_id, text, keyboard_markups.get_deleting_interface_keyboard()):
+        return admin_deletion_interface, None
+
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    return default_admin_page, None
 
 
 # Admin addition interface
-def admin_addition_interface(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
-    handler.send_message(send_id=from_id, text="BOB!")
-    return default_state, None
+def admin_adding_interface(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_default_admin_keyboard()):
+        return default_admin_page, None
+
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    return admin_adding_interface, None
 
 
 # Admin deletion interface
 def admin_deletion_interface(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
-    handler.send_message(send_id=from_id, text="BOB!")
-    return default_state, None
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_default_admin_keyboard()):
+        return default_admin_page, None
+
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    return admin_deletion_interface, None
