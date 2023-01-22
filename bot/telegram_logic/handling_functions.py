@@ -1,4 +1,5 @@
 from bot import constants
+from bot.telegram_logic import inline_markups
 from bot.telegram_logic import keyboard_markups
 from bot.telegram_logic.user_handler import UserHandler, MARKUP_TYPES
 from typing import Any, Callable
@@ -14,11 +15,21 @@ MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT = "Статус: не авторизов�
 MESSAGE_ON_STATUS_ADMIN_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}"
 MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}\nКласс: {grade}"
 
+# __compute_button_show_results_table
+MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
+MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
+
+CALLBACK_DATA_GET_RESULTS_TABLE_BY_EXERCISE_NAME = "C"
+
 # __compute_button_admin_add_action
 MESSAGE_ON_ADMIN_ADD_COMMAND = "Выберите объект для добавления:"
 
 # __compute_button_admin_delete_action
 MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удаления:"
+
+# __compute_button_student_send_answer
+MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE = "На данный момент для вас нет открытых работ."
+MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
 
 # __compute_button_admin_delete_account
 MESSAGE_ON_ADMIN_DELETE_ACCOUNT = "Введите логин аккаунта для удаления:"
@@ -105,6 +116,24 @@ def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bo
     return True
 
 
+# Checking show results table button (common interface)
+def __compute_button_show_results_table(handler: UserHandler, from_id: int, text: str) -> bool:
+    if text != keyboard_markups.BUTTON_SHOW_RESULTS_TABLE:
+        # There is no show results table button pressed
+        return False
+
+    # Create list of exists homeworks
+    markup = inline_markups.get_all_homeworks_list_inline_markup(handler.get_all_exercises_names(),
+                                                                 CALLBACK_DATA_GET_RESULTS_TABLE_BY_EXERCISE_NAME)
+    if markup is None:
+        # There is no opened homeworks
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED)
+    else:
+        # Print list of exists homework
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE, markup=markup)
+    return True
+
+
 # Checking admin add action button (default admin interface)
 def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: str,
                                       markup: MARKUP_TYPES = None) -> bool:
@@ -126,6 +155,31 @@ def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, tex
 
     # Admin delete action button have pressed, update state and keyboard
     handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_COMMAND, markup=markup)
+    return True
+
+
+# Checking student send answer button (default student interface)
+def __compute_button_student_send_answer(handler: UserHandler, from_id: int, text: str) -> bool:
+    if text != keyboard_markups.BUTTON_SOLVE_EXERCISE:
+        # There is no student send answer button pressed
+        return False
+
+    user_info = handler.get_user_info_by_id(from_id)
+
+    # Create list of available homeworks
+    if user_info is not None:
+        markup = inline_markups.get_all_homeworks_list_inline_markup(handler.get_all_exercises_names_for_grade(user_info.grade),
+                                                                     CALLBACK_DATA_GET_RESULTS_TABLE_BY_EXERCISE_NAME)
+    else:
+        markup = None
+
+    # Student send answer button have pressed, print list of available exercises
+    if markup is None:
+        # There is no available homeworks
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE)
+    else:
+        # Print list of exists homework
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_STUDENT_SEND_ANSWER, markup=markup)
     return True
 
 
@@ -229,7 +283,7 @@ def unauthorized_user_waiting_password(handler: UserHandler, from_id: int, text:
     return default_student_page, None
 
 
-# TO DO || Initial student state
+# Initial student interface
 def default_student_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
@@ -238,11 +292,17 @@ def default_student_page(handler: UserHandler, from_id: int, text: str, data) ->
     if __compute_button_status(handler, from_id, text):
         return default_student_page, None
 
+    if __compute_button_show_results_table(handler, from_id, text):
+        return default_student_page, None
+
+    if __compute_button_student_send_answer(handler, from_id, text):
+        return default_student_page, None
+
     handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
     return default_student_page, None
 
 
-# TO DO || Initial admin state
+# TO DO || Initial admin interface
 def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
@@ -257,6 +317,9 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
 
     if __compute_button_admin_delete_action(handler, from_id, text, keyboard_markups.get_deleting_interface_keyboard()):
         return admin_deletion_interface, None
+
+    if __compute_button_show_results_table(handler, from_id, text):
+        return default_admin_page, None
 
     handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
     return default_admin_page, None
@@ -304,7 +367,7 @@ def deleting_account_waiting_login(handler: UserHandler, from_id: int, text: str
 
     # Admin can delete only users accounts
     if user.status == constants.SUPER_ADMIN_STATUS or not handler.is_super_admin(from_id) \
-       and user.status == constants.ADMIN_STATUS:
+            and user.status == constants.ADMIN_STATUS:
         handler.send_message(send_id=from_id, text=MESSAGE_ON_FORBIDDEN_LOGIN_FOR_DELETE,
                              markup=keyboard_markups.get_deleting_interface_keyboard())
         return admin_deletion_interface, None

@@ -4,6 +4,7 @@ from bot.database.database_funcs import DatabaseHelper
 from bot.telegram_logic import handling_functions
 from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
 from bot.user import User
+from bot.homework import Homework
 from collections.abc import Callable
 from typing import Any, Optional
 
@@ -63,6 +64,15 @@ class UserHandler:
     # Access to exercise statistic
     def is_exists_exercise_name(self, exercise_name: str) -> bool:
         return self.__database.get_homework_by_name(exercise_name) is not None
+
+    def get_all_exercises_names(self) -> list[str]:
+        return self.__database.get_all_homeworks_names()
+
+    def get_all_exercises_names_for_grade(self, grade: int) -> list[str]:
+        return self.__database.get_all_homeworks_names_for_grade(grade)
+
+    def get_exercise_info_by_name(self, exercise_name: str) -> Optional[Homework]:
+        return self.__database.get_homework_by_name(exercise_name)
 
     # Change user data
     def sign_in_user(self, login: str, user_id: int) -> None:

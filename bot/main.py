@@ -789,23 +789,6 @@ if __name__ == "__main__":
     #         self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.",
     #                             markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_keyboard_get_results(self, message) -> None:
-    #     # This function is called when user wants to see results table
-    #
-    #     # If user is not authorized, reject command
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Create homeworks list (user must choose homework name for see results table of it)
-    #     markup = markups.get_all_homeworks(self.database.get_all_homeworks_names(), "C")
-    #     if markup is None:
-    #         # There is no homeworks created
-    #         self.__send_message(message.chat.id, "На данный момент нет открытых работ.", markup=markup)
-    #     else:
-    #         self.__send_message(message.chat.id, "Выберите имя работы.", markup=markup)
-    #
     # def __compute_keyboard_get_list_of_logins(self, message) -> None:
     #     # This function is called when admin wants to see list of accounts
     #
@@ -872,24 +855,6 @@ if __name__ == "__main__":
     #         # There is no homeworks created
     #         self.__send_message(message.chat.id, "На данный момент нет открытых работ.",
     #                             markup=self.__get_markup(message.chat.id))
-    #
-    # def __compute_keyboard_send_answer(self, message) -> None:
-    #     # This function is called when user wants to send answer on some task
-    #
-    #     # If user is not student, reject command
-    #     if not self.__is_student(message.chat.id):
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # Create list of homeworks
-    #     markup = markups.get_all_homeworks(self.database.get_all_homeworks_names_for_grade(user.grade), "A")
-    #     if markup is None:
-    #         # There is no homeworks created
-    #         self.__send_message(message.chat.id, "На данный момент для вас нет открытых задач.", markup=markup)
-    #     else:
-    #         self.__send_message(message.chat.id, "Выберите имя работы.", markup=markup)
     #
     # def __handler(self) -> None:
     #     # This function is called on all events
