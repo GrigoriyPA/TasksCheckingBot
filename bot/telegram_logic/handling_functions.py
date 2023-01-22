@@ -22,6 +22,12 @@ MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
 # __compute_button_admin_get_list_of_exercises
 MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
 
+# __compute_button_admin_get_list_of_accounts
+TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS = "Супер-администраторы:"
+TOP_MESSAGE_OF_LIST_OF_ADMINS = "Администраторы:"
+TOP_MESSAGE_OF_LIST_OF_STUDENTS = "Ученики:"
+STUDENT_DESCRIPTION_IN_LIST_OF_STUDENTS = "{login}, {grade} класс"
+
 # __compute_button_admin_add_action
 MESSAGE_ON_ADMIN_ADD_COMMAND = "Выберите объект для добавления:"
 
@@ -177,6 +183,47 @@ def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: 
     # Send list of homeworks
     for name in exercises_names:
         handler.send_message(send_id=from_id, text=name, markup=inline_markups.get_exercise_actions_inline_markup(name))
+    return True
+
+
+# Checking admin get list of accounts button (default admin interface)
+def __compute_button_admin_get_list_of_accounts(handler: UserHandler, from_id: int, text: str) -> bool:
+    if text != keyboard_markups.BUTTON_ACCOUNTS_LIST:
+        # There is no admin get list of accounts button pressed
+        return False
+
+    # Admin get list of accounts button have pressed, print list of exists accounts
+
+    # Admins can see only other admins and users (not super-admins)
+    if handler.is_super_admin(from_id):
+        users = handler.get_users_info_by_status(constants.SUPER_ADMIN_STATUS)
+        users.sort(key=lambda current_user: current_user.login)
+        if len(users) > 0:
+            # Send list of super-admins
+            handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS)
+            for user in users:
+                handler.send_message(send_id=from_id, text=user.login,
+                                     markup=inline_markups.get_admin_account_actions_inline_markup(user.login))
+
+    users = handler.get_users_info_by_status(constants.ADMIN_STATUS)
+    users.sort(key=lambda current_user: current_user.login)
+    if len(users) > 0:
+        # Send list of admins
+        handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_LIST_OF_ADMINS)
+        for user in users:
+            handler.send_message(send_id=from_id, text=user.login,
+                                 markup=inline_markups.get_admin_account_actions_inline_markup(user.login))
+
+    users = handler.get_users_info_by_status(constants.STUDENT_STATUS)
+    users.sort(key=lambda current_user: current_user.login)
+    if len(users) > 0:
+        # Send list of students
+        handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_LIST_OF_STUDENTS)
+        for user in users:
+            handler.send_message(send_id=from_id,
+                                 text=STUDENT_DESCRIPTION_IN_LIST_OF_STUDENTS.format(login=user.login,
+                                                                                     grade=str(user.grade)),
+                                 markup=inline_markups.get_student_account_actions_inline_markup(user.login))
     return True
 
 
@@ -387,7 +434,7 @@ def default_student_page(handler: UserHandler, from_id: int, text: str, data) ->
     return default_student_page, None
 
 
-# TO DO || Initial admin interface
+# Initial admin interface
 def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
                              message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
@@ -407,6 +454,9 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
         return default_admin_page, None
 
     if __compute_button_admin_get_list_of_exercises(handler, from_id, text):
+        return default_admin_page, None
+
+    if __compute_button_admin_get_list_of_accounts(handler, from_id, text):
         return default_admin_page, None
 
     handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)

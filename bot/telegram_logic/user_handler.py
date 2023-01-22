@@ -70,6 +70,9 @@ class UserHandler:
     def get_user_info_by_id(self, user_id: id) -> Optional[User]:
         return self.__database.get_user_by_telegram_id(user_id)
 
+    def get_users_info_by_status(self, status: str) -> list[User]:
+        return self.__database.get_all_users_with_status(status)
+
     # Access to exercise statistic
     def is_exists_exercise_name(self, exercise_name: str) -> bool:
         return self.__database.get_homework_by_name(exercise_name) is not None

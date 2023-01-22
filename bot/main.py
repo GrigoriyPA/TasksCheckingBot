@@ -653,50 +653,6 @@ if __name__ == "__main__":
     #     markup = markups.get_list_of_grades(homework_name, "N")
     #     self.__send_message(message.chat.id, "Выберите для какого класса будет доступно новое задание.", markup=markup)
     #
-    # def __compute_keyboard_get_list_of_logins(self, message) -> None:
-    #     # This function is called when admin wants to see list of accounts
-    #
-    #     # If user is not admin, reject command
-    #     if not self.__is_admin(message.chat.id):
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Admins can see only other admins and users (not super-admins)
-    #     if self.__is_super_admin(message.chat.id):
-    #         users = self.database.get_all_users_with_status(constants.SUPER_ADMIN_STATUS)
-    #         if len(users) > 0:
-    #             # Send list of super-admins
-    #             self.__send_message(message.chat.id, "Супер-администраторы:", markup=self.__get_markup(message.chat.id))
-    #             for user in users:
-    #                 # Create buttons under login
-    #                 markup = types.InlineKeyboardMarkup(
-    #                     [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + user.login),
-    #                       types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login)]])
-    #                 self.__send_message(message.chat.id, user.login, markup=markup)
-    #
-    #     users = self.database.get_all_users_with_status(constants.ADMIN_STATUS)
-    #     if len(users) > 0:
-    #         # Send list of admins
-    #         self.__send_message(message.chat.id, "Администраторы:", markup=self.__get_markup(message.chat.id))
-    #         for user in users:
-    #             # Create buttons under login
-    #             markup = types.InlineKeyboardMarkup(
-    #                 [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + user.login),
-    #                   types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login)]])
-    #             self.__send_message(message.chat.id, user.login, markup=markup)
-    #
-    #     users = self.database.get_all_users_with_status(constants.STUDENT_STATUS)
-    #     if len(users) > 0:
-    #         # Send list of users
-    #         self.__send_message(message.chat.id, "Ученики:", markup=self.__get_markup(message.chat.id))
-    #         for user in users:
-    #             # Create buttons under login
-    #             markup = types.InlineKeyboardMarkup(
-    #                 [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + user.login),
-    #                   types.InlineKeyboardButton(text="Пользователь", callback_data="K" + user.login),
-    #                   types.InlineKeyboardButton(text="Результаты", callback_data="L" + user.login)]])
-    #             self.__send_message(message.chat.id, user.login + ", " + str(user.grade) + " класс", markup=markup)
-    #
     # def __handler(self) -> None:
     #     # This function is called on all events
     #

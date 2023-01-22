@@ -227,6 +227,19 @@ def get_exercise_actions_inline_markup(exercise_name: str) -> types.InlineKeyboa
     return types.InlineKeyboardMarkup(keyboard)
 
 
+def get_admin_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
+    keyboard = [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + login),
+                 types.InlineKeyboardButton(text="Пользователь", callback_data="K" + login)]]
+    return types.InlineKeyboardMarkup(keyboard)
+
+
+def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
+    keyboard = [[types.InlineKeyboardButton(text="Пароль", callback_data="F" + login),
+                 types.InlineKeyboardButton(text="Пользователь", callback_data="K" + login),
+                 types.InlineKeyboardButton(text="Результаты", callback_data="L" + login)]]
+    return types.InlineKeyboardMarkup(keyboard)
+
+
 def get_user_results_table(homework_list: list[str], user_results):
     # This function returns table of buttons for table of one user results
 
