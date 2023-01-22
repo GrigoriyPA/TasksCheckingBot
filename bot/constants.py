@@ -24,7 +24,7 @@ UNAUTHORIZED_TELEGRAM_ID = -1
 MAX_LOGIN_SIZE = 25  # less than 30
 MAX_HOMEWORK_NAME_SIZE = 25  # less than 30
 
-GRADES_IN_LINE = 7  # less or equal 8
+GRADES_IN_LINE = 4  # less or equal 8
 HOMEWORKS_NUMBER_IN_LINE = 1  # less or equal 8
 TASKS_NUMBER_IN_LINE = 6  # less or equal 8
 TASKS_ON_ONE_PAGE = 5  # less or equal 6

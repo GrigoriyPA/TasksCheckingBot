@@ -12,14 +12,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-    # def __check_name(self, name: str) -> bool:
-    #     # Check login/homework name, returns True if all ASCII codes are good
-    #     for symbol in name:
-    #         if ord(symbol) >= 123:
-    #             return False
-    #     return True
-    #
     # def __check_task(self, login: str, homework_name: str, task_id: int):
     #     user = self.database.get_user_by_login(login)
     #
@@ -616,66 +608,6 @@ if __name__ == "__main__":
     #     markup = markups.get_list_of_grades(login, "M")
     #     self.__send_message(message.chat.id, "Выберите класс нового ученика.", markup=markup)
     #
-    # def __compute_keyboard_add_admin(self, message) -> None:
-    #     # This function is called when admin wants to create new admin account
-    #
-    #     # If user is not super admin, reject command
-    #     if not self.__is_super_admin(message.chat.id):
-    #         self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the first call of this function
-    #     if self.wait_mode[message.chat.id] is None:
-    #         # Start waiting of login for creating new account (WaitModeDescription status is WAIT_LOGIN)
-    #         self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_admin,
-    #                                                               status="WAIT_LOGIN")
-    #         self.__send_message(message.chat.id,
-    #                             "Введите логин для нового аккаунта администратора (доступны латинские символы, цифры и знаки препинания):",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the second call of this function (waiting input login)
-    #     if self.wait_mode[message.chat.id].status == "WAIT_LOGIN":
-    #         login = message.text
-    #
-    #         # If login already exists, stop creating
-    #         if self.database.get_user_by_login(login) is not None:
-    #             self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #             self.__send_message(message.chat.id, "Введённый логин уже существует, создание аккаунта отменено.",
-    #                                 markup=self.__get_markup(message.chat.id))
-    #             return
-    #
-    #         # If login is incorrect, stop creating
-    #         if login.count("$") > 0 or not self.__check_name(login):
-    #             self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #             self.__send_message(message.chat.id, "Логин содержит запрещённые символы, создание аккаунта отменено.",
-    #                                 markup=self.__get_markup(message.chat.id))
-    #             return
-    #
-    #         # If login too long, stop creating
-    #         if len(login) > constants.MAX_LOGIN_SIZE:
-    #             self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #             self.__send_message(message.chat.id, "Введённый логин слишком длинный, создание аккаунта отменено.",
-    #                                 markup=self.__get_markup(message.chat.id))
-    #             return
-    #
-    #         # Start waiting of password for create account with current login (login saved in WaitModeDescription data)
-    #         self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add_admin, data=login)
-    #         self.__send_message(message.chat.id, "Введите пароль для нового аккаунта администратора:",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the third call of this function (waiting input password)
-    #     login = self.wait_mode[message.chat.id].data  # Getting stored current login
-    #     password = message.text
-    #     self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #
-    #     self.database.add_user(User(login, password, constants.ADMIN_STATUS,
-    #                                 constants.UNAUTHORIZED_TELEGRAM_ID))  # Creating new admin account
-    #     self.__send_message(message.chat.id, "Аккаунт администратора успешно создан.",
-    #                         markup=self.__get_markup(message.chat.id))
-    #
     # def __compute_keyboard_add_exercise(self, message) -> None:
     #     # This function is called when admin wants to add new exercise
     #
@@ -720,74 +652,6 @@ if __name__ == "__main__":
     #     # Create list of grades
     #     markup = markups.get_list_of_grades(homework_name, "N")
     #     self.__send_message(message.chat.id, "Выберите для какого класса будет доступно новое задание.", markup=markup)
-    #
-    # def __compute_keyboard_add(self, message) -> None:
-    #     # This function is called when admin wants to add something
-    #
-    #     # If user is not admin, reject command
-    #     if not self.__is_admin(message.chat.id):
-    #         self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the first call of this function
-    #     if self.wait_mode[message.chat.id] is None:
-    #         # Start waiting of action type (WaitModeDescription status describe action class (ADD/DELETE))
-    #         if self.__is_super_admin(message.chat.id):
-    #             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="ADD")
-    #         else:
-    #             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_add, status="ADD")
-    #
-    #         self.__send_message(message.chat.id, "Выберите объект модификации.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the second call of this function (waiting input action type)
-    #     self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #
-    #     # Finding value of current action type
-    #     if message.text == "Ученик":  # Add new account
-    #         self.__compute_keyboard_add_student(message)
-    #     elif message.text == "Администратор":  # Add new account
-    #         self.__compute_keyboard_add_admin(message)
-    #     elif message.text == "Задание":  # Add new exercise
-    #         self.__compute_keyboard_add_exercise(message)
-    #     else:  # Unknown command type
-    #         self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #
-    # def __compute_keyboard_delete(self, message) -> None:
-    #     # This function is called when admin wants to delete something
-    #
-    #     # If user is not admin, reject command
-    #     if not self.__is_admin(message.chat.id):
-    #         self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the first call of this function
-    #     if self.wait_mode[message.chat.id] is None:
-    #         # Start waiting of action type (WaitModeDescription status describe action class (ADD/DELETE))
-    #         if self.__is_super_admin(message.chat.id):
-    #             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="DELETE")
-    #         else:
-    #             self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete, status="DELETE")
-    #
-    #         self.__send_message(message.chat.id, "Выберите объект модификации.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the second call of this function (waiting input action type)
-    #     self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #
-    #     # Finding value of current action type
-    #     if message.text == "Аккаунт":  # Delete existing account
-    #         self.__compute_keyboard_delete_account(message)
-    #     elif message.text == "Задание":  # Delete existing exercise
-    #         self.__compute_keyboard_delete_exercise(message)
-    #     else:  # Unknown command type
-    #         self.__send_message(message.chat.id, "Неизвестная команда, отмена модификации.",
-    #                             markup=self.__get_markup(message.chat.id))
     #
     # def __compute_keyboard_get_list_of_logins(self, message) -> None:
     #     # This function is called when admin wants to see list of accounts

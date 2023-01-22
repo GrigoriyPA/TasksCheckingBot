@@ -15,6 +15,15 @@ def add_error_to_log(text: str) -> None:
     error_log.close()
 
 
+def check_new_login(login: str) -> bool:
+    # Check login, returns True if all ASCII codes are good
+
+    for symbol in login:
+        if ord(symbol) >= 123:
+            return False
+    return True
+
+
 class UserHandler:
     def __init__(self) -> None:
         # Dict of { telegram_id -> current user state (function on message) }
@@ -82,6 +91,10 @@ class UserHandler:
         user = self.__database.get_user_by_telegram_id(user_id)
         if user is not None:
             self.__database.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)
+
+    def add_user(self, login: str, password: str, status: str) -> None:
+        self.__database.add_user(User(login=login, password=password, status=status,
+                                      telegram_id=constants.UNAUTHORIZED_TELEGRAM_ID))
 
     def delete_user(self, login: str) -> None:
         self.__database.delete_user_by_login(login)
