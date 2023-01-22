@@ -697,29 +697,6 @@ if __name__ == "__main__":
     #                   types.InlineKeyboardButton(text="Результаты", callback_data="L" + user.login)]])
     #             self.__send_message(message.chat.id, user.login + ", " + str(user.grade) + " класс", markup=markup)
     #
-    # def __compute_keyboard_get_list_of_exercises(self, message) -> None:
-    #     # This function is called when admin wants to see list of exercises
-    #
-    #     # If user is not admin, reject command
-    #     if not self.__is_admin(message.chat.id):
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     homework_names = self.database.get_all_homeworks_names()
-    #     if len(homework_names) > 0:
-    #         # Send list of homeworks
-    #         for name in homework_names:
-    #             # Create buttons under homework name
-    #             markup = types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text="Результаты",
-    #                                                                              callback_data="C" + name),
-    #                                                   types.InlineKeyboardButton(text="Описание",
-    #                                                                              callback_data="H" + name)]])
-    #             self.__send_message(message.chat.id, name, markup=markup)
-    #     else:
-    #         # There is no homeworks created
-    #         self.__send_message(message.chat.id, "На данный момент нет открытых работ.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #
     # def __handler(self) -> None:
     #     # This function is called on all events
     #

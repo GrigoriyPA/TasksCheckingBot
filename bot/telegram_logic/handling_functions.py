@@ -19,7 +19,8 @@ MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {passwor
 MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
 MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
 
-CALLBACK_DATA_GET_RESULTS_TABLE_BY_EXERCISE_NAME = "C"
+# __compute_button_admin_get_list_of_exercises
+MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
 
 # __compute_button_admin_add_action
 MESSAGE_ON_ADMIN_ADD_COMMAND = "Выберите объект для добавления:"
@@ -30,6 +31,8 @@ MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удал
 # __compute_button_student_send_answer
 MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE = "На данный момент для вас нет открытых работ."
 MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
+
+CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = "A"
 
 # __compute_button_admin_add_student
 MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
@@ -145,14 +148,35 @@ def __compute_button_show_results_table(handler: UserHandler, from_id: int, text
         return False
 
     # Create list of exists homeworks
-    markup = inline_markups.get_all_homeworks_list_inline_markup(handler.get_all_exercises_names(),
-                                                                 CALLBACK_DATA_GET_RESULTS_TABLE_BY_EXERCISE_NAME)
+    markup = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_exercises_names(),
+                                                                    inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE)
     if markup is None:
         # There is no opened homeworks
         handler.send_message(send_id=from_id, text=MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED)
     else:
         # Print list of exists homework
         handler.send_message(send_id=from_id, text=MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE, markup=markup)
+    return True
+
+
+# Checking admin get list of exercises button (default admin interface)
+def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: int, text: str) -> bool:
+    if text != keyboard_markups.BUTTON_EXERCISES_LIST:
+        # There is no admin get list of exercises button pressed
+        return False
+
+    # Admin get list of exercises button have pressed, print list of exists exercises
+    exercises_names = handler.get_all_exercises_names()
+    exercises_names.sort()
+
+    if len(exercises_names) == 0:
+        # There is no homeworks created
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED)
+        return True
+
+    # Send list of homeworks
+    for name in exercises_names:
+        handler.send_message(send_id=from_id, text=name, markup=inline_markups.get_exercise_actions_inline_markup(name))
     return True
 
 
@@ -190,9 +214,9 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
 
     # Create list of available homeworks
     if user_info is not None:
-        markup = inline_markups.get_all_homeworks_list_inline_markup(
+        markup = inline_markups.get_list_of_all_homeworks_inline_markup(
             handler.get_all_exercises_names_for_grade(user_info.grade),
-            CALLBACK_DATA_GET_RESULTS_TABLE_BY_EXERCISE_NAME)
+            CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER)
     else:
         markup = None
 
@@ -380,6 +404,9 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
         return admin_deletion_interface, None
 
     if __compute_button_show_results_table(handler, from_id, text):
+        return default_admin_page, None
+
+    if __compute_button_admin_get_list_of_exercises(handler, from_id, text):
         return default_admin_page, None
 
     handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)

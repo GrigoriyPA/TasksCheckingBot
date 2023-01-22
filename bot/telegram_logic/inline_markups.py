@@ -31,6 +31,13 @@ CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK = "E"
 CALLBACK_DATA_MOVE_RESULTS_TABLE = "I"
 CALLBACK_DATA_REFRESH_RESULTS_TABLE = "G"
 
+# get_exercise_actions_inline_markup
+BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS = "Результаты"
+BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION = "Описание"
+
+CALLBACK_DATA_SHOW_RESULTS_TABLE = "C"
+CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION = "H"
+
 
 def get_results_table_inline_markup(results, homework_name: str, homework_size: int,
                                     first_task_id: int) -> types.InlineKeyboardMarkup:
@@ -163,8 +170,8 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_all_homeworks_list_inline_markup(homework_list: list[str],
-                                         callback_data: str) -> Optional[types.InlineKeyboardMarkup]:
+def get_list_of_all_homeworks_inline_markup(homework_list: list[str],
+                                            callback_data: str) -> Optional[types.InlineKeyboardMarkup]:
     # This function returns table of buttons for list of homeworks
 
     homework_list.sort()
@@ -209,6 +216,14 @@ def get_list_of_all_grades_inline_markup(callback_data: str) -> types.InlineKeyb
         keyboard.append(row)
 
     # Returns created keyboard
+    return types.InlineKeyboardMarkup(keyboard)
+
+
+def get_exercise_actions_inline_markup(exercise_name: str) -> types.InlineKeyboardMarkup:
+    keyboard = [[types.InlineKeyboardButton(text=BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS,
+                                            callback_data=CALLBACK_DATA_SHOW_RESULTS_TABLE + exercise_name),
+                 types.InlineKeyboardButton(text=BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION,
+                                            callback_data=CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION + exercise_name)]]
     return types.InlineKeyboardMarkup(keyboard)
 
 
