@@ -31,6 +31,11 @@ MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удал
 MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE = "На данный момент для вас нет открытых работ."
 MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
 
+# __compute_button_admin_add_student
+MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
+
+CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE = "M"
+
 # __compute_button_admin_add_exercise
 MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE = "Выберите для какого класса будет создано задание."
 
@@ -201,6 +206,19 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
     return True
 
 
+# Checking admin add student button (adding admin interface)
+def __compute_button_admin_add_student(handler: UserHandler, from_id: int, text: str) -> bool:
+    if text != keyboard_markups.BUTTON_ADD_STUDENT:
+        # There is no admin add student button pressed
+        return False
+
+    # Admin add student button have pressed, print list of all grades
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_NEW_STUDENT,
+                         markup=inline_markups.get_list_of_all_grades_inline_markup(
+                             CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE))
+    return True
+
+
 # Checking admin add exercise button (adding admin interface)
 def __compute_button_admin_add_exercise(handler: UserHandler, from_id: int, text: str) -> bool:
     if text != keyboard_markups.BUTTON_ADD_EXERCISE:
@@ -368,7 +386,7 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
     return default_admin_page, None
 
 
-# TO DO || Admin addition interface
+# Admin addition interface
 def admin_adding_interface(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_default_admin_keyboard()):
         return default_admin_page, None
@@ -378,6 +396,9 @@ def admin_adding_interface(handler: UserHandler, from_id: int, text: str, data) 
         return adding_admin_waiting_login, None
 
     if __compute_button_admin_add_exercise(handler, from_id, text):
+        return admin_adding_interface, None
+
+    if __compute_button_admin_add_student(handler, from_id, text):
         return admin_adding_interface, None
 
     handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
