@@ -69,6 +69,9 @@ class UserHandler:
         if user is not None:
             self.__database.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)
 
+    def delete_user(self, login: str) -> None:
+        self.__database.delete_user_by_login(login)
+
     def update_user_state(self, user_id: int, new_state: Callable[[Any, int, str, Any], tuple[Callable, Any]],
                           new_data) -> None:
         self.__user_state[user_id] = new_state

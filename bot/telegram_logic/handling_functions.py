@@ -20,6 +20,9 @@ MESSAGE_ON_ADMIN_ADD_COMMAND = "Выберите объект для добав�
 # __compute_button_admin_delete_action
 MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удаления:"
 
+# __compute_button_admin_delete_account
+MESSAGE_ON_ADMIN_DELETE_ACCOUNT = "Введите логин аккаунта для удаления:"
+
 # common
 MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда."
 
@@ -39,10 +42,16 @@ NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT = "В ваш профиль в�
 MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: администратор."
 MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: ученик."
 
+# deleting_account_waiting_login
+MESSAGE_ON_INVALID_LOGIN_FOR_DELETE = "Введённый логин не существует, повторите попытку."
+MESSAGE_ON_FORBIDDEN_LOGIN_FOR_DELETE = "Вы не можете удалить этот аккаунт."
+NOTIFICATION_FOR_LAST_USER_ON_DELETED_ACCOUNT = "Ваш аккаунт был удалён администратором. Введите логин для авторизации."
+MESSAGE_ON_SUCCESS_DELETION_ACCOUNT = "Аккаунт успешно удалён."
+
 
 # Special computing functions
 
-# Checking back button
+# Checking back button (common interface)
 def __compute_button_back(handler: UserHandler, from_id: int, text: str, markup: MARKUP_TYPES = None,
                           message_info: str = '') -> bool:
     if text != keyboard_markups.BUTTON_BACK:
@@ -54,7 +63,7 @@ def __compute_button_back(handler: UserHandler, from_id: int, text: str, markup:
     return True
 
 
-# Checking exit button
+# Checking exit button (common interface)
 def __compute_button_exit(handler: UserHandler, from_id: int, text: str, markup: MARKUP_TYPES = None,
                           message_info: str = '') -> bool:
     if text != keyboard_markups.BUTTON_EXIT:
@@ -67,7 +76,7 @@ def __compute_button_exit(handler: UserHandler, from_id: int, text: str, markup:
     return True
 
 
-# Checking status button
+# Checking status button (common interface)
 def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bool:
     if text != keyboard_markups.BUTTON_SHOW_STATUS:
         # There is no exit button pressed
@@ -89,7 +98,7 @@ def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bo
     return True
 
 
-# Checking admin add action button
+# Checking admin add action button (default admin interface)
 def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: str,
                                       markup: MARKUP_TYPES = None) -> bool:
     if text != keyboard_markups.BUTTON_ADD:
@@ -101,7 +110,7 @@ def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: 
     return True
 
 
-# Checking admin delete action button
+# Checking admin delete action button (default admin interface)
 def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, text: str,
                                          markup: MARKUP_TYPES = None) -> bool:
     if text != keyboard_markups.BUTTON_DELETE:
@@ -110,6 +119,18 @@ def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, tex
 
     # Admin delete action button have pressed, update state and keyboard
     handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_COMMAND, markup=markup)
+    return True
+
+
+# Checking admin delete account button (adding admin interface)
+def __compute_button_admin_delete_account(handler: UserHandler, from_id: int, text: str,
+                                          markup: MARKUP_TYPES = None) -> bool:
+    if text != keyboard_markups.BUTTON_DELETE_ACCOUNT:
+        # There is no admin delete account button pressed
+        return False
+
+    # Admin delete account button have pressed, start waiting login of deletion account
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_ACCOUNT, markup=markup)
     return True
 
 
@@ -236,5 +257,44 @@ def admin_deletion_interface(handler: UserHandler, from_id: int, text: str, data
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_default_admin_keyboard()):
         return default_admin_page, None
 
+    if __compute_button_admin_delete_account(handler, from_id, text, keyboard_markups.get_back_button_keyboard()):
+        return deleting_account_waiting_login, None
+
     handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    return admin_deletion_interface, None
+
+
+# Deleting account branch
+def deleting_account_waiting_login(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called when admin wants to delete exist account (waiting login)
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_deleting_interface_keyboard(),
+                             message_info=MESSAGE_ON_ADMIN_DELETE_COMMAND):
+        return admin_deletion_interface, None
+
+    login: str = text  # Current login
+    user = handler.get_user_info_by_login(login)
+
+    # If there is no such login, reset deleting
+    if user is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_LOGIN_FOR_DELETE)
+        return deleting_account_waiting_login, None
+
+    # Admin can delete only users accounts
+    if user.status == constants.SUPER_ADMIN_STATUS or not handler.is_super_admin(from_id) \
+       and user.status == constants.ADMIN_STATUS:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_FORBIDDEN_LOGIN_FOR_DELETE,
+                             markup=keyboard_markups.get_deleting_interface_keyboard())
+        return admin_deletion_interface, None
+
+    # Send notification to last user if he exists
+    if user.telegram_id != constants.UNAUTHORIZED_TELEGRAM_ID:
+        handler.send_message(send_id=user.telegram_id, text=NOTIFICATION_FOR_LAST_USER_ON_DELETED_ACCOUNT,
+                             markup=keyboard_markups.remove_keyboard())
+        handler.update_user_state(user.telegram_id, unauthorized_user_waiting_login, None)
+
+    handler.delete_user(login)  # Deleting account
+
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_DELETION_ACCOUNT,
+                         markup=keyboard_markups.get_deleting_interface_keyboard())
     return admin_deletion_interface, None

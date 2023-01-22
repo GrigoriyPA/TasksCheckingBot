@@ -676,51 +676,6 @@ if __name__ == "__main__":
     #     self.__send_message(message.chat.id, "Аккаунт администратора успешно создан.",
     #                         markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_keyboard_delete_account(self, message) -> None:
-    #     # This function is called when admin wants to delete existing account
-    #
-    #     # If user is not admin, reject command
-    #     if not self.__is_admin(message.chat.id):
-    #         self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #         self.__send_message(message.chat.id, "Неизвестная команда.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the first call of this function
-    #     if self.wait_mode[message.chat.id] is None:
-    #         # Start waiting of login for deleting account
-    #         self.wait_mode[message.chat.id] = WaitModeDescription(self.__compute_keyboard_delete_account)
-    #         self.__send_message(message.chat.id, "Введите логин аккаунта для удаления:",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # If it is the second call of this function (waiting input login)
-    #     login = message.text
-    #     user = self.database.get_user_by_login(login)
-    #     self.wait_mode[message.chat.id] = None  # Drop waiting mode
-    #
-    #     # If there is no such login, stop deleting
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Введённый логин не существует, удаление аккаунта отменено.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Admin can delete only users accounts
-    #     if user.status == constants.SUPER_ADMIN_STATUS or not self.__is_super_admin(
-    #             message.chat.id) and user.status == constants.ADMIN_STATUS:
-    #         self.__send_message(message.chat.id, "Вы не можете удалить этот аккаунт.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     id = self.__get_id_by_login(login)  # Getting id of last user on current account
-    #     self.database.delete_user_by_login(login)  # Deleting account
-    #
-    #     # Send notification to last user if he exists
-    #     if id is not None:
-    #         self.wait_mode[id] = None  # Drop waiting mode
-    #         self.__send_message(id, "Ваш аккаунт был удалён.", markup=self.__get_markup(id))
-    #
-    #     self.__send_message(message.chat.id, "Аккаунт успешно удалён.", markup=self.__get_markup(message.chat.id))
-    #
     # def __compute_keyboard_add_exercise(self, message) -> None:
     #     # This function is called when admin wants to add new exercise
     #
