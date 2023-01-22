@@ -16,6 +16,11 @@ class Attachment:
 
         return requests.get(self.link).content
 
+    def get_extension(self) -> str:
+        # Returns extension of data on current link
+
+        return self.link[self.link.rfind(".") + 1:len(self.link)]
+
 
 class Message:
     def __init__(self, from_id: int, text: str, author: types.ChatMember, attachment: Optional[Attachment] = None,

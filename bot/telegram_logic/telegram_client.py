@@ -22,24 +22,23 @@ class TelegramClient:
             # There is no attachment
             return None
 
+        file = None
+
         if message.content_type == "photo":
             # Attachment is compressed photo
-
-            link = "https://api.telegram.org/file/bot" + self.__token + "/" + \
-                   self.__client.get_file(message.photo[-1].file_id).file_path
-
-            return Attachment(attach_type=message.content_type, link=link)
+            file = self.__client.get_file(message.photo[-1].file_id)
 
         if message.content_type == "document":
             # Attachment is some document
-
-            link = "https://api.telegram.org/file/bot" + self.__token + "/" + \
-                   self.__client.get_file(message.document.file_id).file_path
-
-            return Attachment(attach_type=message.content_type, link=link)
+            file = self.__client.get_file(message.document.file_id)
 
         # Unknown attachment type
-        return None
+        if file is None:
+            return None
+
+        link = "https://api.telegram.org/file/bot" + self.__token + "/" + file.file_path
+
+        return Attachment(attach_type=message.content_type, link=link)
 
     def __handler(self) -> None:
         # This function is called on all events
