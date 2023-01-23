@@ -1,6 +1,6 @@
 from telebot import types, TeleBot
-from bot.user import User
-from bot.homework import Homework
+from bot.entities.user import User
+from bot.entities.homework import Homework
 from bot.database.database_funcs import DatabaseHelper
 from bot.telegram_logic import markups
 from bot.config import TELEGRAM_TOKEN

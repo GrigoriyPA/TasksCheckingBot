@@ -1,8 +1,9 @@
 import sqlite3
-from bot.user import User
-from bot.homework import Homework
+from bot.entities.user import User
+from bot.entities.homework import Homework
 from bot.constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, \
     ADMINS, ADMIN_STATUS
+from json import dumps, loads
 
 
 class DatabaseHelper:
@@ -37,25 +38,33 @@ class DatabaseHelper:
                     "telegram_id INTEGER NOT NULL,"
                     "grade INTEGER);")
 
+        # Creating table with info about the homeworks
+        cur.execute("CREATE TABLE IF NOT EXISTS homeworks("
+                    "homework_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                    "homework_name TEXT NOT NULL,"
+                    "grade INTEGER NOT NULL)")
+
         # Creating table with info about the tasks
         cur.execute("CREATE TABLE IF NOT EXISTS tasks("
                     "task_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                    "homework_name TEXT NOT NULL,"
-                    "task_number INTEGER NOT NULL,"
-                    "right_answer TEXT NOT NULL,"
-                    "grade INTEGER NOT NULL,"
-                    "UNIQUE(homework_name, task_number))")
+                    "index_in_homework TEXT NOT NULL,"
+                    "right_answers STRING NOT NULL,"
+                    "text_statement STRING,"
+                    "photo_statement BLOB,"
+                    "homework_id INTEGER NOT NULL,"
+                    "FOREIGN KEY (homework_id) REFERENCES homeworks (homework_id) ON DELETE CASCADE)")
 
         # Creating table with results of solving tasks by users
         cur.execute("CREATE TABLE IF NOT EXISTS results("
                     "user_id INTEGER NOT NULL,"
                     "task_id INTEGER NOT NULL,"
-                    "user_answer TEXT NOT NULL,"
+                    "text_answer TEXT NOT NULL,"
+                    "photo_answer BLOB NOT NULL,"
                     "FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,"
                     "FOREIGN KEY (task_id) REFERENCES tasks (task_id) ON DELETE CASCADE,"
-                    "PRIMARY KEY (user_id, task_id));")
+                    "PRIMARY KEY (user_id, task_id))")
 
-        # Creating super-admin
+        # Creating super admin
         if self.get_user_by_login(SUPER_ADMIN_LOGIN) is None:
             super_admin_user = User(SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, SUPER_ADMIN_STATUS,
                                     UNAUTHORIZED_TELEGRAM_ID)
@@ -281,6 +290,7 @@ class DatabaseHelper:
 
         return self.get_right_answer_for_the_task(homework_name, task_number)
 
+    # TODO return homework not homework name
     def get_all_homeworks_names(self) -> list[str]:
         # Returns list of homeworks names
 
@@ -291,6 +301,7 @@ class DatabaseHelper:
         # We need to take the first element in each list
         return [data[0] for data in cur.fetchall()]
 
+    # TODO return homework not homework name
     def get_all_homeworks_names_for_grade(self, grade: int) -> list[str]:
         # Returns list of homeworks names for given grade
 
