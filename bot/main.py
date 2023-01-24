@@ -42,31 +42,6 @@ if __name__ == "__main__":
     #     self.__send_message(message.chat.id, "Пароль пользователя \'" + login + "\': " + user.password,
     #                         markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_callback_describe_exercise(self, data: list[str], message) -> None:
-    #     # This function is called when admin chooses some exercise for see its description (in list of exercises)
-    #
-    #     # If user is not admin, reject choice
-    #     if not self.__is_admin(message.chat.id):
-    #         self.__send_message(message.chat.id, "Вы не обладаете достаточными правами.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     homework_name = data[0]  # Getting chooses homework name
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #
-    #     # If homework was blocked or deleted, reject choice
-    #     if homework is None:
-    #         self.__send_message(message.chat.id, "Выбранное задание было удалено.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Create and send description of current task
-    #     text = "Класс работы: " + str(homework.grade) + "\nВсего задач: " + str(
-    #         len(homework.right_answers)) + "\nПравильные ответы:\n"
-    #     for i in range(len(homework.right_answers)):
-    #         text += str(i + 1) + ": " + homework.right_answers[i] + "\n"
-    #     self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
-    #
     # def __compute_callback_get_current_user_on_login(self, data: list[str], message) -> None:
     #     # This function is called when admin wants to see current user on chooses login (in list of logins)
     #

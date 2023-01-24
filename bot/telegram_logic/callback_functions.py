@@ -40,6 +40,9 @@ MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT = "Введите логи
 MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE = "Введите название новой работы " \
                                                     "(доступны латинские символы, цифры и знаки препинания):"
 
+# compute_show_exercise_description_callback
+FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION = "Класс работы: {grade}\nВсего задач: {number_tasks}\nПравильные ответы:\n"
+
 
 def compute_callback(handler, from_id: int, message_id: int, text: str, callback_data: str) -> tuple[Optional[Callable], Any]:
     # Parsing callback data
@@ -325,6 +328,33 @@ def compute_select_exercise_grade_for_create_callback(handler, from_id: int, mes
     return handling_functions.adding_exercise_waiting_exercise_name, grade
 
 
+def compute_show_exercise_description_callback(handler, from_id: int, message_id: int, text: str,
+                                               callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin chooses some exercise for see its description (in list of exercises)
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    exercise_name = callback_data[0]  # Getting chooses exercise name
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # Create and send description of current task
+    text = FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION.format(grade=exercise_info.grade,
+                                                        number_tasks=str(len(exercise_info.right_answers)))
+    for i in range(len(exercise_info.right_answers)):
+        text += str(i + 1) + ": " + exercise_info.right_answers[i] + "\n"
+
+    handler.send_message(send_id=from_id, text=text)
+    return None, None
+
+
 CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], tuple[Optional[Callable], Any]]] = {
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
@@ -335,5 +365,6 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER: compute_select_homework_for_send_answer_callback,
     inline_markups.CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER: compute_select_task_id_for_send_answer_callback,
     inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE: compute_select_student_grade_for_create_callback,
-    inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE: compute_select_exercise_grade_for_create_callback
+    inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE: compute_select_exercise_grade_for_create_callback,
+    inline_markups.CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION: compute_show_exercise_description_callback
 }
