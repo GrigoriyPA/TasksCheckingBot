@@ -50,7 +50,7 @@ class DatabaseHelper:
                     "index_in_homework TEXT NOT NULL,"
                     "right_answers STRING NOT NULL,"
                     "text_statement STRING,"
-                    "photo_statement BLOB,"
+                    "file_statement STRING,"
                     "homework_id INTEGER NOT NULL,"
                     "FOREIGN KEY (homework_id) REFERENCES homeworks (homework_id) ON DELETE CASCADE)")
 
@@ -59,7 +59,7 @@ class DatabaseHelper:
                     "user_id INTEGER NOT NULL,"
                     "task_id INTEGER NOT NULL,"
                     "text_answer TEXT NOT NULL,"
-                    "photo_answer BLOB NOT NULL,"
+                    "file_answer STRING NOT NULL,"
                     "FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,"
                     "FOREIGN KEY (task_id) REFERENCES tasks (task_id) ON DELETE CASCADE,"
                     "PRIMARY KEY (user_id, task_id))")
