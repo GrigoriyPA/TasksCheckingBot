@@ -3,129 +3,6 @@ from bot.telegram_logic.interface import inline_markups, keyboard_markups, messa
 from bot.telegram_logic.user_handler import UserHandler, check_new_name, MARKUP_TYPES
 from typing import Any, Callable
 
-# __compute_button_back
-MESSAGE_ON_EXIT_FROM_CURRENT_STATE = "Отмена...\n"
-
-# __compute_button_exit
-MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT = "Вы вышли из текущего аккаунта.\n"
-
-# __compute_button_status
-MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT = "Статус: не авторизован"
-MESSAGE_ON_STATUS_ADMIN_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}"
-MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}\nКласс: {grade}"
-
-# __compute_button_show_results_table
-MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
-MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
-
-# __compute_button_admin_get_list_of_exercises
-MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
-
-# __compute_button_admin_get_list_of_accounts
-TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS = "Супер-администраторы:"
-TOP_MESSAGE_OF_LIST_OF_ADMINS = "Администраторы:"
-TOP_MESSAGE_OF_LIST_OF_STUDENTS = "Ученики:"
-STUDENT_DESCRIPTION_IN_LIST_OF_STUDENTS = "{login}, {grade} класс"
-
-# __compute_button_admin_add_action
-MESSAGE_ON_ADMIN_ADD_COMMAND = "Выберите объект для добавления:"
-
-# __compute_button_admin_delete_action
-MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удаления:"
-
-# __compute_button_student_send_answer
-MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE = "На данный момент для вас нет открытых работ."
-MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
-
-# __compute_button_admin_add_student
-MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
-
-# __compute_button_admin_add_exercise
-MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE = "Выберите для какого класса будет создано задание."
-
-# __compute_button_super_admin_add_admin_account
-MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN = "Введите логин для нового аккаунта администратора."
-
-# __compute_button_admin_delete_account
-MESSAGE_ON_ADMIN_DELETE_ACCOUNT = "Введите логин аккаунта для удаления:"
-
-# __compute_button_admin_delete_exercise
-MESSAGE_ON_ADMIN_DELETE_EXERCISE = "Введите название работы для удаления:"
-
-# common
-MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда."
-
-# default_state
-WELCOME_MESSAGE_FOR_ADMIN = "С возвращением. Статус аккаунта: администратор."
-WELCOME_MESSAGE_FOR_STUDENT = "С возвращением. Статус аккаунта: ученик."
-WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS = "Введите логин аккаунта для авторизации:"
-
-# unauthorized_user_waiting_login
-MESSAGE_ON_INVALID_LOGIN = "Введённый логин не существует, повторите попытку."
-MESSAGE_ON_VALID_LOGIN = "Введите пароль:"
-
-# unauthorized_user_waiting_password
-MESSAGE_ON_INVALID_PASSWORD = "Введён неправильный пароль, повторите попытку."
-NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT = "В ваш профиль выполнен вход с другого телеграм аккаунта, " \
-                                                   "вы были разлогинены. Введите логин для авторизации."
-MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: администратор."
-MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: ученик."
-
-# solving_task_waiting_answer
-MESSAGE_ON_INVALID_EXERCISE_NAME = "Выбранное задание более недоступно."
-MESSAGE_ON_INVALID_ANSWER = "Введён некорректный ответ, повторите попытку сдачи."
-MESSAGE_RIGHT_RESULT_MARK = "✅"
-MESSAGE_WRONG_RESULT_MARK = "❌"
-MESSAGE_ON_RIGHT_ANSWER = "Ваш ответ правильный!"
-MESSAGE_ON_WRONG_ANSWER = "Ваш ответ неправильный. Правильный ответ: {correct_answer}"
-NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK = "'{login}', {grade} класс добавил ответ к заданию {task_id} в работе '{exercise_name}'\n" \
-                                         "Правильный ответ: {correct_answer}\n" \
-                                         "Ответ ученика: {answer}\n" \
-                                         "Результат: {result}"
-
-# adding_exercise_waiting_exercise_name
-MESSAGE_ON_ALREADY_EXISTS_EXERCISE_NAME = "Работа с введённым именем уже существует, повторите попытку."
-MESSAGE_ON_INVALID_NEW_EXERCISE_NAME = "Введённое имя работы содержит запрещённые символы, повторите попытку."
-MESSAGE_ON_TOO_LONG_NEW_EXERCISE_NAME = "Введённое имя работы слишком длинное, повторите попытку."
-MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME = "Введите число заданий в новой работе:"
-
-# adding_exercise_waiting_number_of_right_answers
-MESSAGE_ON_INVALID_NUMBER_OF_TASKS = "Введено некорректное число задач, повторите попытку."
-MESSAGE_ON_CORRECT_NUMBER_OF_TASKS = "Введите поочерёдно правильный ответ к каждому заданию."
-
-# adding_exercise_waiting_list_of_right_answers
-MESSAGE_ON_ACCEPTED_RIGHT_ANSWER = "Ответ принят."
-MESSAGE_REQUEST_FOR_NEW_ANSWER = "Введите ответ к задаче номер {task_id}:"
-MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE = "Новая работа успешно создана."
-
-# adding_student_waiting_login
-MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN = "Введённый логин уже существует, повторите попытку."
-MESSAGE_ON_INVALID_NEW_STUDENT_LOGIN = "Введённый логин содержит запрещённые символы, повторите попытку."
-MESSAGE_ON_TOO_LONG_NEW_STUDENT_LOGIN = "Введённый логин слишком длинный, повторите попытку."
-MESSAGE_ON_CORRECT_NEW_STUDENT_LOGIN = "Введите пароль для нового аккаунта ученика:"
-
-# adding_student_waiting_password
-MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT = "Новый аккаунт ученика успешно создан."
-
-# adding_admin_waiting_login
-MESSAGE_ON_ALREADY_EXISTS_ADMIN_LOGIN = "Введённый логин уже существует, повторите попытку."
-MESSAGE_ON_INVALID_NEW_ADMIN_LOGIN = "Введённый логин содержит запрещённые символы, повторите попытку."
-MESSAGE_ON_TOO_LONG_NEW_ADMIN_LOGIN = "Введённый логин слишком длинный, повторите попытку."
-MESSAGE_ON_CORRECT_NEW_ADMIN_LOGIN = "Введите пароль для нового аккаунта администратора:"
-
-# adding_admin_waiting_password
-MESSAGE_ON_SUCCESS_ADDING_NEW_ADMIN_ACCOUNT = "Новый аккаунт администратора успешно создан."
-
-# deleting_account_waiting_login
-MESSAGE_ON_INVALID_LOGIN_FOR_DELETE = "Введённый логин не существует, повторите попытку."
-MESSAGE_ON_FORBIDDEN_LOGIN_FOR_DELETE = "Вы не можете удалить этот аккаунт."
-NOTIFICATION_FOR_LAST_USER_ON_DELETED_ACCOUNT = "Ваш аккаунт был удалён администратором. Введите логин для авторизации."
-MESSAGE_ON_SUCCESS_DELETION_ACCOUNT = "Аккаунт успешно удалён."
-
-# deleting_exercise_waiting_name
-MESSAGE_ON_INVALID_EXERCISE_NAME_FOR_DELETE = "Не существует работы с введённым именем, повторите попытку."
-MESSAGE_ON_SUCCESS_DELETION_EXERCISE = "Работа успешно удалена."
-
 
 # Special computing functions
 
@@ -137,7 +14,7 @@ def __compute_button_back(handler: UserHandler, from_id: int, text: str, markup:
         return False
 
     # Back button have pressed, go back from current state
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_EXIT_FROM_CURRENT_STATE + message_info, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_EXIT_FROM_CURRENT_STATE + message_info, markup=markup)
     return True
 
 
@@ -150,7 +27,7 @@ def __compute_button_exit(handler: UserHandler, from_id: int, text: str, markup:
 
     # Exit button have pressed, exit from current account
     handler.sign_out_user(from_id)
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT + message_info, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT + message_info, markup=markup)
     return True
 
 
@@ -163,14 +40,14 @@ def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bo
     # Status button have pressed, show status of current account
     user_info = handler.get_user_info_by_id(from_id)
     if user_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT)
     elif user_info.status == constants.STUDENT_STATUS:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_STATUS_STUDENT_ACCOUNT.format(login=user_info.login,
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STATUS_STUDENT_ACCOUNT.format(login=user_info.login,
                                                                                             password=user_info.password,
                                                                                             status=user_info.status,
                                                                                             grade=user_info.grade))
     else:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_STATUS_ADMIN_ACCOUNT.format(login=user_info.login,
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STATUS_ADMIN_ACCOUNT.format(login=user_info.login,
                                                                                           password=user_info.password,
                                                                                           status=user_info.status))
     return True
@@ -187,10 +64,10 @@ def __compute_button_show_results_table(handler: UserHandler, from_id: int, text
                                                                     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE)
     if markup is None:
         # There is no opened homeworks
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED)
     else:
         # Print list of exists homework
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE, markup=markup)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE, markup=markup)
     return True
 
 
@@ -206,7 +83,7 @@ def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: 
 
     if len(exercises_names) == 0:
         # There is no homeworks created
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED)
         return True
 
     # Send list of homeworks
@@ -229,7 +106,7 @@ def __compute_button_admin_get_list_of_accounts(handler: UserHandler, from_id: i
         users.sort(key=lambda current_user: current_user.login)
         if len(users) > 0:
             # Send list of super-admins
-            handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS)
+            handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS)
             for user in users:
                 handler.send_message(send_id=from_id, text=user.login,
                                      markup=inline_markups.get_admin_account_actions_inline_markup(user.login))
@@ -238,7 +115,7 @@ def __compute_button_admin_get_list_of_accounts(handler: UserHandler, from_id: i
     users.sort(key=lambda current_user: current_user.login)
     if len(users) > 0:
         # Send list of admins
-        handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_LIST_OF_ADMINS)
+        handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_LIST_OF_ADMINS)
         for user in users:
             handler.send_message(send_id=from_id, text=user.login,
                                  markup=inline_markups.get_admin_account_actions_inline_markup(user.login))
@@ -247,10 +124,10 @@ def __compute_button_admin_get_list_of_accounts(handler: UserHandler, from_id: i
     users.sort(key=lambda current_user: current_user.login)
     if len(users) > 0:
         # Send list of students
-        handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_LIST_OF_STUDENTS)
+        handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_LIST_OF_STUDENTS)
         for user in users:
             handler.send_message(send_id=from_id,
-                                 text=STUDENT_DESCRIPTION_IN_LIST_OF_STUDENTS.format(login=user.login,
+                                 text=messages_text.STUDENT_DESCRIPTION_IN_LIST_OF_STUDENTS.format(login=user.login,
                                                                                      grade=str(user.grade)),
                                  markup=inline_markups.get_student_account_actions_inline_markup(user.login))
     return True
@@ -264,7 +141,7 @@ def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: 
         return False
 
     # Admin add action button have pressed, update state and keyboard
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_COMMAND, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND, markup=markup)
     return True
 
 
@@ -276,7 +153,7 @@ def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, tex
         return False
 
     # Admin delete action button have pressed, update state and keyboard
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_COMMAND, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_DELETE_COMMAND, markup=markup)
     return True
 
 
@@ -299,10 +176,10 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
     # Student send answer button have pressed, print list of available exercises
     if markup is None:
         # There is no available homeworks
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE)
     else:
         # Print list of exists homework
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_STUDENT_SEND_ANSWER, markup=markup)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STUDENT_SEND_ANSWER, markup=markup)
     return True
 
 
@@ -313,7 +190,7 @@ def __compute_button_admin_add_student(handler: UserHandler, from_id: int, text:
         return False
 
     # Admin add student button have pressed, print list of all grades
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_NEW_STUDENT,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_ADD_NEW_STUDENT,
                          markup=inline_markups.get_list_of_all_grades_inline_markup(
                                 inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE))
     return True
@@ -326,7 +203,7 @@ def __compute_button_admin_add_exercise(handler: UserHandler, from_id: int, text
         return False
 
     # Admin add exercise button have pressed, print list of all grades
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE,
                          markup=inline_markups.get_list_of_all_grades_inline_markup(
                                 inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE))
     return True
@@ -340,7 +217,7 @@ def __compute_button_super_admin_add_admin_account(handler: UserHandler, from_id
         return False
 
     # Super-admin add admin account button have pressed, start waiting login of new account
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN, markup=markup)
     return True
 
 
@@ -352,7 +229,7 @@ def __compute_button_admin_delete_account(handler: UserHandler, from_id: int, te
         return False
 
     # Admin delete account button have pressed, start waiting login of deletion account
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_ACCOUNT, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_DELETE_ACCOUNT, markup=markup)
     return True
 
 
@@ -364,7 +241,7 @@ def __compute_button_admin_delete_exercise(handler: UserHandler, from_id: int, t
         return False
 
     # Admin delete exercise button have pressed, start waiting name of deletion exercise
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_DELETE_EXERCISE, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_DELETE_EXERCISE, markup=markup)
     return True
 
 
@@ -376,18 +253,18 @@ def default_state(handler: UserHandler, from_id: int, text: str, data) -> tuple[
 
     if handler.is_admin(from_id):
         # Current user is admin, go to admin home page
-        handler.send_message(send_id=from_id, text=WELCOME_MESSAGE_FOR_ADMIN,
+        handler.send_message(send_id=from_id, text=messages_text.WELCOME_MESSAGE_FOR_ADMIN,
                              markup=keyboard_markups.get_default_admin_keyboard())
         return default_admin_page, None
 
     if handler.is_student(from_id):
         # Current user is student, go to student home page
-        handler.send_message(send_id=from_id, text=WELCOME_MESSAGE_FOR_STUDENT,
+        handler.send_message(send_id=from_id, text=messages_text.WELCOME_MESSAGE_FOR_STUDENT,
                              markup=keyboard_markups.get_default_student_keyboard())
         return default_student_page, None
 
     # Current user is unauthorized, start waiting of login for authorization
-    handler.send_message(send_id=from_id, text=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS,
+    handler.send_message(send_id=from_id, text=messages_text.WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS,
                          markup=keyboard_markups.remove_keyboard())
     return unauthorized_user_waiting_login, None
 
@@ -400,11 +277,11 @@ def unauthorized_user_waiting_login(handler: UserHandler, from_id: int, text: st
 
     # If there is no such login, reset authorization
     if not handler.is_exists_login(login):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_LOGIN)
         return unauthorized_user_waiting_login, None
 
     # Start waiting of password for authorizing in current login
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_VALID_LOGIN,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_VALID_LOGIN,
                          markup=keyboard_markups.get_back_button_keyboard())
     return unauthorized_user_waiting_password, login
 
@@ -413,7 +290,7 @@ def unauthorized_user_waiting_password(handler: UserHandler, from_id: int, text:
     # This function is called when user wants to authorize (waiting password, login stored in data)
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.remove_keyboard(),
-                             message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
+                             message_info=messages_text.WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
         return unauthorized_user_waiting_login, None
 
     login: str = data  # Current login
@@ -421,25 +298,25 @@ def unauthorized_user_waiting_password(handler: UserHandler, from_id: int, text:
 
     # If password is incorrect, reset authorization
     if not handler.is_valid_password(login, password):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_PASSWORD)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_PASSWORD)
         return unauthorized_user_waiting_password, login
 
     user = handler.get_user_info_by_login(login)
 
     # Send notification for last user on current login, if he exists
     if user.telegram_id != constants.UNAUTHORIZED_TELEGRAM_ID:
-        handler.send_message(send_id=user.telegram_id, text=NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT,
+        handler.send_message(send_id=user.telegram_id, text=messages_text.NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT,
                              markup=keyboard_markups.remove_keyboard())
         handler.update_user_state(user.telegram_id, unauthorized_user_waiting_login, None)
 
     handler.sign_in_user(login, from_id)  # Authorize current user
 
     if handler.is_admin(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION,
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION,
                              markup=keyboard_markups.get_default_admin_keyboard())
         return default_admin_page, None
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION,
                          markup=keyboard_markups.get_default_student_keyboard())
     return default_student_page, None
 
@@ -447,7 +324,7 @@ def unauthorized_user_waiting_password(handler: UserHandler, from_id: int, text:
 # Initial student interface
 def default_student_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
-                             message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
+                             message_info=messages_text.WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
         return unauthorized_user_waiting_login, None
 
     if __compute_button_status(handler, from_id, text):
@@ -459,7 +336,7 @@ def default_student_page(handler: UserHandler, from_id: int, text: str, data) ->
     if __compute_button_student_send_answer(handler, from_id, text):
         return default_student_page, None
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
     return default_student_page, None
 
 
@@ -476,7 +353,7 @@ def solving_task_waiting_answer(handler: UserHandler, from_id: int, text: str, d
 
     # If task was blocked or deleted, reject answer
     if user_info is None or exercise_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_EXERCISE_NAME,
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_EXERCISE_NAME,
                              markup=keyboard_markups.get_default_student_keyboard())
         return default_student_page, None
 
@@ -484,19 +361,19 @@ def solving_task_waiting_answer(handler: UserHandler, from_id: int, text: str, d
 
     # Empty answer are banned
     if answer == '':
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_ANSWER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_ANSWER)
         return solving_task_waiting_answer, data
 
     correct_answer = handler.send_answer_on_exercise(user_info.login, exercise_name, task_id, answer)
 
     # Checking answer
     if answer == correct_answer:
-        result = MESSAGE_RIGHT_RESULT_MARK
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_RIGHT_ANSWER,
+        result = messages_text.MESSAGE_RIGHT_RESULT_MARK
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_RIGHT_ANSWER,
                              markup=keyboard_markups.get_default_student_keyboard())
     else:
-        result = MESSAGE_WRONG_RESULT_MARK
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_WRONG_ANSWER.format(correct_answer=correct_answer),
+        result = messages_text.MESSAGE_WRONG_RESULT_MARK
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_WRONG_ANSWER.format(correct_answer=correct_answer),
                              markup=keyboard_markups.get_default_student_keyboard())
 
     # Sending notifications to all admins
@@ -507,7 +384,7 @@ def solving_task_waiting_answer(handler: UserHandler, from_id: int, text: str, d
             continue
 
         handler.send_message(send_id=admin_info.telegram_id,
-                             text=NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK.format(login=user_info.login,
+                             text=messages_text.NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK.format(login=user_info.login,
                                                                                 grade=user_info.grade,
                                                                                 exercise_name=exercise_name,
                                                                                 task_id=str(task_id),
@@ -520,7 +397,7 @@ def solving_task_waiting_answer(handler: UserHandler, from_id: int, text: str, d
 # Initial admin interface
 def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
-                             message_info=WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
+                             message_info=messages_text.WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS):
         return unauthorized_user_waiting_login, None
 
     if __compute_button_status(handler, from_id, text):
@@ -542,7 +419,7 @@ def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> t
     if __compute_button_admin_get_list_of_accounts(handler, from_id, text):
         return default_admin_page, None
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
     return default_admin_page, None
 
 
@@ -561,7 +438,7 @@ def admin_adding_interface(handler: UserHandler, from_id: int, text: str, data) 
     if __compute_button_admin_add_student(handler, from_id, text):
         return admin_adding_interface, None
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
     return admin_adding_interface, None
 
 
@@ -571,7 +448,7 @@ def adding_exercise_waiting_exercise_name(handler: UserHandler, from_id: int, te
 
     if __compute_button_back(handler, from_id, text,
                              keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)),
-                             message_info=MESSAGE_ON_ADMIN_ADD_COMMAND):
+                             message_info=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND):
         return admin_adding_interface, None
 
     grade = int(data)  # Getting chooses grade
@@ -579,21 +456,21 @@ def adding_exercise_waiting_exercise_name(handler: UserHandler, from_id: int, te
 
     # If exercise with same name already exists, reset creating
     if handler.is_exists_exercise_name(exercise_name):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_EXISTS_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ALREADY_EXISTS_EXERCISE_NAME)
         return adding_exercise_waiting_exercise_name, data
 
     # If exercise name is incorrect, reset creating
     if exercise_name.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_name(exercise_name):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_NEW_EXERCISE_NAME)
         return adding_exercise_waiting_exercise_name, data
 
     # If exercise name too long, reset creating
     if len(exercise_name) > constants.MAX_HOMEWORK_NAME_SIZE:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_TOO_LONG_NEW_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_TOO_LONG_NEW_EXERCISE_NAME)
         return adding_exercise_waiting_exercise_name, data
 
     # Start waiting number of tasks in new exercise
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME)
     return adding_exercise_waiting_number_of_right_answers, (grade, exercise_name)
 
 
@@ -615,11 +492,11 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
 
     # If number of tasks is incorrect or not positive, reset creating
     if not success or number_of_tasks <= 0:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NUMBER_OF_TASKS)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_NUMBER_OF_TASKS)
         return adding_exercise_waiting_number_of_right_answers, data
 
     # Start waiting all right answers in new exercise
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NUMBER_OF_TASKS)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CORRECT_NUMBER_OF_TASKS)
 
     # Data description: (grade, exercise name, number of tasks, amount, list of right answers)
     return adding_exercise_waiting_list_of_right_answers(handler, from_id, text,
@@ -631,18 +508,18 @@ def adding_exercise_waiting_list_of_right_answers(handler: UserHandler, from_id:
     # This function is called on admin input during waiting list of right answers for create new exercise
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
-                             message_info=MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME):
+                             message_info=messages_text.MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME):
         return adding_exercise_waiting_number_of_right_answers, (data[0], data[1])
 
     # Waiting right answer starts when current_number > 0 and stop when current_number == amount
     if data[3] > 0:
         right_answer = text  # Current right answer
         data = (data[0], data[1], data[2], data[3], data[4] + [right_answer])
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_ACCEPTED_RIGHT_ANSWER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ACCEPTED_RIGHT_ANSWER)
 
     if data[3] < data[2]:
         data = (data[0], data[1], data[2], data[3] + 1, data[4])
-        handler.send_message(send_id=from_id, text=MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=data[3]))
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=data[3]))
         return adding_exercise_waiting_list_of_right_answers, data
 
     grade = int(data[0])  # Getting stored exercise grade
@@ -651,7 +528,7 @@ def adding_exercise_waiting_list_of_right_answers(handler: UserHandler, from_id:
 
     handler.add_exercise(exercise_name, grade, answers)  # Add new exercise
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE,
                          markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)))
     return admin_adding_interface, None
 
@@ -662,7 +539,7 @@ def adding_student_waiting_login(handler: UserHandler, from_id: int, text: str, 
 
     if __compute_button_back(handler, from_id, text,
                              keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)),
-                             message_info=MESSAGE_ON_ADMIN_ADD_COMMAND):
+                             message_info=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND):
         return admin_adding_interface, None
 
     grade = int(data)  # Getting chooses grade
@@ -670,21 +547,21 @@ def adding_student_waiting_login(handler: UserHandler, from_id: int, text: str, 
 
     # If login already exists, reset creating
     if handler.is_exists_login(login):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN)
         return adding_student_waiting_login, data
 
     # If login is incorrect, reset creating
     if login.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_name(login):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_STUDENT_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_NEW_STUDENT_LOGIN)
         return adding_student_waiting_login, data
 
     # If login too long, reset creating
     if len(login) > constants.MAX_LOGIN_SIZE:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_TOO_LONG_NEW_STUDENT_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_TOO_LONG_NEW_STUDENT_LOGIN)
         return adding_student_waiting_login, data
 
     # Start waiting password of new student account
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NEW_STUDENT_LOGIN)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CORRECT_NEW_STUDENT_LOGIN)
     return adding_student_waiting_password, (grade, login)
 
 
@@ -700,7 +577,7 @@ def adding_student_waiting_password(handler: UserHandler, from_id: int, text: st
 
     handler.add_user(login, password, constants.STUDENT_STATUS, grade=grade)  # Creating new student account
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT,
                          markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)))
     return admin_adding_interface, None
 
@@ -710,28 +587,28 @@ def adding_admin_waiting_login(handler: UserHandler, from_id: int, text: str, da
     # This function is called when super-admin wants to create new admin account (waiting login)
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_adding_interface_keyboard(True),
-                             message_info=MESSAGE_ON_ADMIN_ADD_COMMAND):
+                             message_info=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND):
         return admin_adding_interface, None
 
     login: str = text  # Current login
 
     # If login already exists, reset creating
     if handler.is_exists_login(login):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_EXISTS_ADMIN_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ALREADY_EXISTS_ADMIN_LOGIN)
         return adding_admin_waiting_login, None
 
     # If login is incorrect, reset creating
     if login.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_name(login):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_ADMIN_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_NEW_ADMIN_LOGIN)
         return adding_admin_waiting_login, None
 
     # If login too long, reset creating
     if len(login) > constants.MAX_LOGIN_SIZE:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_TOO_LONG_NEW_ADMIN_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_TOO_LONG_NEW_ADMIN_LOGIN)
         return adding_admin_waiting_login, None
 
     # Start waiting password of new admin account
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NEW_ADMIN_LOGIN)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CORRECT_NEW_ADMIN_LOGIN)
     return adding_admin_waiting_password, login
 
 
@@ -739,7 +616,7 @@ def adding_admin_waiting_password(handler: UserHandler, from_id: int, text: str,
     # This function is called when super-admin wants to create new admin account (waiting password)
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
-                             message_info=MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN):
+                             message_info=messages_text.MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN):
         return adding_admin_waiting_login, None
 
     login: str = data  # Current login
@@ -747,7 +624,7 @@ def adding_admin_waiting_password(handler: UserHandler, from_id: int, text: str,
 
     handler.add_user(login, password, constants.ADMIN_STATUS)  # Creating new admin account
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_ADDING_NEW_ADMIN_ACCOUNT,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADDING_NEW_ADMIN_ACCOUNT,
                          markup=keyboard_markups.get_adding_interface_keyboard(True))
     return admin_adding_interface, None
 
@@ -763,7 +640,7 @@ def admin_deletion_interface(handler: UserHandler, from_id: int, text: str, data
     if __compute_button_admin_delete_exercise(handler, from_id, text, keyboard_markups.get_back_button_keyboard()):
         return deleting_exercise_waiting_name, None
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_COMMAND)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
     return admin_deletion_interface, None
 
 
@@ -772,7 +649,7 @@ def deleting_account_waiting_login(handler: UserHandler, from_id: int, text: str
     # This function is called when admin wants to delete exist account (waiting login)
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_deleting_interface_keyboard(),
-                             message_info=MESSAGE_ON_ADMIN_DELETE_COMMAND):
+                             message_info=messages_text.MESSAGE_ON_ADMIN_DELETE_COMMAND):
         return admin_deletion_interface, None
 
     login: str = text  # Current login
@@ -780,25 +657,25 @@ def deleting_account_waiting_login(handler: UserHandler, from_id: int, text: str
 
     # If there is no such login, reset deleting
     if user is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_LOGIN_FOR_DELETE)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_LOGIN_FOR_DELETE)
         return deleting_account_waiting_login, None
 
     # Admin can delete only users accounts
     if user.status == constants.SUPER_ADMIN_STATUS or not handler.is_super_admin(from_id) \
             and user.status == constants.ADMIN_STATUS:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_FORBIDDEN_LOGIN_FOR_DELETE,
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_FORBIDDEN_LOGIN_FOR_DELETE,
                              markup=keyboard_markups.get_deleting_interface_keyboard())
         return admin_deletion_interface, None
 
     # Send notification to last user if he exists
     if user.telegram_id != constants.UNAUTHORIZED_TELEGRAM_ID:
-        handler.send_message(send_id=user.telegram_id, text=NOTIFICATION_FOR_LAST_USER_ON_DELETED_ACCOUNT,
+        handler.send_message(send_id=user.telegram_id, text=messages_text.NOTIFICATION_FOR_LAST_USER_ON_DELETED_ACCOUNT,
                              markup=keyboard_markups.remove_keyboard())
         handler.update_user_state(user.telegram_id, unauthorized_user_waiting_login, None)
 
     handler.delete_user(login)  # Deleting account
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_DELETION_ACCOUNT,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_DELETION_ACCOUNT,
                          markup=keyboard_markups.get_deleting_interface_keyboard())
     return admin_deletion_interface, None
 
@@ -808,18 +685,18 @@ def deleting_exercise_waiting_name(handler: UserHandler, from_id: int, text: str
     # This function is called when admin wants to delete exist exercise (waiting homework name)
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_deleting_interface_keyboard(),
-                             message_info=MESSAGE_ON_ADMIN_DELETE_COMMAND):
+                             message_info=messages_text.MESSAGE_ON_ADMIN_DELETE_COMMAND):
         return admin_deletion_interface, None
 
     exercise_name: str = text  # Current exercise name
 
     # If there is no such exercise, reset deleting
     if not handler.is_exists_exercise_name(exercise_name):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_EXERCISE_NAME_FOR_DELETE)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_EXERCISE_NAME_FOR_DELETE)
         return deleting_exercise_waiting_name, None
 
     handler.delete_exercise(exercise_name)  # Deleting exercise
 
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_DELETION_EXERCISE,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_DELETION_EXERCISE,
                          markup=keyboard_markups.get_deleting_interface_keyboard())
     return admin_deletion_interface, None
