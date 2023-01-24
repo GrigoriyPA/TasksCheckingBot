@@ -93,6 +93,9 @@ class TelegramClient:
 
         self.__client.infinity_polling()  # Launch bot
 
+    def edit_message(self, from_id: int, message_id: int, text: str, markup: MARKUP_TYPES = None) -> None:
+        self.__client.edit_message_text(chat_id=from_id, message_id=message_id, text=text, reply_markup=markup)
+
     def send_message(self, send_id: int, text: str, attachments: Optional[list[Attachment]] = None,
                      markup: MARKUP_TYPES = None) -> None:
         # If there is no attachments, just send text

@@ -12,22 +12,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-    # def __check_task(self, login: str, homework_name: str, task_id: int):
-    #     user = self.database.get_user_by_login(login)
-    #
-    #     # If there is no such user just return None
-    #     if user is None:
-    #         return None
-    #
-    #     user_answer = self.database.get_user_answer_for_the_task(login, homework_name, task_id)
-    #
-    #     # If user did not give any answers just return None
-    #     if user_answer is None or user_answer == '':
-    #         return None
-    #
-    #     # Returns True if user answer is right
-    #     return self.database.get_right_answer_for_the_task(homework_name, task_id) == user_answer
-    #
     # def __compute_wait_answer(self, message) -> None:
     #     # This function is called on user input during waiting answer on some exercise
     #
@@ -159,28 +143,6 @@ if __name__ == "__main__":
     #     self.database.add_homework(Homework(homework_name, grade, answers))  # Add new exercise
     #     self.__send_message(message.chat.id, "Задание успешно добавленно.", markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_callback_select_homework(self, data: list[str], message) -> None:
-    #     # This function is called when user chooses homework for solve (in list of homeworks)
-    #
-    #     # If user is not student, reject choice
-    #     if not self.__is_student(message.chat.id):
-    #         self.__send_message(message.chat.id, "Выбор задания невозможен.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #     homework_name = data[0]  # Getting chooses homework name
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #
-    #     # If homework was blocked or deleted, reject choice
-    #     if homework is None or homework.grade != user.grade:
-    #         self.__send_message(message.chat.id, "Выбранная работа недоступна.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Creating table of tasks
-    #     markup = markups.get_task_list(user.login, len(homework.right_answers), homework.name, self.__check_task)
-    #     self.__send_message(message.chat.id, "Выберите задание.", markup=markup)
-    #
     # def __compute_callback_select_task(self, data: list[str], message) -> None:
     #     # This function is called when user chooses task for solve (in list of tasks)
     #
@@ -219,79 +181,6 @@ if __name__ == "__main__":
     #     self.__send_message(message.chat.id, "Введите ответ на задание " + str(task_id) + ":",
     #                         markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_callback_show_task(self, data: list[str], message) -> None:
-    #     # This function is called when user chooses task for see right answer on this task (in list of tasks)
-    #
-    #     # If user is not student, reject choice
-    #     if not self.__is_student(message.chat.id):
-    #         self.__send_message(message.chat.id, "Просмотр задания невозможен.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #     homework_name, task_id = data[0], int(data[1])  # Getting chooses homework name and task id
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #
-    #     # If homework was blocked or deleted, reject choice
-    #     if homework is None or homework.grade != user.grade:
-    #         self.__send_message(message.chat.id, "Выбранная работа недоступна.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     answer = self.database.get_user_answer_for_the_task(user.login, homework_name,
-    #                                                         task_id)  # Getting user answer on current task
-    #     correct_answer = self.database.get_right_answer_for_the_task(homework_name, task_id)
-    #
-    #     # If task was blocked or deleted, reject choice
-    #     if answer is None or correct_answer is None:
-    #         self.__send_message(message.chat.id, "Выбранное задание недоступно.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Compare answers and show right answer
-    #     if answer != correct_answer:
-    #         self.__send_message(message.chat.id, "Ваш ответ: " + answer + "\nПравильный ответ: " + correct_answer,
-    #                             markup=self.__get_markup(message.chat.id))
-    #     else:
-    #         self.__send_message(message.chat.id, "Ваш правильный ответ: " + answer,
-    #                             markup=self.__get_markup(message.chat.id))
-    #
-    # def __compute_callback_show_task_in_table(self, data: list[str], message) -> None:
-    #     # This function is called when user chooses task for see right answer on this task (in results table)
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user is not authorized, reject choice
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     login, homework_name, task_id = data[0], data[1], int(
-    #         data[2])  # Getting chooses user login, homework name and task id
-    #
-    #     # If user is not admin, and he want to see someone else's answer, reject choice
-    #     if not self.__is_admin(message.chat.id) and login != user.login:
-    #         return
-    #
-    #     answer = self.database.get_user_answer_for_the_task(login, homework_name,
-    #                                                         task_id)  # Getting user answer on current task
-    #     correct_answer = self.database.get_right_answer_for_the_task(homework_name, task_id)
-    #
-    #     # If task was blocked or deleted, reject choice
-    #     if answer is None or correct_answer is None:
-    #         self.__send_message(message.chat.id, "Выбранное задание недоступно.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Show right answer
-    #     if self.__is_admin(message.chat.id):
-    #         self.__send_message(message.chat.id, "Правильный ответ на задание " + str(
-    #             task_id) + ": " + correct_answer + "\nОтвет \'" + login + "\' на задание: " + answer,
-    #                             markup=self.__get_markup(message.chat.id))
-    #     else:
-    #         self.__send_message(message.chat.id, "Правильный ответ на задание " + str(
-    #             task_id) + ": " + correct_answer + "\nВаш ответ на задание: " + answer,
-    #                             markup=self.__get_markup(message.chat.id))
     #
     # def __compute_callback_show_password(self, data: list[str], message) -> None:
     #     # This function is called when admin chooses some user for see his password (in list of logins)
@@ -322,36 +211,6 @@ if __name__ == "__main__":
     #     self.__send_message(message.chat.id, "Пароль пользователя \'" + login + "\': " + user.password,
     #                         markup=self.__get_markup(message.chat.id))
     #
-    # def __compute_callback_refresh_results_table(self, data: list[str], message) -> None:
-    #     # This function is called when user wants to refresh results table
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user is not authorized, reject attempt
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     homework_name, first_task_id = data[0], int(data[1])  # Getting chooses homework name and last first task id
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #
-    #     # If homework was blocked or deleted, reject choice
-    #     if homework is None:
-    #         self.__send_message(message.chat.id, "Выбранное задание недоступно.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Update results table
-    #     markup = markups.get_results_table(self.database.get_results(constants.STUDENT_STATUS, homework_name),
-    #                                        homework_name,
-    #                                        len(homework.right_answers), first_task_id)
-    #     try:
-    #         self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text,
-    #                                       reply_markup=markup)
-    #     except:
-    #         # Table already updated
-    #         self.__send_message(message.chat.id, "Информация актуальна.", markup=self.__get_markup(message.chat.id))
-    #
     # def __compute_callback_describe_exercise(self, data: list[str], message) -> None:
     #     # This function is called when admin chooses some exercise for see its description (in list of exercises)
     #
@@ -376,35 +235,6 @@ if __name__ == "__main__":
     #     for i in range(len(homework.right_answers)):
     #         text += str(i + 1) + ": " + homework.right_answers[i] + "\n"
     #     self.__send_message(message.chat.id, text, markup=self.__get_markup(message.chat.id))
-    #
-    # def __compute_callback_change_results_table(self, data: list[str], message) -> None:
-    #     # This function is called when user wants to switch page in results table
-    #
-    #     user = self.database.get_user_by_telegram_id(message.chat.id)
-    #
-    #     # If user is not authorized, reject attempt
-    #     if user is None:
-    #         self.__send_message(message.chat.id, "Вы не авторизованы.", markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     homework_name, first_task_id = data[0], int(data[1])  # Getting chooses homework name and new first task id
-    #     homework = self.database.get_homework_by_name(homework_name)
-    #
-    #     # If homework was blocked or deleted, reject choice
-    #     if homework is None:
-    #         self.__send_message(message.chat.id, "Выбранное задание недоступно.",
-    #                             markup=self.__get_markup(message.chat.id))
-    #         return
-    #
-    #     # Update results table
-    #     markup = markups.get_results_table(self.database.get_results(constants.STUDENT_STATUS, homework_name),
-    #                                        homework_name,
-    #                                        len(homework.right_answers), first_task_id)
-    #     try:
-    #         self.client.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message.text,
-    #                                       reply_markup=markup)
-    #     except:
-    #         pass
     #
     # def __compute_callback_get_current_user_on_login(self, data: list[str], message) -> None:
     #     # This function is called when admin wants to see current user on chooses login (in list of logins)
@@ -607,42 +437,12 @@ if __name__ == "__main__":
     #
     #     @self.client.callback_query_handler(func=lambda call: True)
     #     def callback_inline(call):
-    #         # Computing callback from inline button
-    #
-    #         self.client.answer_callback_query(
-    #             callback_query_id=call.id)  # Answer on callback (required to continue working with the button)
-    #         callback_type = call.data[0]  # Special type of pressed button
-    #         data = call.data[1:].split("$")
-    #
-    #         # NONE - type of empty button
-    #         if callback_type == "0":  # NONE
-    #             return
-    #
-    #         # Drop current waiting mode if button was pressed
-    #         if call.message.chat.id in self.wait_mode and self.wait_mode[call.message.chat.id] is not None:
-    #             self.__compute_keyboard_back(call.message)
-    #
-    #         # Finding value of current action type
-    #         if callback_type == "A":  # SELECT_HOMEWORK
-    #             self.__compute_callback_select_homework(data, call.message)
     #         elif callback_type == "B":  # SELECT_TASK
     #             self.__compute_callback_select_task(data, call.message)
-    #         elif callback_type == "C":  # SHOW_HOMEWORK
-    #             self.__compute_callback_show_homework(data, call.message)
-    #         elif callback_type == "D":  # SHOW_TASK
-    #             self.__compute_callback_show_task(data, call.message)
-    #         elif callback_type == "E":  # SHOW_TASK_IN_TABLE
-    #             self.__compute_callback_show_task_in_table(data, call.message)
     #         elif callback_type == "F":  # SHOW_PASSWORD
     #             self.__compute_callback_show_password(data, call.message)
-    #         elif callback_type == "G":  # REFRESH_RESULTS_TABLE
-    #             self.__compute_callback_refresh_results_table(data, call.message)
     #         elif callback_type == "H":  # DESCRIBE_EXERCISE
     #             self.__compute_callback_describe_exercise(data, call.message)
-    #         elif callback_type == "I":  # CHANGE_RESULTS_TABLE
-    #             self.__compute_callback_change_results_table(data, call.message)
-    #         elif callback_type == "J":  # GET_USER_STATISTIC_IN_TABLE
-    #             self.__compute_callback_get_user_statistic_in_table(data, call.message)
     #         elif callback_type == "K":  # GET_CURRENT_USER_ON_LOGIN
     #             self.__compute_callback_get_current_user_on_login(data, call.message)
     #         elif callback_type == "L":  # GET_USER_RESULTS

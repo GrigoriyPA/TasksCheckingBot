@@ -38,8 +38,6 @@ MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удал
 MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE = "На данный момент для вас нет открытых работ."
 MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
 
-CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = "A"
-
 # __compute_button_admin_add_student
 MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
 
@@ -263,7 +261,7 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
     if user_info is not None:
         markup = inline_markups.get_list_of_all_homeworks_inline_markup(
             handler.get_all_exercises_names_for_grade(user_info.grade),
-            CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER)
+            inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER)
     else:
         markup = None
 

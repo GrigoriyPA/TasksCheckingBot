@@ -4,7 +4,9 @@ from typing import Any, Optional
 
 # common
 MESSAGE_ON_UNAUTHORIZED_USER = "Вы не авторизованы."
-MESSAGE_ON_UNKNOWN_EXERCISE_NAME = "Выбранное задание недоступно."
+MESSAGE_ON_NOT_STUDENT_USER = "Выбор задания невозможен."
+MESSAGE_ON_UNKNOWN_EXERCISE_NAME = "Выбранная работа недоступна."
+MESSAGE_ON_INVALID_TASK = "Выбранное задание недоступно."
 
 # compute_show_results_table_callback
 MESSAGE_ON_SUCCESS_CREATION_TABLE = "Текущие результаты по работе '{exercise_name}', {grade} класс:"
@@ -12,24 +14,38 @@ MESSAGE_ON_SUCCESS_CREATION_TABLE = "Текущие результаты по р
 # compute_show_login_in_results_table_callback
 MESSAGE_ON_SHOW_LOGIN_IN_RESULTS_TABLE = "{login}\nРешено {solved_tasks_number} / {tasks_number} задач."
 
+# compute_cell_of_solved_task_in_table_callback
+MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Правильный ответ '{login}' на задание {task_id}: {answer}"
+MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Правильный ответ на задание {task_id}: {correct_answer}\n" \
+                                                          "Ответ '{login}' на задание: {answer}"
+MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Ваш правильный ответ на задание {task_id}: {answer}"
+MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Правильный ответ на задание {task_id}: {correct_answer}\n" \
+                                                            "Ваш ответ на задание:  {answer}"
 
-def compute_callback(handler, from_id: int, message_id: int, callback_data: str) -> tuple[Optional[Callable], Any]:
+# compute_refresh_results_table_callback
+MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE = "Информация актуальна."
+
+# compute_select_homework_for_send_answer_callback
+TOP_MESSAGE_OF_STUDENT_TASK_LIST = "Выберите задание."
+
+
+def compute_callback(handler, from_id: int, message_id: int, text: str, callback_data: str) -> tuple[Optional[Callable], Any]:
     # Parsing callback data
     callback_type = callback_data[0]
     callback_data = callback_data[1:].split(inline_markups.CALLBACK_SEPARATION_ELEMENT)
 
-    return CALLBACK_HANDLING_FUNCTION[callback_type](handler, from_id, message_id, callback_data)
+    return CALLBACK_HANDLING_FUNCTION[callback_type](handler, from_id, message_id, text, callback_data)
 
 
 # Callback computing functions
 
-def compute_none_callback(handler, from_id: int, message_id: int,
+def compute_none_callback(handler, from_id: int, message_id: int, text: str,
                           callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # Do nothing
     return None, None
 
 
-def compute_show_results_table_callback(handler, from_id: int, message_id: int,
+def compute_show_results_table_callback(handler, from_id: int, message_id: int, text: str,
                                         callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when user chooses homework for show results (in list of homeworks)
 
@@ -59,7 +75,7 @@ def compute_show_results_table_callback(handler, from_id: int, message_id: int,
     return None, None
 
 
-def compute_show_login_in_results_table_callback(handler, from_id: int, message_id: int,
+def compute_show_login_in_results_table_callback(handler, from_id: int, message_id: int, text: str,
                                                  callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when user wants to see statistic of one user in results table
 
@@ -88,8 +104,151 @@ def compute_show_login_in_results_table_callback(handler, from_id: int, message_
     return None, None
 
 
-CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, list[str]], tuple[Optional[Callable], Any]]] = {
+def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message_id: int, text: str,
+                                                  callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when user chooses task for see right answer on this task (in results table)
+
+    user = handler.get_user_info_by_id(from_id)
+
+    # If user is not authorized, reject choice
+    if user is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        return None, None
+
+    # Getting chooses user login, homework name and task id
+    login, exercise_name, task_id = callback_data[0], callback_data[1], int(callback_data[2])
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # If user is not admin, and he want to see someone else's answer, reject choice
+    if not handler.is_admin(from_id) and login != user.login:
+        return None, None
+
+    # Getting user answer on current task
+    answer = handler.get_user_answer_on_task(login, exercise_name, task_id)
+    correct_answer = handler.get_right_answer_on_task(exercise_name, task_id)
+
+    # If task was blocked or deleted, reject choice
+    if answer is None or correct_answer is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_TASK)
+        return None, None
+
+    # Show right answer
+    if answer == correct_answer:
+        if handler.is_admin(from_id):
+            handler.send_message(send_id=from_id,
+                                 text=MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
+                                                                                                     task_id=str(task_id),
+                                                                                                     answer=answer))
+        else:
+            handler.send_message(send_id=from_id,
+                                 text=MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
+                                                                                                       answer=answer))
+    else:
+        if handler.is_admin(from_id):
+            handler.send_message(send_id=from_id,
+                                 text=MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
+                                                                                                     task_id=str(task_id),
+                                                                                                     correct_answer=correct_answer,
+                                                                                                     answer=answer))
+        else:
+            handler.send_message(send_id=from_id,
+                                 text=MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
+                                                                                                       correct_answer=correct_answer,
+                                                                                                       answer=answer))
+    return None, None
+
+
+def compute_refresh_results_table_callback(handler, from_id: int, message_id: int, text: str,
+                                           callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when user wants to refresh results table
+
+    # If user is not authorized, reject choice
+    if not handler.is_authorized(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        return None, None
+
+    # Getting chooses homework name and last first task id
+    exercise_name, first_task_id = callback_data[0], int(callback_data[1])
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # Update results table
+    markup = inline_markups.get_results_table_inline_markup(
+        handler.get_results_of_students_by_exercise_name(exercise_name), exercise_name,
+        len(exercise_info.right_answers), first_task_id)
+
+    if not handler.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE)
+    return None, None
+
+
+def compute_switch_results_table_callback(handler, from_id: int, message_id: int, text: str,
+                                          callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when user wants to switch page in results table
+
+    # If user is not authorized, reject choice
+    if not handler.is_authorized(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        return None, None
+
+    # Getting chooses homework name and last first task id
+    exercise_name, first_task_id = callback_data[0], int(callback_data[1])
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # Update results table
+    markup = inline_markups.get_results_table_inline_markup(
+        handler.get_results_of_students_by_exercise_name(exercise_name), exercise_name,
+        len(exercise_info.right_answers), first_task_id)
+
+    handler.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup)
+    return None, None
+
+
+def compute_select_homework_for_send_answer_callback(handler, from_id: int, message_id: int, text: str,
+                                                     callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when user chooses homework for solve (in list of homeworks)
+
+    # If user is not student, reject choice
+    if not handler.is_student(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_STUDENT_USER)
+        return None, None
+
+    exercise_name = callback_data[0]  # Getting chooses homework name
+    user_info = handler.get_user_info_by_id(from_id)
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None or exercise_info.grade != user_info.grade:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # Creating table of tasks
+    markup = inline_markups.get_student_task_list_inline_markup(user_info.login, len(exercise_info.right_answers),
+                                                                exercise_name, handler.check_task)
+    handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_STUDENT_TASK_LIST, markup=markup)
+    return None, None
+
+
+CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], tuple[Optional[Callable], Any]]] = {
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
-    inline_markups.CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE: compute_show_login_in_results_table_callback
+    inline_markups.CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE: compute_show_login_in_results_table_callback,
+    inline_markups.CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK: compute_cell_of_solved_task_in_table_callback,
+    inline_markups.CALLBACK_DATA_REFRESH_RESULTS_TABLE: compute_refresh_results_table_callback,
+    inline_markups.CALLBACK_DATA_MOVE_RESULTS_TABLE: compute_switch_results_table_callback,
+    inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER: compute_select_homework_for_send_answer_callback
 }

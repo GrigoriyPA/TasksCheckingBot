@@ -1,5 +1,4 @@
-from bot import config
-from bot import constants
+from bot import config, constants
 from bot.database.database_funcs import DatabaseHelper
 from bot.telegram_logic import handling_functions, callback_functions
 from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
@@ -7,6 +6,9 @@ from bot.user import User
 from bot.homework import Homework
 from collections.abc import Callable
 from typing import Any, Optional
+
+
+MESSAGE_ON_START_COMMAND = "Состояние сессии сброшено..."
 
 
 def add_error_to_log(text: str) -> None:
@@ -76,15 +78,6 @@ class UserHandler:
     def get_users_info_by_status(self, status: str) -> list[User]:
         return self.__database.get_all_users_with_status(status)
 
-    def get_number_of_right_answers_on_task(self, login: str, exercise_name: str) -> int:
-        exercise_info = self.__database.get_homework_by_name(exercise_name)
-        tasks_number = len(exercise_info.right_answers)
-        solved_tasks_number = 0
-        for i in range(1, tasks_number + 1):
-            solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) == \
-                                   exercise_info.right_answers[i - 1]
-        return solved_tasks_number
-
     # Access to exercise statistic
     def is_exists_exercise_name(self, exercise_name: str) -> bool:
         return self.__database.get_homework_by_name(exercise_name) is not None
@@ -100,6 +93,37 @@ class UserHandler:
 
     def get_exercise_info_by_name(self, exercise_name: str) -> Optional[Homework]:
         return self.__database.get_homework_by_name(exercise_name)
+
+    def get_number_of_right_answers_on_task(self, login: str, exercise_name: str) -> int:
+        exercise_info = self.__database.get_homework_by_name(exercise_name)
+        tasks_number = len(exercise_info.right_answers)
+        solved_tasks_number = 0
+        for i in range(1, tasks_number + 1):
+            solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) == \
+                                   exercise_info.right_answers[i - 1]
+        return solved_tasks_number
+
+    def get_user_answer_on_task(self, login: str, exercise_name: str, task_id: int):
+        return self.__database.get_user_answer_for_the_task(login, exercise_name, task_id)
+
+    def get_right_answer_on_task(self, exercise_name: str, task_id: int):
+        return self.__database.get_right_answer_for_the_task(exercise_name, task_id)
+
+    def check_task(self, login: str, homework_name: str, task_id: int):
+        user = self.__database.get_user_by_login(login)
+
+        # If there is no such user just return None
+        if user is None:
+            return None
+
+        user_answer = self.__database.get_user_answer_for_the_task(login, homework_name, task_id)
+
+        # If user did not give any answers just return None
+        if user_answer is None or user_answer == '':
+            return None
+
+        # Returns True if user answer is right
+        return self.__database.get_right_answer_for_the_task(homework_name, task_id) == user_answer
 
     # Change user data
     def sign_in_user(self, login: str, user_id: int) -> None:
@@ -141,7 +165,8 @@ class UserHandler:
 
         self.__add_user(callback.from_id)
         new_state, new_data = \
-            callback_functions.compute_callback(self, callback.from_id, callback.message_id, callback.callback_data)
+            callback_functions.compute_callback(self, callback.from_id, callback.message_id, callback.text,
+                                                callback.callback_data)
 
         if new_state is not None:
             self.__user_state[callback.from_id], self.__user_data[callback.from_id] = new_state, new_data
@@ -151,9 +176,21 @@ class UserHandler:
         if message.is_from_chat():
             return
 
+        if message.from_id in self.__user_state and message.text == "/start":
+            self.send_message(send_id=message.from_id, text=MESSAGE_ON_START_COMMAND)
+            handling_functions.default_state(self, message.from_id, message.text, self.__user_data[message.from_id])
+            return
+
         self.__add_user(message.from_id)
         self.__user_state[message.from_id], self.__user_data[message.from_id] = \
             self.__user_state[message.from_id](self, message.from_id, message.text, self.__user_data[message.from_id])
+
+    def edit_message(self, from_id: int, message_id: int, text: str, markup: MARKUP_TYPES = None) -> bool:
+        try:
+            self.client.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup)
+            return True
+        except Exception as error:
+            return False
 
     def send_message(self, send_id: int, text: str, attachments: Optional[list[Attachment]] = None,
                      markup: MARKUP_TYPES = None) -> None:

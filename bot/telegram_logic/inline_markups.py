@@ -5,6 +5,9 @@ from typing import Optional
 # All callback data must be different and represented by one char
 
 # common
+BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK = "✅"
+BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK = "❌"
+
 CALLBACK_SEPARATION_ELEMENT = "$"  # Element that divide callback data
 CALLBACK_DATA_NONE = "0"  # Button do nothing
 
@@ -13,8 +16,6 @@ CALLBACK_DATA_NONE = "0"  # Button do nothing
 BUTTON_NAME_OF_COLUMN_OF_USER_NUMBERS = "№"
 BUTTON_NAME_OF_COLUMN_OF_USER_LOGINS = "Логин"
 BUTTON_NAME_OF_CELL_OF_NOT_SOLVED_TASK = " "
-BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK = "✅"
-BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK = "❌"
 BUTTON_NAME_OF_ROW_OF_NUMBER_OF_SOLVED_TASKS = "Σ"
 BUTTON_NAME_MOVE_TABLE_LEFT_ONE_STEP_NO_ACTION = " "
 BUTTON_NAME_MOVE_TABLE_LEFT_MANY_STEPS_NO_ACTION = " "
@@ -30,6 +31,9 @@ CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = "J"
 CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK = "E"
 CALLBACK_DATA_MOVE_RESULTS_TABLE = "I"
 CALLBACK_DATA_REFRESH_RESULTS_TABLE = "G"
+
+# get_student_task_list_inline_markup
+CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER = "D"
 
 # get_exercise_actions_inline_markup
 BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS = "Результаты"
@@ -47,6 +51,9 @@ BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
 CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = "F"
 CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = "K"
 CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "L"
+
+# other
+CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = "A"
 
 
 def get_results_table_inline_markup(results, homework_name: str, homework_size: int,
@@ -180,6 +187,45 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
     return types.InlineKeyboardMarkup(keyboard)
 
 
+def get_student_task_list_inline_markup(login: str, homework_size: int, homework_name: str, check_task):
+    # This function returns table of buttons for tasks list
+
+    keyboard = []  # Final keyboard storage
+    row = []  # Temporary storage for current row
+    for task_id in range(1, homework_size + 1):
+        # None - there is no user answer, True - user answer is right, False otherwise
+        task_state = check_task(login, homework_name, task_id)
+
+        # Add button depend on task state
+        if task_state is None:
+            row.append(types.InlineKeyboardButton(text=str(task_id),
+                                                  callback_data=CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER +
+                                                                homework_name +
+                                                                CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+        elif task_state:
+            row.append(types.InlineKeyboardButton(text=str(task_id) + " " + BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
+                                                  callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
+                                                                CALLBACK_SEPARATION_ELEMENT + homework_name +
+                                                                CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+        else:
+            row.append(types.InlineKeyboardButton(text=str(task_id) + " " + BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
+                                                  callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
+                                                                CALLBACK_SEPARATION_ELEMENT + homework_name +
+                                                                CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+
+        # End current row on length TASKS_NUMBER_IN_LINE
+        if len(row) == constants.TASKS_NUMBER_IN_LINE:
+            keyboard.append(row)
+            row = []
+
+    # Add last row to table
+    if len(row) > 0:
+        keyboard.append(row)
+
+    # Returns created keyboard
+    return types.InlineKeyboardMarkup(keyboard)
+
+
 def get_list_of_all_homeworks_inline_markup(homework_list: list[str],
                                             callback_data: str) -> Optional[types.InlineKeyboardMarkup]:
     # This function returns table of buttons for list of homeworks
@@ -266,35 +312,6 @@ def get_user_results_table(homework_list: list[str], user_results):
         keyboard.append([types.InlineKeyboardButton(text=homework_list[row_id], callback_data="C" + homework_list[row_id]),
                     types.InlineKeyboardButton(text=str(user_results[row_id][0]), callback_data="0"),
                     types.InlineKeyboardButton(text=str(user_results[row_id][1]), callback_data="0")])
-
-    # Returns created keyboard
-    return types.InlineKeyboardMarkup(keyboard)
-
-
-def get_task_list(login: str, homework_size: int, homework_name: str, check_task):
-    # This function returns table of buttons for tasks list
-
-    keyboard = []  # Final keyboard storage
-    row = []  # Temporary storage for current row
-    for task_id in range(1, homework_size + 1):
-        task_state = check_task(login, homework_name, task_id)  # None - there is no user answer, True - user answer is right, False otherwise
-
-        # Add button depend on task state
-        if task_state is None:
-            row.append(types.InlineKeyboardButton(text=str(task_id), callback_data="B" + homework_name + "$" + str(task_id)))
-        elif task_state:
-            row.append(types.InlineKeyboardButton(text=str(task_id) + " ✅", callback_data="D" + homework_name + "$" + str(task_id)))
-        else:
-            row.append(types.InlineKeyboardButton(text=str(task_id) + " ❌", callback_data="D" + homework_name + "$" + str(task_id)))
-
-        # End current row on length TASKS_NUMBER_IN_LINE
-        if len(row) == constants.TASKS_NUMBER_IN_LINE:
-            keyboard.append(row)
-            row = []
-
-    # Add last row to table
-    if len(row) > 0:
-        keyboard.append(row)
 
     # Returns created keyboard
     return types.InlineKeyboardMarkup(keyboard)
