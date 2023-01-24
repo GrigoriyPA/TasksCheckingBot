@@ -1,10 +1,11 @@
-from bot.telegram_logic import inline_markups
+from bot.telegram_logic import inline_markups, keyboard_markups, handling_functions
 from collections.abc import Callable
 from typing import Any, Optional
 
 # common
 MESSAGE_ON_UNAUTHORIZED_USER = "Вы не авторизованы."
 MESSAGE_ON_NOT_STUDENT_USER = "Выбор задания невозможен."
+MESSAGE_ON_NOT_ADMIN_USER = "Вы не обладаете достаточными правами."
 MESSAGE_ON_UNKNOWN_EXERCISE_NAME = "Выбранная работа недоступна."
 MESSAGE_ON_INVALID_TASK = "Выбранное задание недоступно."
 
@@ -27,6 +28,17 @@ MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE = "Информация �
 
 # compute_select_homework_for_send_answer_callback
 TOP_MESSAGE_OF_STUDENT_TASK_LIST = "Выберите задание."
+
+# compute_select_task_id_for_send_answer_callback
+MESSAGE_ON_START_WAITING_ANSWER_ON_TASK = "Введите ответ на задание {task_id}:"
+
+# compute_select_student_grade_for_create_callback
+MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT = "Введите логин для нового аккаунта " \
+                                                        "(доступны латинские символы, цифры и знаки препинания):"
+
+# compute_select_exercise_grade_for_create_callback
+MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE = "Введите название новой работы " \
+                                                    "(доступны латинские символы, цифры и знаки препинания):"
 
 
 def compute_callback(handler, from_id: int, message_id: int, text: str, callback_data: str) -> tuple[Optional[Callable], Any]:
@@ -243,6 +255,76 @@ def compute_select_homework_for_send_answer_callback(handler, from_id: int, mess
     return None, None
 
 
+def compute_select_task_id_for_send_answer_callback(handler, from_id: int, message_id: int, text: str,
+                                                    callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when user chooses task for solve (in list of tasks)
+
+    # If user is not student, reject choice
+    if not handler.is_student(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_STUDENT_USER)
+        return None, None
+
+    exercise_name, task_id = callback_data[0], int(callback_data[1])  # Getting chooses homework name and task id
+    user_info = handler.get_user_info_by_id(from_id)
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None or exercise_info.grade != user_info.grade:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # Update table of tasks
+    markup = inline_markups.get_student_task_list_inline_markup(user_info.login, len(exercise_info.right_answers),
+                                                                exercise_name, handler.check_task)
+    handler.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup)
+
+    # If task was blocked or deleted, reject choice
+    if handler.check_task(user_info.login, exercise_name, task_id) is not None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_TASK)
+        return None, None
+
+    # Start waiting of answer for current task in current exercise
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_START_WAITING_ANSWER_ON_TASK.format(task_id=str(task_id)),
+                         markup=keyboard_markups.get_back_button_keyboard())
+    return handling_functions.solving_task_waiting_answer, (exercise_name, task_id)
+
+
+def compute_select_student_grade_for_create_callback(handler, from_id: int, message_id: int, text: str,
+                                                     callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to create new student account
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    grade = int(callback_data[0])  # Getting chooses grade
+
+    # Start waiting of login for create new student account
+    handler.send_message(send_id=from_id,
+                         text=MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT,
+                         markup=keyboard_markups.get_back_button_keyboard())
+    return handling_functions.adding_student_waiting_login, grade
+
+
+def compute_select_exercise_grade_for_create_callback(handler, from_id: int, message_id: int, text: str,
+                                                      callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to create new exercise
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    grade = int(callback_data[0])  # Getting chooses grade
+
+    # Start waiting of exercise name for create
+    handler.send_message(send_id=from_id,
+                         text=MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE,
+                         markup=keyboard_markups.get_back_button_keyboard())
+    return handling_functions.adding_exercise_waiting_exercise_name, grade
+
+
 CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], tuple[Optional[Callable], Any]]] = {
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
@@ -250,5 +332,8 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK: compute_cell_of_solved_task_in_table_callback,
     inline_markups.CALLBACK_DATA_REFRESH_RESULTS_TABLE: compute_refresh_results_table_callback,
     inline_markups.CALLBACK_DATA_MOVE_RESULTS_TABLE: compute_switch_results_table_callback,
-    inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER: compute_select_homework_for_send_answer_callback
+    inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER: compute_select_homework_for_send_answer_callback,
+    inline_markups.CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER: compute_select_task_id_for_send_answer_callback,
+    inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE: compute_select_student_grade_for_create_callback,
+    inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE: compute_select_exercise_grade_for_create_callback
 }

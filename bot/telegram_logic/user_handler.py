@@ -7,7 +7,6 @@ from bot.homework import Homework
 from collections.abc import Callable
 from typing import Any, Optional
 
-
 MESSAGE_ON_START_COMMAND = "Состояние сессии сброшено..."
 
 
@@ -88,7 +87,8 @@ class UserHandler:
     def get_all_exercises_names_for_grade(self, grade: int) -> list[str]:
         return self.__database.get_all_homeworks_names_for_grade(grade)
 
-    def get_results_of_students_by_exercise_name(self, exercise_name: str):
+    def get_results_of_students_by_exercise_name(self, exercise_name: str) -> Optional[
+        list[tuple[User, list[tuple[str, str]]]]]:
         return self.__database.get_results(constants.STUDENT_STATUS, exercise_name)
 
     def get_exercise_info_by_name(self, exercise_name: str) -> Optional[Homework]:
@@ -103,13 +103,13 @@ class UserHandler:
                                    exercise_info.right_answers[i - 1]
         return solved_tasks_number
 
-    def get_user_answer_on_task(self, login: str, exercise_name: str, task_id: int):
+    def get_user_answer_on_task(self, login: str, exercise_name: str, task_id: int) -> Optional[str]:
         return self.__database.get_user_answer_for_the_task(login, exercise_name, task_id)
 
-    def get_right_answer_on_task(self, exercise_name: str, task_id: int):
+    def get_right_answer_on_task(self, exercise_name: str, task_id: int) -> str:
         return self.__database.get_right_answer_for_the_task(exercise_name, task_id)
 
-    def check_task(self, login: str, homework_name: str, task_id: int):
+    def check_task(self, login: str, homework_name: str, task_id: int) -> Optional[bool]:
         user = self.__database.get_user_by_login(login)
 
         # If there is no such user just return None
@@ -134,9 +134,9 @@ class UserHandler:
         if user is not None:
             self.__database.change_user_telegram_id(user.login, constants.UNAUTHORIZED_TELEGRAM_ID)
 
-    def add_user(self, login: str, password: str, status: str) -> None:
+    def add_user(self, login: str, password: str, status: str, grade: int = -1) -> None:
         self.__database.add_user(User(login=login, password=password, status=status,
-                                      telegram_id=constants.UNAUTHORIZED_TELEGRAM_ID))
+                                      telegram_id=constants.UNAUTHORIZED_TELEGRAM_ID, grade=grade))
 
     def delete_user(self, login: str) -> None:
         self.__database.delete_user_by_login(login)
@@ -147,8 +147,14 @@ class UserHandler:
         self.__user_data[user_id] = new_data
 
     # Change exercise data
+    def add_exercise(self, exercise_name: str, grade: int, answers: list[str]):
+        self.__database.add_homework(Homework(exercise_name, grade, answers))
+
     def delete_exercise(self, exercise_name: str) -> None:
         self.__database.delete_homework_by_name(exercise_name)
+
+    def send_answer_on_exercise(self, login: str, exercise_name: str, task_id: int, answer: str) -> Optional[str]:
+        return self.__database.send_answer_for_the_task(login, exercise_name, task_id, answer)
 
     # Bot interface
     def __add_user(self, user_id: int) -> None:

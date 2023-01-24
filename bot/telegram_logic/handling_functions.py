@@ -1,6 +1,5 @@
 from bot import constants
-from bot.telegram_logic import inline_markups
-from bot.telegram_logic import keyboard_markups
+from bot.telegram_logic import inline_markups, keyboard_markups, callback_functions
 from bot.telegram_logic.user_handler import UserHandler, check_new_login, MARKUP_TYPES
 from typing import Any, Callable
 
@@ -41,12 +40,8 @@ MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
 # __compute_button_admin_add_student
 MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
 
-CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE = "M"
-
 # __compute_button_admin_add_exercise
 MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE = "Выберите для какого класса будет создано задание."
-
-CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE = "N"
 
 # __compute_button_super_admin_add_admin_account
 MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN = "Введите логин для нового аккаунта администратора."
@@ -75,6 +70,42 @@ NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT = "В ваш профиль в�
                                                    "вы были разлогинены. Введите логин для авторизации."
 MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: администратор."
 MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: ученик."
+
+# solving_task_waiting_answer
+MESSAGE_ON_INVALID_EXERCISE_NAME = "Выбранное задание более недоступно."
+MESSAGE_ON_INVALID_ANSWER = "Введён некорректный ответ, повторите попытку сдачи."
+MESSAGE_RIGHT_RESULT_MARK = "✅"
+MESSAGE_WRONG_RESULT_MARK = "❌"
+MESSAGE_ON_RIGHT_ANSWER = "Ваш ответ правильный!"
+MESSAGE_ON_WRONG_ANSWER = "Ваш ответ неправильный. Правильный ответ: {correct_answer}"
+NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK = "'{login}', {grade} класс добавил ответ к заданию {task_id} в работе '{exercise_name}'\n" \
+                                         "Правильный ответ: {correct_answer}\n" \
+                                         "Ответ ученика: {answer}\n" \
+                                         "Результат: {result}"
+
+# adding_exercise_waiting_exercise_name
+MESSAGE_ON_ALREADY_EXISTS_EXERCISE_NAME = "Работа с введённым именем уже существует, повторите попытку."
+MESSAGE_ON_INVALID_NEW_EXERCISE_NAME = "Введённое имя работы содержит запрещённые символы, повторите попытку."
+MESSAGE_ON_TOO_LONG_NEW_EXERCISE_NAME = "Введённое имя работы слишком длинное, повторите попытку."
+MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME = "Введите число заданий в новой работе:"
+
+# adding_exercise_waiting_number_of_right_answers
+MESSAGE_ON_INVALID_NUMBER_OF_TASKS = "Введено некорректное число задач, повторите попытку."
+MESSAGE_ON_CORRECT_NUMBER_OF_TASKS = "Введите поочерёдно правильный ответ к каждому заданию."
+
+# adding_exercise_waiting_list_of_right_answers
+MESSAGE_ON_ACCEPTED_RIGHT_ANSWER = "Ответ принят."
+MESSAGE_REQUEST_FOR_NEW_ANSWER = "Введите ответ к задаче номер {task_id}:"
+MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE = "Новая работа успешно создана."
+
+# adding_student_waiting_login
+MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN = "Введённый логин уже существует, повторите попытку."
+MESSAGE_ON_INVALID_NEW_STUDENT_LOGIN = "Введённый логин содержит запрещённые символы, повторите попытку."
+MESSAGE_ON_TOO_LONG_NEW_STUDENT_LOGIN = "Введённый логин слишком длинный, повторите попытку."
+MESSAGE_ON_CORRECT_NEW_STUDENT_LOGIN = "Введите пароль для нового аккаунта ученика:"
+
+# adding_student_waiting_password
+MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT = "Новый аккаунт ученика успешно создан."
 
 # adding_admin_waiting_login
 MESSAGE_ON_ALREADY_EXISTS_ADMIN_LOGIN = "Введённый логин уже существует, повторите попытку."
@@ -284,7 +315,7 @@ def __compute_button_admin_add_student(handler: UserHandler, from_id: int, text:
     # Admin add student button have pressed, print list of all grades
     handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_NEW_STUDENT,
                          markup=inline_markups.get_list_of_all_grades_inline_markup(
-                             CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE))
+                                inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE))
     return True
 
 
@@ -297,7 +328,7 @@ def __compute_button_admin_add_exercise(handler: UserHandler, from_id: int, text
     # Admin add exercise button have pressed, print list of all grades
     handler.send_message(send_id=from_id, text=MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE,
                          markup=inline_markups.get_list_of_all_grades_inline_markup(
-                             CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE))
+                                inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE))
     return True
 
 
@@ -432,6 +463,60 @@ def default_student_page(handler: UserHandler, from_id: int, text: str, data) ->
     return default_student_page, None
 
 
+# Solving task branch
+def solving_task_waiting_answer(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called on user input during waiting answer on some exercise
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_default_student_keyboard()):
+        return default_student_page, None
+
+    exercise_name, task_id = data[0], int(data[1])  # Getting chooses exercise name and task id
+    user_info = handler.get_user_info_by_id(from_id)
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If task was blocked or deleted, reject answer
+    if user_info is None or exercise_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_EXERCISE_NAME,
+                             markup=keyboard_markups.get_default_student_keyboard())
+        return default_student_page, None
+
+    answer = text
+
+    # Empty answer are banned
+    if answer == '':
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_ANSWER)
+        return solving_task_waiting_answer, data
+
+    correct_answer = handler.send_answer_on_exercise(user_info.login, exercise_name, task_id, answer)
+
+    # Checking answer
+    if answer == correct_answer:
+        result = MESSAGE_RIGHT_RESULT_MARK
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_RIGHT_ANSWER,
+                             markup=keyboard_markups.get_default_student_keyboard())
+    else:
+        result = MESSAGE_WRONG_RESULT_MARK
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_WRONG_ANSWER.format(correct_answer=correct_answer),
+                             markup=keyboard_markups.get_default_student_keyboard())
+
+    # Sending notifications to all admins
+    for admin_info in handler.get_users_info_by_status(constants.ADMIN_STATUS) + \
+                      handler.get_users_info_by_status(constants.SUPER_ADMIN_STATUS):
+        # Scip all not authorized admins
+        if admin_info.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
+            continue
+
+        handler.send_message(send_id=admin_info.telegram_id,
+                             text=NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK.format(login=user_info.login,
+                                                                                grade=user_info.grade,
+                                                                                exercise_name=exercise_name,
+                                                                                task_id=str(task_id),
+                                                                                answer=answer,
+                                                                                correct_answer=correct_answer,
+                                                                                result=result))
+    return default_student_page, None
+
+
 # Initial admin interface
 def default_admin_page(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     if __compute_button_exit(handler, from_id, text, keyboard_markups.remove_keyboard(),
@@ -480,6 +565,146 @@ def admin_adding_interface(handler: UserHandler, from_id: int, text: str, data) 
     return admin_adding_interface, None
 
 
+# Adding exercise branch
+def adding_exercise_waiting_exercise_name(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called when admin wants to add new exercise (exercise_name)
+
+    if __compute_button_back(handler, from_id, text,
+                             keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)),
+                             message_info=MESSAGE_ON_ADMIN_ADD_COMMAND):
+        return admin_adding_interface, None
+
+    grade = int(data)  # Getting chooses grade
+    exercise_name: str = text  # Current exercise name
+
+    # If exercise with same name already exists, reset creating
+    if handler.is_exists_exercise_name(exercise_name):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_EXISTS_EXERCISE_NAME)
+        return adding_exercise_waiting_exercise_name, data
+
+    # If exercise name is incorrect, reset creating
+    if exercise_name.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_login(exercise_name):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_EXERCISE_NAME)
+        return adding_exercise_waiting_exercise_name, data
+
+    # If exercise name too long, reset creating
+    if len(exercise_name) > constants.MAX_HOMEWORK_NAME_SIZE:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_TOO_LONG_NEW_EXERCISE_NAME)
+        return adding_exercise_waiting_exercise_name, data
+
+    # Start waiting number of tasks in new exercise
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME)
+    return adding_exercise_waiting_number_of_right_answers, (grade, exercise_name)
+
+
+def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_id: int,
+                                                    text: str, data) -> tuple[Callable, Any]:
+    # This function is called on admin input during waiting number of tasks for create new exercise
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
+                             message_info=callback_functions.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE):
+        return adding_exercise_waiting_exercise_name, data[0]
+
+    # Try to extract number of tasks from the message text
+    success = True
+    number_of_tasks = 0
+    try:
+        number_of_tasks = int(text)
+    except:
+        success = False
+
+    # If number of tasks is incorrect or not positive, reset creating
+    if not success or number_of_tasks <= 0:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NUMBER_OF_TASKS)
+        return adding_exercise_waiting_number_of_right_answers, data
+
+    # Start waiting all right answers in new exercise
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NUMBER_OF_TASKS)
+
+    # Data description: (grade, exercise name, number of tasks, amount, list of right answers)
+    return adding_exercise_waiting_list_of_right_answers(handler, from_id, text,
+                                                         (data[0], data[1], number_of_tasks, 0, []))
+
+
+def adding_exercise_waiting_list_of_right_answers(handler: UserHandler, from_id: int,
+                                                  text: str, data) -> tuple[Callable, Any]:
+    # This function is called on admin input during waiting list of right answers for create new exercise
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
+                             message_info=MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME):
+        return adding_exercise_waiting_number_of_right_answers, (data[0], data[1])
+
+    # Waiting right answer starts when current_number > 0 and stop when current_number == amount
+    if data[3] > 0:
+        right_answer = text  # Current right answer
+        data = (data[0], data[1], data[2], data[3], data[4] + [right_answer])
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_ACCEPTED_RIGHT_ANSWER)
+
+    if data[3] < data[2]:
+        data = (data[0], data[1], data[2], data[3] + 1, data[4])
+        handler.send_message(send_id=from_id, text=MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=data[3]))
+        return adding_exercise_waiting_list_of_right_answers, data
+
+    grade = int(data[0])  # Getting stored exercise grade
+    exercise_name = data[1]  # Getting stored exercise name
+    answers = data[4]  # Getting stored right answers for each task
+
+    handler.add_exercise(exercise_name, grade, answers)  # Add new exercise
+
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE,
+                         markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)))
+    return admin_adding_interface, None
+
+
+# Adding student branch
+def adding_student_waiting_login(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called when admin wants to create new student account (waiting login)
+
+    if __compute_button_back(handler, from_id, text,
+                             keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)),
+                             message_info=MESSAGE_ON_ADMIN_ADD_COMMAND):
+        return admin_adding_interface, None
+
+    grade = int(data)  # Getting chooses grade
+    login: str = text  # Current login
+
+    # If login already exists, reset creating
+    if handler.is_exists_login(login):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN)
+        return adding_student_waiting_login, data
+
+    # If login is incorrect, reset creating
+    if login.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_login(login):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_STUDENT_LOGIN)
+        return adding_student_waiting_login, data
+
+    # If login too long, reset creating
+    if len(login) > constants.MAX_LOGIN_SIZE:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_TOO_LONG_NEW_STUDENT_LOGIN)
+        return adding_student_waiting_login, data
+
+    # Start waiting password of new student account
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NEW_STUDENT_LOGIN)
+    return adding_student_waiting_password, (grade, login)
+
+
+def adding_student_waiting_password(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called on admin input during waiting password for create new student account
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
+                             message_info=callback_functions.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT):
+        return adding_student_waiting_login, data[0]
+
+    grade, login = int(data[0]), data[1]  # Getting chooses grade and current login
+    password: str = text  # Current password
+
+    handler.add_user(login, password, constants.STUDENT_STATUS, grade=grade)  # Creating new student account
+
+    handler.send_message(send_id=from_id, text=MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT,
+                         markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)))
+    return admin_adding_interface, None
+
+
 # Adding admin branch
 def adding_admin_waiting_login(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
     # This function is called when super-admin wants to create new admin account (waiting login)
@@ -490,7 +715,7 @@ def adding_admin_waiting_login(handler: UserHandler, from_id: int, text: str, da
 
     login: str = text  # Current login
 
-    # If login already exists, stop creating, reset creating
+    # If login already exists, reset creating
     if handler.is_exists_login(login):
         handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_EXISTS_ADMIN_LOGIN)
         return adding_admin_waiting_login, None
@@ -505,7 +730,7 @@ def adding_admin_waiting_login(handler: UserHandler, from_id: int, text: str, da
         handler.send_message(send_id=from_id, text=MESSAGE_ON_TOO_LONG_NEW_ADMIN_LOGIN)
         return adding_admin_waiting_login, None
 
-    # Start waiting password of new account
+    # Start waiting password of new admin account
     handler.send_message(send_id=from_id, text=MESSAGE_ON_CORRECT_NEW_ADMIN_LOGIN)
     return adding_admin_waiting_password, login
 
