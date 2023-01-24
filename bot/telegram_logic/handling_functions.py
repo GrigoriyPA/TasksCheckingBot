@@ -1,5 +1,4 @@
 from bot import constants
-from bot.telegram_logic import callback_functions
 from bot.telegram_logic.interface import inline_markups, keyboard_markups, messages_text
 from bot.telegram_logic.user_handler import UserHandler, check_new_name, MARKUP_TYPES
 from typing import Any, Callable
@@ -133,7 +132,7 @@ MESSAGE_ON_SUCCESS_DELETION_EXERCISE = "Работа успешно удален
 # Checking back button (common interface)
 def __compute_button_back(handler: UserHandler, from_id: int, text: str, markup: MARKUP_TYPES = None,
                           message_info: str = '') -> bool:
-    if text != keyboard_markups.BUTTON_BACK:
+    if text != messages_text.BUTTON_BACK:
         # There is no back button pressed
         return False
 
@@ -145,7 +144,7 @@ def __compute_button_back(handler: UserHandler, from_id: int, text: str, markup:
 # Checking exit button (common interface)
 def __compute_button_exit(handler: UserHandler, from_id: int, text: str, markup: MARKUP_TYPES = None,
                           message_info: str = '') -> bool:
-    if text != keyboard_markups.BUTTON_EXIT:
+    if text != messages_text.BUTTON_EXIT:
         # There is no exit button pressed
         return False
 
@@ -157,7 +156,7 @@ def __compute_button_exit(handler: UserHandler, from_id: int, text: str, markup:
 
 # Checking status button (common interface)
 def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bool:
-    if text != keyboard_markups.BUTTON_SHOW_STATUS:
+    if text != messages_text.BUTTON_SHOW_STATUS:
         # There is no exit button pressed
         return False
 
@@ -179,7 +178,7 @@ def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bo
 
 # Checking show results table button (common interface)
 def __compute_button_show_results_table(handler: UserHandler, from_id: int, text: str) -> bool:
-    if text != keyboard_markups.BUTTON_SHOW_RESULTS_TABLE:
+    if text != messages_text.BUTTON_SHOW_RESULTS_TABLE:
         # There is no show results table button pressed
         return False
 
@@ -197,7 +196,7 @@ def __compute_button_show_results_table(handler: UserHandler, from_id: int, text
 
 # Checking admin get list of exercises button (default admin interface)
 def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: int, text: str) -> bool:
-    if text != keyboard_markups.BUTTON_EXERCISES_LIST:
+    if text != messages_text.BUTTON_EXERCISES_LIST:
         # There is no admin get list of exercises button pressed
         return False
 
@@ -218,7 +217,7 @@ def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: 
 
 # Checking admin get list of accounts button (default admin interface)
 def __compute_button_admin_get_list_of_accounts(handler: UserHandler, from_id: int, text: str) -> bool:
-    if text != keyboard_markups.BUTTON_ACCOUNTS_LIST:
+    if text != messages_text.BUTTON_ACCOUNTS_LIST:
         # There is no admin get list of accounts button pressed
         return False
 
@@ -260,7 +259,7 @@ def __compute_button_admin_get_list_of_accounts(handler: UserHandler, from_id: i
 # Checking admin add action button (default admin interface)
 def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: str,
                                       markup: MARKUP_TYPES = None) -> bool:
-    if text != keyboard_markups.BUTTON_ADD:
+    if text != messages_text.BUTTON_ADD:
         # There is no admin add action button pressed
         return False
 
@@ -272,7 +271,7 @@ def __compute_button_admin_add_action(handler: UserHandler, from_id: int, text: 
 # Checking admin delete action button (default admin interface)
 def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, text: str,
                                          markup: MARKUP_TYPES = None) -> bool:
-    if text != keyboard_markups.BUTTON_DELETE:
+    if text != messages_text.BUTTON_DELETE:
         # There is no admin delete action button pressed
         return False
 
@@ -283,7 +282,7 @@ def __compute_button_admin_delete_action(handler: UserHandler, from_id: int, tex
 
 # Checking student send answer button (default student interface)
 def __compute_button_student_send_answer(handler: UserHandler, from_id: int, text: str) -> bool:
-    if text != keyboard_markups.BUTTON_SOLVE_EXERCISE:
+    if text != messages_text.BUTTON_SOLVE_EXERCISE:
         # There is no student send answer button pressed
         return False
 
@@ -309,7 +308,7 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
 
 # Checking admin add student button (adding admin interface)
 def __compute_button_admin_add_student(handler: UserHandler, from_id: int, text: str) -> bool:
-    if text != keyboard_markups.BUTTON_ADD_STUDENT:
+    if text != messages_text.BUTTON_ADD_STUDENT:
         # There is no admin add student button pressed
         return False
 
@@ -322,7 +321,7 @@ def __compute_button_admin_add_student(handler: UserHandler, from_id: int, text:
 
 # Checking admin add exercise button (adding admin interface)
 def __compute_button_admin_add_exercise(handler: UserHandler, from_id: int, text: str) -> bool:
-    if text != keyboard_markups.BUTTON_ADD_EXERCISE:
+    if text != messages_text.BUTTON_ADD_EXERCISE:
         # There is no admin add exercise button pressed
         return False
 
@@ -336,7 +335,7 @@ def __compute_button_admin_add_exercise(handler: UserHandler, from_id: int, text
 # Checking super-admin add admin account button (adding super-admin interface)
 def __compute_button_super_admin_add_admin_account(handler: UserHandler, from_id: int, text: str,
                                                    markup: MARKUP_TYPES = None) -> bool:
-    if text != keyboard_markups.BUTTON_ADD_ADMIN:
+    if text != messages_text.BUTTON_ADD_ADMIN:
         # There is no super-admin add admin account button pressed
         return False
 
@@ -348,7 +347,7 @@ def __compute_button_super_admin_add_admin_account(handler: UserHandler, from_id
 # Checking admin delete account button (deleting admin interface)
 def __compute_button_admin_delete_account(handler: UserHandler, from_id: int, text: str,
                                           markup: MARKUP_TYPES = None) -> bool:
-    if text != keyboard_markups.BUTTON_DELETE_ACCOUNT:
+    if text != messages_text.BUTTON_DELETE_ACCOUNT:
         # There is no admin delete account button pressed
         return False
 
@@ -360,7 +359,7 @@ def __compute_button_admin_delete_account(handler: UserHandler, from_id: int, te
 # Checking admin delete exercise button (deleting admin interface)
 def __compute_button_admin_delete_exercise(handler: UserHandler, from_id: int, text: str,
                                            markup: MARKUP_TYPES = None) -> bool:
-    if text != keyboard_markups.BUTTON_DELETE_EXERCISE:
+    if text != messages_text.BUTTON_DELETE_EXERCISE:
         # There is no admin delete exercise button pressed
         return False
 
@@ -603,7 +602,7 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
     # This function is called on admin input during waiting number of tasks for create new exercise
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
-                             message_info=callback_functions.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE):
+                             message_info=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE):
         return adding_exercise_waiting_exercise_name, data[0]
 
     # Try to extract number of tasks from the message text
@@ -693,7 +692,7 @@ def adding_student_waiting_password(handler: UserHandler, from_id: int, text: st
     # This function is called on admin input during waiting password for create new student account
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
-                             message_info=callback_functions.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT):
+                             message_info=messages_text.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT):
         return adding_student_waiting_login, data[0]
 
     grade, login = int(data[0]), data[1]  # Getting chooses grade and current login
