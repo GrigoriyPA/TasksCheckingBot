@@ -1,9 +1,14 @@
 import sqlite3
+from typing import Union
+from json import dumps, loads
+import os
+
+from bot.entities.result import Result
+from bot.entities.task import Task
 from bot.entities.user import User
 from bot.entities.homework import Homework
 from bot.constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, \
-    ADMINS, ADMIN_STATUS
-from json import dumps, loads
+    ADMINS, ADMIN_STATUS, PATH_TO_SOLUTION_FILES, PATH_TO_STATEMENTS_FILES, STUDENT_STATUS
 
 
 class DatabaseHelper:
@@ -11,7 +16,7 @@ class DatabaseHelper:
         self.database_path: str = path_to_database + database_name
         self.create_database()
 
-    def __create_connection_and_cursor(self):
+    def __create_connection_and_cursor(self) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
         # Returns connection and cursor to our database
         con = sqlite3.connect(self.database_path)
         cur = con.cursor()
@@ -22,7 +27,7 @@ class DatabaseHelper:
 
         return con, cur
 
-    def create_database(self):
+    def create_database(self) -> None:
         con, cur = self.__create_connection_and_cursor()
 
         # USE ONLY WHEN CREATING NEW DATABASE
@@ -41,13 +46,13 @@ class DatabaseHelper:
         # Creating table with info about the homeworks
         cur.execute("CREATE TABLE IF NOT EXISTS homeworks("
                     "homework_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                    "homework_name TEXT NOT NULL,"
+                    "homework_name TEXT NOT NULL UNIQUE,"
                     "grade INTEGER NOT NULL)")
 
         # Creating table with info about the tasks
         cur.execute("CREATE TABLE IF NOT EXISTS tasks("
                     "task_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                    "index_in_homework TEXT NOT NULL,"
+                    "task_number TEXT NOT NULL,"
                     "right_answers STRING NOT NULL,"
                     "text_statement STRING,"
                     "file_statement STRING,"
@@ -79,7 +84,7 @@ class DatabaseHelper:
         # Saving changes
         con.commit()
 
-    def add_user(self, user: User):
+    def add_user(self, user: User) -> None:
         # Creating new user with the given parameters
 
         # If we already have user with given login there should be an exception
@@ -92,7 +97,7 @@ class DatabaseHelper:
                     "VALUES (?, ?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id, user.grade))
         con.commit()
 
-    def get_user_by_login(self, login: str):
+    def get_user_by_login(self, login: str) -> Union[User, None]:
         con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the given login
@@ -110,25 +115,7 @@ class DatabaseHelper:
         # Returning user with the given parameters
         return User(*user_parameters)
 
-    def get_user_id_by_login(self, login: str):
-        con, cur = self.__create_connection_and_cursor()
-
-        # Getting user id with the corresponding login
-
-        cur.execute("SELECT user_id "
-                    "FROM users "
-                    "WHERE login = ?", (login,))
-
-        user_id = cur.fetchone()
-
-        # If there is no such user just return None
-        if user_id is None:
-            return None
-
-        # Returning user id with the given parameters
-        return user_id[0]
-
-    def get_user_by_user_id(self, user_id: str):
+    def get_user_by_user_id(self, user_id: int) -> Union[User, None]:
         con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the corresponding user id
@@ -146,7 +133,7 @@ class DatabaseHelper:
         # Returning user login with the given parameters
         return User(*user_data)
 
-    def get_user_by_telegram_id(self, telegram_id: int):
+    def get_user_by_telegram_id(self, telegram_id: int) -> Union[User, None]:
         con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the given telegram_id
@@ -164,172 +151,222 @@ class DatabaseHelper:
         # Returning user with the given parameters
         return User(*user_parameters)
 
-    def change_user_status(self, login: str, new_status: str):
+    def change_user_status(self, login: str, new_status: str) -> None:
         con, cur = self.__create_connection_and_cursor()
 
         cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
         con.commit()
 
-    def change_user_telegram_id(self, login: str, new_telegram_id: int):
+    def change_user_telegram_id(self, login: str, new_telegram_id: int) -> None:
         con, cur = self.__create_connection_and_cursor()
 
         cur.execute("UPDATE users SET telegram_id = ? WHERE login = ?", (new_telegram_id, login))
         con.commit()
 
-    def delete_user_by_login(self, login: str):
+    def delete_user_by_login(self, login: str) -> None:
         con, cur = self.__create_connection_and_cursor()
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
 
-    def add_homework(self, homework: Homework):
-        # Creating new homework with the given parameters
-
-        # If there is already a homework with given name we should raise an exception
-        if self.get_homework_by_name(homework.name) is not None:
-            raise RuntimeError
+    def get_all_users_with_status(self, status: str) -> list[User]:
+        # Returns list of all the users with given status in the database
 
         con, cur = self.__create_connection_and_cursor()
 
-        # There is a line in the database for each task in the homework
-        for i in range(len(homework.right_answers)):
-            right_answer = homework.right_answers[i]
-            cur.execute("INSERT INTO tasks (homework_name, task_number, right_answer, grade) "
-                        "VALUES (?, ?, ?, ?)", (homework.name, i + 1, right_answer, homework.grade))
+        # Get list of logins with given status
+        cur.execute("SELECT login FROM users WHERE status = ?", (status,))
 
-        con.commit()
+        # We need only the first element in the tuple
+        logins = [data[0] for data in cur.fetchall()]
 
-    def delete_homework_by_name(self, homework_name: str):
-        # Deletes all the tasks in the homework by its name
+        # Getting users from logins
+        users = [self.get_user_by_login(login) for login in logins]
+
+        return users
+
+    def get_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int) -> Union[Result, None]:
+        # Returns the answer user gave for the given task
+
+        user = self.get_user_by_login(login)
+
+        # If there is no such user, we just return None
+        if user is None:
+            return None
+
+        task = self.get_task(homework_name, task_number)
+
+        # If there is no such task, we just return None
+        if task is None:
+            return None
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("DELETE FROM tasks WHERE homework_name = ?", (homework_name,))
-        con.commit()
+        # We get answer of the user
+        cur.execute("SELECT user_id, task_id, text_answer, file_answer FROM results WHERE user_id = ? AND task_id = ?",
+                    (user.user_id, task.task_id))
+        result_params = cur.fetchone()
 
-    def get_task_id(self, homework_name: str, task_number: int):
+        # If user didn't give answer to that task we return empty string
+        if result_params is None:
+            return None
+
+        return Result(result_params[0], result_params[1], result_params[2],
+                      (self.get_file_data(result_params[3]), result_params[3]))
+
+    def get_task(self, homework_name: str, task_number: int) -> Union[Task, None]:
         # Returns task id with given homework name and task number
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("SELECT task_id FROM tasks WHERE homework_name = ? AND task_number = ?",
-                    (homework_name, task_number))
-        task_id = cur.fetchone()
+        homework = self.get_homework_by_name(homework_name)
+        # If there is no such homework return None
+        if homework is None:
+            return None
+
+        # Choosing the task what we need
+        cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
+                    "FROM tasks WHERE homework_id = ? AND task_number = ?",
+                    (homework.homework_id, task_number))
+        task_params = cur.fetchone()
 
         # Returns None if there is no such task
-        if task_id is None:
+        if task_params is None:
             return None
 
-        return task_id[0]
+        return Task(task_params[5], task_params[1], loads(task_params[2]), task_params[3],
+                    (self.get_file_data(task_params[4]), task_params[4]), task_params[0])
 
-    def get_right_answer_for_the_task(self, homework_name: str, task_number: int):
-        # Returns right answer for the task with given homework name and task number
-
-        con, cur = self.__create_connection_and_cursor()
-
-        cur.execute("SELECT right_answer FROM tasks WHERE homework_name = ? AND task_number = ?",
-                    (homework_name, task_number))
-        right_answer = cur.fetchone()
-
-        # If there is no such task just returns None
-        if right_answer is None:
-            return None
-
-        return right_answer[0]
-
-    def get_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int):
-        # Returns the answer user gave for the given task
-
-        user_id = self.get_user_id_by_login(login)
-
-        # If there is no such user, we just return None
-        if user_id is None:
-            return None
-
-        task_id = self.get_task_id(homework_name, task_number)
-
-        # If there is no such task, we just return None
-        if task_id is None:
-            return None
-
-        con, cur = self.__create_connection_and_cursor()
-
-        cur.execute("SELECT user_answer FROM results WHERE user_id = ? AND task_id = ?", (user_id, task_id))
-        answer = cur.fetchone()
-
-        # If user didn't give answer to that task we return empty string
-        if answer is None:
-            return ''
-
-        return answer[0]
-
-    def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int, answer: str):
+    def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
+                                 text_answer: str, file_answer: tuple[bytes, str]) -> Union[list[str], None]:
         # Writes info about user answer for the particular task
 
         # If user has already given an answer to this task we should raise an exception
         current_answer = self.get_user_answer_for_the_task(login, homework_name, task_number)
-        if current_answer is not None and current_answer != '':
-            raise RuntimeError
+        if current_answer is not None:
+            raise RuntimeError("User has already given an answer for that task")
 
-        user_id = self.get_user_id_by_login(login)
+        user = self.get_user_by_login(login)
 
         # If there is no such user, we just return None
-        if user_id is None:
+        if user is None:
             return None
 
-        task_id = self.get_task_id(homework_name, task_number)
+        task = self.get_task(homework_name, task_number)
 
         # If there is no such task, we just return None
-        if task_id is None:
+        if task is None:
             return None
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("INSERT INTO results (user_id, task_id, user_answer) VALUES (?, ?, ?)", (user_id, task_id, answer))
+        # Saving our solution file to special directory
+        # Even if there is no solution file we will create an empty file
+        filename = f"{PATH_TO_SOLUTION_FILES}/{str(user.user_id)}_{str(task.task_id)}.{file_answer[1]}"
+        self.save_file_data(filename, file_answer[0])
+
+        # Writing info about the answer
+        cur.execute("INSERT INTO results (user_id, task_id, text_answer, file_answer) VALUES (?, ?, ?, ?)",
+                    (user.user_id, task.task_id, text_answer, filename))
         con.commit()
 
-        return self.get_right_answer_for_the_task(homework_name, task_number)
+        return self.get_right_answers_for_the_task(homework_name, task_number)
 
-    # TODO return homework not homework name
-    def get_all_homeworks_names(self) -> list[str]:
-        # Returns list of homeworks names
+    def add_homework(self, homework: Homework) -> None:
+        # Creating new homework with the given parameters
+
+        # If there is already a homework with given name we should raise an exception
+        if self.get_homework_by_name(homework.name) is not None:
+            raise RuntimeError("There is already a homework with the given name")
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("SELECT DISTINCT homework_name FROM tasks")
+        # Writing information about the new homework and getting its id
+        cur.execute("INSERT INTO homeworks (homework_name, grade) VALUES (?, ?)", (homework.name, homework.grade))
+        cur.execute("SELECT homework_id from homeworks WHERE homework_name = ?", (homework.name, ))
+        homework_id = cur.fetchone()[0]
 
-        # We need to take the first element in each list
-        return [data[0] for data in cur.fetchall()]
+        # Writing info about all tasks in another table
+        for i in range(len(homework.tasks)):
+            task = homework.tasks[i]
 
-    # TODO return homework not homework name
-    def get_all_homeworks_names_for_grade(self, grade: int) -> list[str]:
+            # Saving task statement file in the special directory
+            filename = f"{PATH_TO_STATEMENTS_FILES}/{str(task.task_id)}.{task.file_statement[1]}"
+            self.save_file_data(filename, task.file_statement[0])
+
+            # Adding info about the task
+            cur.execute("INSERT INTO tasks (task_number, right_answers, text_statement, file_statement, homework_id) "
+                        "VALUES (?, ?, ?, ?, ?)", (task.task_number, dumps(task.right_answers), task.text_statement,
+                                                   filename, homework_id))
+
+        con.commit()
+
+    def delete_homework_by_name(self, homework_name: str) -> None:
+        # Deletes homework by its name
+
+        con, cur = self.__create_connection_and_cursor()
+
+        cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
+        con.commit()
+
+    def get_right_answers_for_the_task(self, homework_name: str, task_number: int) -> Union[None, list[str]]:
+        # Returns right answers for the task with given homework name and task number
+
+        homework = self.get_homework_by_name(homework_name)
+
+        # If there is no such homework return None
+        if homework is None:
+            return None
+
+        # If there is no such task number return None
+        if task_number >= len(homework.tasks):
+            return None
+
+        return homework.tasks[task_number - 1].right_answers
+
+    def get_all_homeworks(self) -> list[Homework]:
+        # Returns list of homeworks
+
+        con, cur = self.__create_connection_and_cursor()
+
+        cur.execute("SELECT homework_name FROM homeworks")
+        # We need only the first element in the tuples
+        homeworks_names = [item[0] for item in cur.fetchall()]
+
+        return [self.get_homework_by_name(homework_name) for homework_name in homeworks_names]
+
+    def get_all_homeworks_for_grade(self, grade: int) -> list[Homework]:
         # Returns list of homeworks names for given grade
 
-        con, cur = self.__create_connection_and_cursor()
+        return [homework for homework in self.get_all_homeworks() if homework.grade == grade]
 
-        cur.execute("SELECT DISTINCT homework_name FROM tasks WHERE grade = ?", (grade,))
-
-        # We need to take the first element in each list
-        return [data[0] for data in cur.fetchall()]
-
-    def get_homework_by_name(self, homework_name: str):
+    def get_homework_by_name(self, homework_name: str) -> Union[Homework, None]:
         # Returns the object of class Homework corresponding to the given homework name
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("SELECT right_answer, grade FROM tasks WHERE homework_name = ?", (homework_name,))
-        info = cur.fetchall()
+        cur.execute("SELECT homework_id, homework_name, grade FROM homeworks WHERE homework_name = ?", (homework_name,))
+        raw_homework = cur.fetchone()
 
-        # If there is no such tasks with given homework name we return None
-        if len(info) == 0:
+        # If there is no such homework with given name we return None
+        if raw_homework is None:
             return None
 
-        grade = info[0][1]
-        right_answers = [data[0] for data in info]
+        homework = Homework(raw_homework[1], raw_homework[2], [], raw_homework[0])
 
-        return Homework(homework_name, grade, right_answers)
+        # Finding all the tasks for our homework
+        cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
+                    "FROM tasks WHERE homework_id = ?", (homework.homework_id,))
 
-    def get_list_of_unsolved_tasks(self, login: str, homework_name: str):
+        raw_tasks = cur.fetchall()
+        homework.tasks = [Task(raw_task[5], raw_task[1],
+                               loads(raw_task[2]), raw_task[3],
+                               (self.get_file_data(raw_task[4]), raw_task[4]),
+                               raw_task[0]) for raw_task in raw_tasks]
+
+        return homework
+
+    def get_list_of_unsolved_tasks(self, login: str, homework_name: str) -> Union[None, list[int]]:
         # Returns a list of tasks in particular homework on which user didn't give any answer
 
         homework = self.get_homework_by_name(homework_name)
@@ -346,33 +383,17 @@ class DatabaseHelper:
 
         # For each task we check if there is an answer
         unsolved_tasks = []
-        for i in range(len(homework.right_answers)):
-            if self.get_user_answer_for_the_task(login, homework_name, i + 1) == '':
+        for i in range(len(homework.tasks)):
+            if self.get_user_answer_for_the_task(login, homework_name, i + 1) is None:
                 unsolved_tasks.append(i + 1)
 
         return unsolved_tasks
 
-    def get_all_users_with_status(self, status) -> list[User]:
-        # Returns list of all the users with given status in the database
-
-        con, cur = self.__create_connection_and_cursor()
-
-        # Get list of logins with given status
-        cur.execute("SELECT login FROM users WHERE status = ?", (status,))
-
-        # We need only the first element in the tuple
-        logins = [data[0] for data in cur.fetchall()]
-
-        # Getting users from logins
-        users = [self.get_user_by_login(login) for login in logins]
-
-        return users
-
-    def get_results(self, status, homework_name: str):
+    def get_results(self, status, homework_name: str) -> Union[None, list[tuple[User, list[Union[bool, None]]]]]:
         """
         Returns list of the next pairs:
         First element - User object
-        Second element - list of the pairs: (user_answer, right_answer)
+        Second element - list of the values: (True - correct answer, False - wrong answer, None - no answer)
         Second element has the length of the amount of tasks in the homework with the given name
         """
 
@@ -383,18 +404,41 @@ class DatabaseHelper:
         if homework is None:
             return None
 
-        results: list[tuple[User, list[tuple[str, str]]]] = []
+        results: list[tuple[User, list[Union[bool, None]]]] = []
         for user in users:
             # We need only user with the same grade as in the homework
             if user.grade != homework.grade:
                 continue
 
             # Going through all the tasks and collecting info about given answers
-            answers: list[tuple[str, str]] = []
-            for i in range(len(homework.right_answers)):
+            answers: list[Union[bool, None]] = []
+            for i in range(len(homework.tasks)):
                 user_answer = self.get_user_answer_for_the_task(user.login, homework_name, i + 1)
-                right_answer = homework.right_answers[i]
-                answers.append((user_answer, right_answer))
+                right_answers = homework.tasks[i].right_answers
+
+                # Checking if user answer is correct
+                if user_answer is None:
+                    answers.append(None)
+                elif user_answer.text_answer in right_answers:
+                    answers.append(True)
+                else:
+                    answers.append(False)
+
             results.append((user, answers))
 
         return results
+
+    @staticmethod
+    def get_file_data(filename: str) -> Union[bytes, None]:
+        # Gets data in bytes from the file called "filename"
+        if os.path.exists(filename):
+            with open(filename, 'rb') as f:
+                data = f.read()
+            return data
+        return None
+
+    @staticmethod
+    def save_file_data(filename: str, data: bytes) -> None:
+        # Writes data in bytes to the file called "filename"
+        with open(filename, 'wb') as f:
+            f.write(data)
