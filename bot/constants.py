@@ -9,10 +9,10 @@ ADMINS = [
     ['admin3_login', 'admin3_password']
 ]
 
-PATH_TO_DATABASE = "bot/database/"
-ERROR_LOG_PATH = "bot/"
-
+PATH_TO_DATABASE = "database/"
 DATABASE_NAME = "database.db"
+
+ERROR_LOG_PATH = "/"
 ERROR_LOG_NAME = "error_log.txt"
 
 SUPER_ADMIN_STATUS = "SUPER_ADMIN"

@@ -1,10 +1,10 @@
 from bot import config, constants
 from bot.database.database_funcs import DatabaseHelper
+from bot.entities.user import User
+from bot.entities.homework import Homework
 from bot.telegram_logic import handling_functions, callback_functions
 from bot.telegram_logic.interface import messages_text
 from bot.telegram_logic.client.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
-from bot.user import User
-from bot.homework import Homework
 from collections.abc import Callable
 from telebot import types
 from typing import Any, Optional
@@ -162,7 +162,7 @@ class UserHandler:
         self.__user_data[user_id] = new_data
 
     # Change exercise data
-    def add_exercise(self, exercise_name: str, grade: int, answers: list[str]):
+    def add_exercise(self, exercise_name: str, grade: int, answers: list[str]) -> None:
         self.__database.add_homework(Homework(exercise_name, grade, answers))
 
     def delete_exercise(self, exercise_name: str) -> None:
