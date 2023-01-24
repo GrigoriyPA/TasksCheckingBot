@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------------------------
-# Inline markups text
+# Inline markups names
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -36,6 +36,32 @@ BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION = "Описание"
 BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD = "Пароль"
 BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER = "Пользователь"
 BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Keyboard markups names
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+# Common:
+BUTTON_SHOW_RESULTS_TABLE = "Вывести результаты"  # Show results table
+BUTTON_SHOW_STATUS = "Статус"  # Get login, password and status of current account
+BUTTON_EXIT = "Выйти"  # Exit from current account
+BUTTON_BACK = "Назад"  # Go to last state
+
+# Students
+BUTTON_SOLVE_EXERCISE = "Сдать задачу"  # Solve unsolved exercise
+
+# Admins:
+BUTTON_ADD = "Добавить"  # Button for select add action type (admin/super-admin)
+BUTTON_DELETE = "Удалить"  # Button for select delete action type (admin/super-admin)
+BUTTON_ACCOUNTS_LIST = "Список аккаунтов"  # Show accounts list (admin/super-admin)
+BUTTON_EXERCISES_LIST = "Список заданий"  # Show exercises list (admin/super-admin)
+BUTTON_ADD_STUDENT = "Ученик"  # Add new student account
+BUTTON_ADD_ADMIN = "Администратор"  # Add new admin account
+BUTTON_ADD_EXERCISE = "Задание"  # Add new exercise
+BUTTON_DELETE_ACCOUNT = "Аккаунт"  # Delete exists account
+BUTTON_DELETE_EXERCISE = "Задание"  # Delete exists exercise
 
 
 # ----------------------------------------------------------------------------------------------------------------------
