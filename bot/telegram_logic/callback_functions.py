@@ -1,60 +1,8 @@
 from bot import constants
 from bot.telegram_logic import handling_functions
-from bot.telegram_logic.interface import inline_markups, keyboard_markups
+from bot.telegram_logic.interface import inline_markups, keyboard_markups, messages_text
 from collections.abc import Callable
 from typing import Any, Optional
-
-# common
-MESSAGE_ON_UNAUTHORIZED_USER = "Вы не авторизованы."
-MESSAGE_ON_NOT_STUDENT_USER = "Выбор задания невозможен."
-MESSAGE_ON_NOT_ADMIN_USER = "Вы не обладаете достаточными правами."
-MESSAGE_ON_UNKNOWN_LOGIN = "Выбранный пользователь был удалён."
-MESSAGE_ON_UNKNOWN_EXERCISE_NAME = "Выбранная работа недоступна."
-MESSAGE_ON_INVALID_TASK = "Выбранное задание недоступно."
-
-# compute_show_results_table_callback
-MESSAGE_ON_SUCCESS_CREATION_TABLE = "Текущие результаты по работе '{exercise_name}', {grade} класс:"
-
-# compute_show_login_in_results_table_callback
-MESSAGE_ON_SHOW_LOGIN_IN_RESULTS_TABLE = "{login}\nРешено {solved_tasks_number} / {tasks_number} задач."
-
-# compute_cell_of_solved_task_in_table_callback
-MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Правильный ответ '{login}' на задание {task_id}: {answer}"
-MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Правильный ответ на задание {task_id}: {correct_answer}\n" \
-                                                          "Ответ '{login}' на задание: {answer}"
-MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Ваш правильный ответ на задание {task_id}: {answer}"
-MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Правильный ответ на задание {task_id}: {correct_answer}\n" \
-                                                            "Ваш ответ на задание:  {answer}"
-
-# compute_refresh_results_table_callback
-MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE = "Информация актуальна."
-
-# compute_select_homework_for_send_answer_callback
-TOP_MESSAGE_OF_STUDENT_TASK_LIST = "Выберите задание."
-
-# compute_select_task_id_for_send_answer_callback
-MESSAGE_ON_START_WAITING_ANSWER_ON_TASK = "Введите ответ на задание {task_id}:"
-
-# compute_select_student_grade_for_create_callback
-MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT = "Введите логин для нового аккаунта " \
-                                                        "(доступны латинские символы, цифры и знаки препинания):"
-
-# compute_select_exercise_grade_for_create_callback
-MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE = "Введите название новой работы " \
-                                                    "(доступны латинские символы, цифры и знаки препинания):"
-
-# compute_show_exercise_description_callback
-FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION = "Класс работы: {grade}\nВсего задач: {number_tasks}\nПравильные ответы:\n"
-
-# compute_account_action_show_password_callback
-MESSAGE_WITH_PASSWORD_DESCRIPTION = "Пароль пользователя '{login}': {password}"
-
-# compute_account_action_show_user_callback
-MESSAGE_ON_UNAUTHORIZED_USER_LOGIN = "В этот аккаунт никто не вошёл."
-MESSAGE_WITH_USER_TELEGRAM_INFO = "Имя: {first_name}\nФамилия: {last_name}\nХэндл: @{username}"
-
-# compute_student_account_action_show_results_callback
-TOP_MESSAGE_OF_USER_RESULTS_TABLE = "Результаты '{login}':"
 
 
 def compute_callback(handler, from_id: int, message_id: int, text: str, callback_data: str) -> tuple[Optional[Callable], Any]:
@@ -79,7 +27,7 @@ def compute_show_results_table_callback(handler, from_id: int, message_id: int, 
 
     # If user is not authorized, reject choice
     if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
         return None, None
 
     exercise_name = callback_data[0]  # Getting stored exercise name
@@ -87,7 +35,7 @@ def compute_show_results_table_callback(handler, from_id: int, message_id: int, 
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # Creating table of results
@@ -97,7 +45,7 @@ def compute_show_results_table_callback(handler, from_id: int, message_id: int, 
 
     # Sending table
     handler.send_message(send_id=from_id,
-                         text=MESSAGE_ON_SUCCESS_CREATION_TABLE.format(exercise_name=exercise_name,
+                         text=messages_text.MESSAGE_ON_SUCCESS_CREATION_TABLE.format(exercise_name=exercise_name,
                                                                        grade=str(exercise_info.grade)),
                          markup=markup)
     return None, None
@@ -109,7 +57,7 @@ def compute_show_login_in_results_table_callback(handler, from_id: int, message_
 
     # If user is not authorized, reject choice
     if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
         return None, None
 
     login, exercise_name = callback_data[0], callback_data[1]  # Getting chooses login and exercise name
@@ -117,7 +65,7 @@ def compute_show_login_in_results_table_callback(handler, from_id: int, message_
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # Calculation number of right solved tasks
@@ -126,7 +74,7 @@ def compute_show_login_in_results_table_callback(handler, from_id: int, message_
 
     # Send statistic
     handler.send_message(send_id=from_id,
-                         text=MESSAGE_ON_SHOW_LOGIN_IN_RESULTS_TABLE.format(login=login,
+                         text=messages_text.MESSAGE_ON_SHOW_LOGIN_IN_RESULTS_TABLE.format(login=login,
                                                                             solved_tasks_number=str(solved_tasks_number),
                                                                             tasks_number=str(tasks_number)))
     return None, None
@@ -140,7 +88,7 @@ def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message
 
     # If user is not authorized, reject choice
     if user is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
         return None, None
 
     # Getting chooses user login, homework name and task id
@@ -149,7 +97,7 @@ def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # If user is not admin, and he want to see someone else's answer, reject choice
@@ -162,30 +110,30 @@ def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message
 
     # If task was blocked or deleted, reject choice
     if answer is None or correct_answer is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_TASK)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_TASK)
         return None, None
 
     # Show right answer
     if answer == correct_answer:
         if handler.is_admin(from_id):
             handler.send_message(send_id=from_id,
-                                 text=MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
+                                 text=messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
                                                                                                      task_id=str(task_id),
                                                                                                      answer=answer))
         else:
             handler.send_message(send_id=from_id,
-                                 text=MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
+                                 text=messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
                                                                                                        answer=answer))
     else:
         if handler.is_admin(from_id):
             handler.send_message(send_id=from_id,
-                                 text=MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
+                                 text=messages_text.MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
                                                                                                      task_id=str(task_id),
                                                                                                      correct_answer=correct_answer,
                                                                                                      answer=answer))
         else:
             handler.send_message(send_id=from_id,
-                                 text=MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
+                                 text=messages_text.MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
                                                                                                        correct_answer=correct_answer,
                                                                                                        answer=answer))
     return None, None
@@ -197,7 +145,7 @@ def compute_refresh_results_table_callback(handler, from_id: int, message_id: in
 
     # If user is not authorized, reject choice
     if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
         return None, None
 
     # Getting chooses homework name and last first task id
@@ -206,7 +154,7 @@ def compute_refresh_results_table_callback(handler, from_id: int, message_id: in
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # Update results table
@@ -215,7 +163,7 @@ def compute_refresh_results_table_callback(handler, from_id: int, message_id: in
         len(exercise_info.right_answers), first_task_id)
 
     if not handler.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE)
     return None, None
 
 
@@ -225,7 +173,7 @@ def compute_switch_results_table_callback(handler, from_id: int, message_id: int
 
     # If user is not authorized, reject choice
     if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
         return None, None
 
     # Getting chooses homework name and last first task id
@@ -234,7 +182,7 @@ def compute_switch_results_table_callback(handler, from_id: int, message_id: int
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # Update results table
@@ -252,7 +200,7 @@ def compute_select_homework_for_send_answer_callback(handler, from_id: int, mess
 
     # If user is not student, reject choice
     if not handler.is_student(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_STUDENT_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_STUDENT_USER)
         return None, None
 
     exercise_name = callback_data[0]  # Getting chooses homework name
@@ -261,13 +209,13 @@ def compute_select_homework_for_send_answer_callback(handler, from_id: int, mess
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None or exercise_info.grade != user_info.grade:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # Creating table of tasks
     markup = inline_markups.get_student_task_list_inline_markup(user_info.login, len(exercise_info.right_answers),
                                                                 exercise_name, handler.check_task)
-    handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_STUDENT_TASK_LIST, markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_STUDENT_TASK_LIST, markup=markup)
     return None, None
 
 
@@ -277,7 +225,7 @@ def compute_select_task_id_for_send_answer_callback(handler, from_id: int, messa
 
     # If user is not student, reject choice
     if not handler.is_student(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_STUDENT_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_STUDENT_USER)
         return None, None
 
     exercise_name, task_id = callback_data[0], int(callback_data[1])  # Getting chooses homework name and task id
@@ -286,7 +234,7 @@ def compute_select_task_id_for_send_answer_callback(handler, from_id: int, messa
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None or exercise_info.grade != user_info.grade:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # Update table of tasks
@@ -296,11 +244,11 @@ def compute_select_task_id_for_send_answer_callback(handler, from_id: int, messa
 
     # If task was blocked or deleted, reject choice
     if handler.check_task(user_info.login, exercise_name, task_id) is not None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_TASK)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_TASK)
         return None, None
 
     # Start waiting of answer for current task in current exercise
-    handler.send_message(send_id=from_id, text=MESSAGE_ON_START_WAITING_ANSWER_ON_TASK.format(task_id=str(task_id)),
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_START_WAITING_ANSWER_ON_TASK.format(task_id=str(task_id)),
                          markup=keyboard_markups.get_back_button_keyboard())
     return handling_functions.solving_task_waiting_answer, (exercise_name, task_id)
 
@@ -311,14 +259,14 @@ def compute_select_student_grade_for_create_callback(handler, from_id: int, mess
 
     # If user is not admin, reject choice
     if not handler.is_admin(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
         return None, None
 
     grade = int(callback_data[0])  # Getting chooses grade
 
     # Start waiting of login for create new student account
     handler.send_message(send_id=from_id,
-                         text=MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT,
+                         text=messages_text.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT,
                          markup=keyboard_markups.get_back_button_keyboard())
     return handling_functions.adding_student_waiting_login, grade
 
@@ -329,14 +277,14 @@ def compute_select_exercise_grade_for_create_callback(handler, from_id: int, mes
 
     # If user is not admin, reject choice
     if not handler.is_admin(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
         return None, None
 
     grade = int(callback_data[0])  # Getting chooses grade
 
     # Start waiting of exercise name for create
     handler.send_message(send_id=from_id,
-                         text=MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE,
+                         text=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE,
                          markup=keyboard_markups.get_back_button_keyboard())
     return handling_functions.adding_exercise_waiting_exercise_name, grade
 
@@ -347,7 +295,7 @@ def compute_show_exercise_description_callback(handler, from_id: int, message_id
 
     # If user is not admin, reject choice
     if not handler.is_admin(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
         return None, None
 
     exercise_name = callback_data[0]  # Getting chooses exercise name
@@ -355,11 +303,11 @@ def compute_show_exercise_description_callback(handler, from_id: int, message_id
 
     # If homework was blocked or deleted, reject choice
     if exercise_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 
     # Create and send description of current task
-    text = FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION.format(grade=exercise_info.grade,
+    text = messages_text.FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION.format(grade=exercise_info.grade,
                                                         number_tasks=str(len(exercise_info.right_answers)))
     for i in range(len(exercise_info.right_answers)):
         text += str(i + 1) + ": " + exercise_info.right_answers[i] + "\n"
@@ -374,7 +322,7 @@ def compute_account_action_show_password_callback(handler, from_id: int, message
 
     # If user is not admin, reject choice
     if not handler.is_admin(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
         return None, None
 
     login = callback_data[0]  # Getting chooses user login
@@ -382,17 +330,17 @@ def compute_account_action_show_password_callback(handler, from_id: int, message
 
     # If current user was deleted, reject choice
     if user_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_LOGIN)
         return None, None
 
     # Not super-admin can not see passwords of other admins
     if login != handler.get_user_info_by_id(from_id).login and not handler.is_super_admin(from_id) \
             and not user_info.status == constants.STUDENT_STATUS:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
         return None, None
 
     # Show user password
-    handler.send_message(send_id=from_id, text=MESSAGE_WITH_PASSWORD_DESCRIPTION.format(login=login,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_WITH_PASSWORD_DESCRIPTION.format(login=login,
                                                                                         password=user_info.password))
     return None, None
 
@@ -403,7 +351,7 @@ def compute_account_action_show_user_callback(handler, from_id: int, message_id:
 
     # If user is not admin, reject choice
     if not handler.is_admin(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
         return None, None
 
     login = callback_data[0]  # Getting chooses user login
@@ -411,18 +359,18 @@ def compute_account_action_show_user_callback(handler, from_id: int, message_id:
 
     # If current user was deleted, reject choice
     if user_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_LOGIN)
         return None, None
 
     # If there is no user on chooses login
     if user_info.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER_LOGIN)
         return None, None
 
     # Show user telegram info
     current_user_info = handler.get_chat_member(user_info.telegram_id, user_info.telegram_id).user
     handler.send_message(send_id=from_id,
-                         text=MESSAGE_WITH_USER_TELEGRAM_INFO.format(first_name=current_user_info.first_name,
+                         text=messages_text.MESSAGE_WITH_USER_TELEGRAM_INFO.format(first_name=current_user_info.first_name,
                                                                      last_name=current_user_info.last_name,
                                                                      username=current_user_info.username))
     return None, None
@@ -434,7 +382,7 @@ def compute_student_account_action_show_results_callback(handler, from_id: int, 
 
     # If user is not admin, reject choice
     if not handler.is_admin(from_id):
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
         return None, None
 
     login = callback_data[0]  # Getting chooses user login
@@ -442,7 +390,7 @@ def compute_student_account_action_show_results_callback(handler, from_id: int, 
 
     # If current user was deleted, reject choice
     if user_info is None:
-        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_LOGIN)
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_LOGIN)
         return None, None
 
     homeworks_names = handler.get_all_exercises_names_for_grade(user_info.grade)
@@ -450,7 +398,7 @@ def compute_student_account_action_show_results_callback(handler, from_id: int, 
 
     # Create table of user results and send results
     markup = inline_markups.get_user_results_table_inline_markup(homeworks_names, user_results)
-    handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_USER_RESULTS_TABLE.format(login=login), markup=markup)
+    handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_USER_RESULTS_TABLE.format(login=login), markup=markup)
     return None, None
 
 

@@ -1,6 +1,6 @@
 from bot import constants
 from bot.telegram_logic import callback_functions
-from bot.telegram_logic.interface import inline_markups, keyboard_markups
+from bot.telegram_logic.interface import inline_markups, keyboard_markups, messages_text
 from bot.telegram_logic.user_handler import UserHandler, check_new_name, MARKUP_TYPES
 from typing import Any, Callable
 

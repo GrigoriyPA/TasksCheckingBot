@@ -1,14 +1,13 @@
 from bot import config, constants
 from bot.database.database_funcs import DatabaseHelper
 from bot.telegram_logic import handling_functions, callback_functions
+from bot.telegram_logic.interface import messages_text
 from bot.telegram_logic.client.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
 from bot.user import User
 from bot.homework import Homework
 from collections.abc import Callable
 from telebot import types
 from typing import Any, Optional
-
-MESSAGE_ON_START_COMMAND = "Состояние сессии сброшено..."
 
 
 def add_error_to_log(text: str) -> None:
@@ -199,7 +198,7 @@ class UserHandler:
             return
 
         if message.from_id in self.__user_state and message.text == "/start":
-            self.send_message(send_id=message.from_id, text=MESSAGE_ON_START_COMMAND)
+            self.send_message(send_id=message.from_id, text=messages_text.MESSAGE_ON_START_COMMAND)
             handling_functions.default_state(self, message.from_id, message.text, self.__user_data[message.from_id])
             return
 

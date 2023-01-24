@@ -1,63 +1,35 @@
 from bot import constants
+from bot.telegram_logic.interface import messages_text
 from telebot import types
 from typing import Optional
 
-# All callback data must be different and represented by one char
+# Callback codes description
+# All callback codes must be different and represented by one char
 
 # common
-BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK = "✅"
-BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK = "❌"
-
 CALLBACK_SEPARATION_ELEMENT = "$"  # Element that divide callback data
 CALLBACK_DATA_NONE = "0"  # Button do nothing
 
-
 # get_results_table_inline_markup
-BUTTON_NAME_OF_COLUMN_OF_USER_NUMBERS = "№"
-BUTTON_NAME_OF_COLUMN_OF_USER_LOGINS = "Логин"
-BUTTON_NAME_OF_CELL_OF_NOT_SOLVED_TASK = " "
-BUTTON_NAME_OF_ROW_OF_NUMBER_OF_SOLVED_TASKS = "Σ"
-BUTTON_NAME_MOVE_TABLE_LEFT_ONE_STEP_NO_ACTION = " "
-BUTTON_NAME_MOVE_TABLE_LEFT_MANY_STEPS_NO_ACTION = " "
-BUTTON_NAME_MOVE_TABLE_LEFT_ONE_STEP_CAN_MOVE = "<"
-BUTTON_NAME_MOVE_TABLE_LEFT_MANY_STEPS_CAN_MOVE = "<<"
-BUTTON_NAME_MOVE_TABLE_RIGHT_ONE_STEP_NO_ACTION = " "
-BUTTON_NAME_MOVE_TABLE_RIGHT_MANY_STEPS_NO_ACTION = " "
-BUTTON_NAME_MOVE_TABLE_RIGHT_ONE_STEP_CAN_MOVE = ">"
-BUTTON_NAME_MOVE_TABLE_RIGHT_MANY_STEPS_CAN_MOVE = ">>"
-BUTTON_NAME_REFRESH_RESULTS_TABLE = "Обновить"
-
 CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = "J"
 CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK = "E"
 CALLBACK_DATA_MOVE_RESULTS_TABLE = "I"
 CALLBACK_DATA_REFRESH_RESULTS_TABLE = "G"
 
-# get_user_results_table_inline_markup
-BUTTON_NAME_OF_COLUMN_OF_EXERCISE_NAMES = "Работа"
-BUTTON_NAME_OF_COLUMN_OF_NUMBER_RIGHT_SOLVED_TASKS = "Решено"
-BUTTON_NAME_OF_COLUMN_OF_NUMBER_OF_TASKS = "Всего"
-
 # get_student_task_list_inline_markup
 CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER = "D"
 
 # get_exercise_actions_inline_markup
-BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS = "Результаты"
-BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION = "Описание"
-
 CALLBACK_DATA_SHOW_RESULTS_TABLE = "C"
 CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION = "H"
 
 # get_admin_account_actions_inline_markup
 # get_student_account_actions_inline_markup
-BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD = "Пароль"
-BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER = "Пользователь"
-BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
-
 CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = "F"
 CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = "K"
 CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "L"
 
-# other
+# other (used in handling_functions)
 CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = "A"
 CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE = "M"
 CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE = "N"
@@ -74,8 +46,8 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
     keyboard = []
 
     # Temporary storage for current row
-    row = [types.InlineKeyboardButton(text=BUTTON_NAME_OF_COLUMN_OF_USER_NUMBERS, callback_data=CALLBACK_DATA_NONE),
-           types.InlineKeyboardButton(text=BUTTON_NAME_OF_COLUMN_OF_USER_LOGINS, callback_data=CALLBACK_DATA_NONE)]
+    row = [types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_USER_NUMBERS, callback_data=CALLBACK_DATA_NONE),
+           types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_USER_LOGINS, callback_data=CALLBACK_DATA_NONE)]
 
     # Creating first line of the table (Number Login 1 2 ... number_tasks)
     for i in range(number_tasks):
@@ -108,17 +80,17 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
             if first_task_id <= task_id < first_task_id + number_tasks:
                 if answer[0] is None or answer[0] == '':
                     # There is no answer from user on this task
-                    row.append(types.InlineKeyboardButton(text=BUTTON_NAME_OF_CELL_OF_NOT_SOLVED_TASK,
+                    row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_NOT_SOLVED_TASK,
                                                           callback_data=CALLBACK_DATA_NONE))
                 elif answer[0] == answer[1]:
                     # User answer is right
-                    row.append(types.InlineKeyboardButton(text=BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
+                    row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
                                                           callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK +
                                                                        result[0].login + CALLBACK_SEPARATION_ELEMENT +
                                                                        homework_name + CALLBACK_SEPARATION_ELEMENT + str(task_id)))
                 else:
                     # User answer is false
-                    row.append(types.InlineKeyboardButton(text=BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
+                    row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
                                                           callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK +
                                                                        result[0].login + CALLBACK_SEPARATION_ELEMENT +
                                                                        homework_name + CALLBACK_SEPARATION_ELEMENT + str(task_id)))
@@ -141,7 +113,7 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
                         rows[element[2]])
 
     # Add row there placed sums of number of right answers
-    row = [types.InlineKeyboardButton(text=BUTTON_NAME_OF_ROW_OF_NUMBER_OF_SOLVED_TASKS,
+    row = [types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_ROW_OF_NUMBER_OF_SOLVED_TASKS,
                                       callback_data=CALLBACK_DATA_NONE),
            types.InlineKeyboardButton(text=str(amount), callback_data=CALLBACK_DATA_NONE)]
     for i in range(number_tasks):
@@ -150,42 +122,42 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
     keyboard.append(row)
 
     # Create buttons that can move table left
-    left1 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_LEFT_ONE_STEP_NO_ACTION,
+    left1 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_LEFT_ONE_STEP_NO_ACTION,
                                        callback_data=CALLBACK_DATA_NONE)
-    left2 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_LEFT_MANY_STEPS_NO_ACTION,
+    left2 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_LEFT_MANY_STEPS_NO_ACTION,
                                        callback_data=CALLBACK_DATA_NONE)
     if first_task_id > 1:
         # Go left on 1
-        left1 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_LEFT_ONE_STEP_CAN_MOVE,
+        left1 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_LEFT_ONE_STEP_CAN_MOVE,
                                            callback_data=CALLBACK_DATA_MOVE_RESULTS_TABLE + homework_name +
                                                          CALLBACK_SEPARATION_ELEMENT + str(first_task_id - 1))
 
         # Go left on TASKS_ON_ONE_PAGE
-        left2 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_LEFT_MANY_STEPS_CAN_MOVE,
+        left2 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_LEFT_MANY_STEPS_CAN_MOVE,
                                            callback_data=CALLBACK_DATA_MOVE_RESULTS_TABLE + homework_name +
                                                          CALLBACK_SEPARATION_ELEMENT +
                                                          str(max(first_task_id - constants.TASKS_ON_ONE_PAGE, 1)))
 
     # Create buttons that can move table right
-    right1 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_RIGHT_ONE_STEP_NO_ACTION,
+    right1 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_RIGHT_ONE_STEP_NO_ACTION,
                                         callback_data=CALLBACK_DATA_NONE)
-    right2 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_RIGHT_MANY_STEPS_NO_ACTION,
+    right2 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_RIGHT_MANY_STEPS_NO_ACTION,
                                         callback_data=CALLBACK_DATA_NONE)
     if first_task_id + number_tasks - 1 < homework_size:
         # Go right on 1
-        right1 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_RIGHT_ONE_STEP_CAN_MOVE,
+        right1 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_RIGHT_ONE_STEP_CAN_MOVE,
                                             callback_data=CALLBACK_DATA_MOVE_RESULTS_TABLE + homework_name +
                                                           CALLBACK_SEPARATION_ELEMENT + str(first_task_id + 1))
 
         # Go right on TASKS_ON_ONE_PAGE
-        right2 = types.InlineKeyboardButton(text=BUTTON_NAME_MOVE_TABLE_RIGHT_MANY_STEPS_CAN_MOVE,
+        right2 = types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_MOVE_TABLE_RIGHT_MANY_STEPS_CAN_MOVE,
                                             callback_data=CALLBACK_DATA_MOVE_RESULTS_TABLE + homework_name +
                                                           CALLBACK_SEPARATION_ELEMENT +
                                                           str(min(first_task_id + constants.TASKS_ON_ONE_PAGE, homework_size - constants.TASKS_ON_ONE_PAGE + 1)))
 
     # Add last row with 'refresh' button
     keyboard.append([left2, left1,
-                     types.InlineKeyboardButton(text=BUTTON_NAME_REFRESH_RESULTS_TABLE,
+                     types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_REFRESH_RESULTS_TABLE,
                                                 callback_data=CALLBACK_DATA_REFRESH_RESULTS_TABLE + homework_name +
                                                               CALLBACK_SEPARATION_ELEMENT + str(first_task_id)),
                      right1, right2])
@@ -197,11 +169,11 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
 def get_user_results_table_inline_markup(homework_list: list[str], user_results):
     # This function returns table of buttons for table of one user results
 
-    keyboard = [[types.InlineKeyboardButton(text=BUTTON_NAME_OF_COLUMN_OF_EXERCISE_NAMES,
+    keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_EXERCISE_NAMES,
                                             callback_data=CALLBACK_DATA_NONE),
-                 types.InlineKeyboardButton(text=BUTTON_NAME_OF_COLUMN_OF_NUMBER_RIGHT_SOLVED_TASKS,
+                 types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_NUMBER_RIGHT_SOLVED_TASKS,
                                             callback_data=CALLBACK_DATA_NONE),
-                 types.InlineKeyboardButton(text=BUTTON_NAME_OF_COLUMN_OF_NUMBER_OF_TASKS,
+                 types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_NUMBER_OF_TASKS,
                                             callback_data=CALLBACK_DATA_NONE)]]  # Final keyboard storage
     for row_id in range(len(homework_list)):
         # Add buttons on current row
@@ -233,12 +205,12 @@ def get_student_task_list_inline_markup(login: str, homework_size: int, homework
                                                                 homework_name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
         elif task_state:
-            row.append(types.InlineKeyboardButton(text=str(task_id) + " " + BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
+            row.append(types.InlineKeyboardButton(text=str(task_id) + " " + messages_text.BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
                                                   callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
                                                                 CALLBACK_SEPARATION_ELEMENT + homework_name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
         else:
-            row.append(types.InlineKeyboardButton(text=str(task_id) + " " + BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
+            row.append(types.InlineKeyboardButton(text=str(task_id) + " " + messages_text.BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
                                                   callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
                                                                 CALLBACK_SEPARATION_ELEMENT + homework_name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
@@ -306,26 +278,26 @@ def get_list_of_all_grades_inline_markup(callback_data: str) -> types.InlineKeyb
 
 
 def get_exercise_actions_inline_markup(exercise_name: str) -> types.InlineKeyboardMarkup:
-    keyboard = [[types.InlineKeyboardButton(text=BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS,
+    keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS,
                                             callback_data=CALLBACK_DATA_SHOW_RESULTS_TABLE + exercise_name),
-                 types.InlineKeyboardButton(text=BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION,
+                 types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION,
                                             callback_data=CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION + exercise_name)]]
     return types.InlineKeyboardMarkup(keyboard)
 
 
 def get_admin_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
-    keyboard = [[types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
+    keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD + login),
-                 types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
+                 types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER + login)]]
     return types.InlineKeyboardMarkup(keyboard)
 
 
 def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
-    keyboard = [[types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
+    keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD + login),
-                 types.InlineKeyboardButton(text=BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
+                 types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER + login),
-                 types.InlineKeyboardButton(text=BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS,
+                 types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS,
                                             callback_data=CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS + login)]]
     return types.InlineKeyboardMarkup(keyboard)
