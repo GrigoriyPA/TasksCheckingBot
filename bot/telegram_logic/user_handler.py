@@ -1,7 +1,7 @@
 from bot import config, constants
 from bot.database.database_funcs import DatabaseHelper
 from bot.telegram_logic import handling_functions, callback_functions
-from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
+from bot.telegram_logic.client.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
 from bot.user import User
 from bot.homework import Homework
 from collections.abc import Callable

@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from bot.telegram_logic.inner_types import MARKUP_TYPES, Callback, Message, Attachment
+from bot.telegram_logic.client.inner_types import MARKUP_TYPES, Callback, Message, Attachment
 from telebot import TeleBot, types
 from threading import Thread
 from typing import Optional
