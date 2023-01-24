@@ -5,6 +5,7 @@ from bot.telegram_logic.telegram_client import TelegramClient, Message, Callback
 from bot.user import User
 from bot.homework import Homework
 from collections.abc import Callable
+from telebot import types
 from typing import Any, Optional
 
 MESSAGE_ON_START_COMMAND = "Состояние сессии сброшено..."
@@ -125,6 +126,21 @@ class UserHandler:
         # Returns True if user answer is right
         return self.__database.get_right_answer_for_the_task(homework_name, task_id) == user_answer
 
+    def get_user_results_on_exercises(self, login: str, exercises_names: list[str]) -> list[tuple[int, int]]:
+        user_results: list[tuple[int, int]] = []  # List of pairs (solved tasks number, tasks number)
+        for exercise_name in exercises_names:
+            exercise_info = self.__database.get_homework_by_name(exercise_name)
+            tasks_number = len(exercise_info.right_answers)
+
+            # Calculate solved tasks number in current homework
+            solved_tasks_number = 0
+            for i in range(1, tasks_number + 1):
+                solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) == \
+                                       exercise_info.right_answers[i - 1]
+
+            user_results.append((solved_tasks_number, tasks_number))
+        return user_results
+
     # Change user data
     def sign_in_user(self, login: str, user_id: int) -> None:
         self.__database.change_user_telegram_id(login, user_id)
@@ -204,6 +220,9 @@ class UserHandler:
             self.client.send_message(send_id=send_id, text=text, attachments=attachments, markup=markup)
         except Exception as error:
             add_error_to_log("Unknown error while sending the message.\nDescription:\n" + str(error))
+
+    def get_chat_member(self, chat_id: int, user_id: int) -> types.ChatMember:
+        return self.client.get_chat_member(chat_id=chat_id, user_id=user_id)
 
     def run(self) -> None:
         # This function launch bot

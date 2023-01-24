@@ -114,6 +114,9 @@ class TelegramClient:
 
             text = ''  # Drop message text after first message
 
+    def get_chat_member(self, chat_id: int, user_id: int) -> types.ChatMember:
+        return self.__client.get_chat_member(chat_id=chat_id, user_id=user_id)
+
     def run(self, token: str) -> None:
         # Function that launch new session
 

@@ -1,3 +1,4 @@
+from bot import constants
 from bot.telegram_logic import inline_markups, keyboard_markups, handling_functions
 from collections.abc import Callable
 from typing import Any, Optional
@@ -6,6 +7,7 @@ from typing import Any, Optional
 MESSAGE_ON_UNAUTHORIZED_USER = "Вы не авторизованы."
 MESSAGE_ON_NOT_STUDENT_USER = "Выбор задания невозможен."
 MESSAGE_ON_NOT_ADMIN_USER = "Вы не обладаете достаточными правами."
+MESSAGE_ON_UNKNOWN_LOGIN = "Выбранный пользователь был удалён."
 MESSAGE_ON_UNKNOWN_EXERCISE_NAME = "Выбранная работа недоступна."
 MESSAGE_ON_INVALID_TASK = "Выбранное задание недоступно."
 
@@ -42,6 +44,16 @@ MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE = "Введите назван
 
 # compute_show_exercise_description_callback
 FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION = "Класс работы: {grade}\nВсего задач: {number_tasks}\nПравильные ответы:\n"
+
+# compute_account_action_show_password_callback
+MESSAGE_WITH_PASSWORD_DESCRIPTION = "Пароль пользователя '{login}': {password}"
+
+# compute_account_action_show_user_callback
+MESSAGE_ON_UNAUTHORIZED_USER_LOGIN = "В этот аккаунт никто не вошёл."
+MESSAGE_WITH_USER_TELEGRAM_INFO = "Имя: {first_name}\nФамилия: {last_name}\nХэндл: @{username}"
+
+# compute_student_account_action_show_results_callback
+TOP_MESSAGE_OF_USER_RESULTS_TABLE = "Результаты '{login}':"
 
 
 def compute_callback(handler, from_id: int, message_id: int, text: str, callback_data: str) -> tuple[Optional[Callable], Any]:
@@ -355,6 +367,92 @@ def compute_show_exercise_description_callback(handler, from_id: int, message_id
     return None, None
 
 
+def compute_account_action_show_password_callback(handler, from_id: int, message_id: int, text: str,
+                                                  callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin chooses some user for see his password (in list of logins)
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    login = callback_data[0]  # Getting chooses user login
+    user_info = handler.get_user_info_by_login(login)
+
+    # If current user was deleted, reject choice
+    if user_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_LOGIN)
+        return None, None
+
+    # Not super-admin can not see passwords of other admins
+    if login != handler.get_user_info_by_id(from_id).login and not handler.is_super_admin(from_id) \
+            and not user_info.status == constants.STUDENT_STATUS:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    # Show user password
+    handler.send_message(send_id=from_id, text=MESSAGE_WITH_PASSWORD_DESCRIPTION.format(login=login,
+                                                                                        password=user_info.password))
+    return None, None
+
+
+def compute_account_action_show_user_callback(handler, from_id: int, message_id: int, text: str,
+                                              callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to see current user on chooses login (in list of logins)
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    login = callback_data[0]  # Getting chooses user login
+    user_info = handler.get_user_info_by_login(login)
+
+    # If current user was deleted, reject choice
+    if user_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_LOGIN)
+        return None, None
+
+    # If there is no user on chooses login
+    if user_info.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNAUTHORIZED_USER_LOGIN)
+        return None, None
+
+    # Show user telegram info
+    current_user_info = handler.get_chat_member(user_info.telegram_id, user_info.telegram_id).user
+    handler.send_message(send_id=from_id,
+                         text=MESSAGE_WITH_USER_TELEGRAM_INFO.format(first_name=current_user_info.first_name,
+                                                                     last_name=current_user_info.last_name,
+                                                                     username=current_user_info.username))
+    return None, None
+
+
+def compute_student_account_action_show_results_callback(handler, from_id: int, message_id: int, text: str,
+                                                         callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to see results of chooses user (in list of logins)
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    login = callback_data[0]  # Getting chooses user login
+    user_info = handler.get_user_info_by_login(login)
+
+    # If current user was deleted, reject choice
+    if user_info is None:
+        handler.send_message(send_id=from_id, text=MESSAGE_ON_UNKNOWN_LOGIN)
+        return None, None
+
+    homeworks_names = handler.get_all_exercises_names_for_grade(user_info.grade)
+    user_results = handler.get_user_results_on_exercises(login, homeworks_names)
+
+    # Create table of user results and send results
+    markup = inline_markups.get_user_results_table_inline_markup(homeworks_names, user_results)
+    handler.send_message(send_id=from_id, text=TOP_MESSAGE_OF_USER_RESULTS_TABLE.format(login=login), markup=markup)
+    return None, None
+
+
 CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], tuple[Optional[Callable], Any]]] = {
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
@@ -366,5 +464,8 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER: compute_select_task_id_for_send_answer_callback,
     inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE: compute_select_student_grade_for_create_callback,
     inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE: compute_select_exercise_grade_for_create_callback,
-    inline_markups.CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION: compute_show_exercise_description_callback
+    inline_markups.CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION: compute_show_exercise_description_callback,
+    inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD: compute_account_action_show_password_callback,
+    inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER: compute_account_action_show_user_callback,
+    inline_markups.CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS: compute_student_account_action_show_results_callback
 }
