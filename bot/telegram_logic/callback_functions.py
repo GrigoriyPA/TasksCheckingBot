@@ -1,5 +1,6 @@
 from bot import constants
-from bot.telegram_logic import inline_markups, keyboard_markups, handling_functions
+from bot.telegram_logic import handling_functions
+from bot.telegram_logic.interface import inline_markups, keyboard_markups
 from collections.abc import Callable
 from typing import Any, Optional
 

@@ -17,11 +17,11 @@ def add_error_to_log(text: str) -> None:
     error_log.close()
 
 
-def check_new_login(login: str) -> bool:
+def check_new_name(login: str) -> bool:
     # Check login, returns True if all ASCII codes are good
 
     for symbol in login:
-        if ord(symbol) >= 123:
+        if ord(symbol) > constants.MAXIMUM_ASCII_CODE_IN_NAMES:
             return False
     return True
 

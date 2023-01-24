@@ -1,6 +1,7 @@
 from bot import constants
-from bot.telegram_logic import inline_markups, keyboard_markups, callback_functions
-from bot.telegram_logic.user_handler import UserHandler, check_new_login, MARKUP_TYPES
+from bot.telegram_logic import callback_functions
+from bot.telegram_logic.interface import inline_markups, keyboard_markups
+from bot.telegram_logic.user_handler import UserHandler, check_new_name, MARKUP_TYPES
 from typing import Any, Callable
 
 # __compute_button_back
@@ -583,7 +584,7 @@ def adding_exercise_waiting_exercise_name(handler: UserHandler, from_id: int, te
         return adding_exercise_waiting_exercise_name, data
 
     # If exercise name is incorrect, reset creating
-    if exercise_name.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_login(exercise_name):
+    if exercise_name.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_name(exercise_name):
         handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_EXERCISE_NAME)
         return adding_exercise_waiting_exercise_name, data
 
@@ -674,7 +675,7 @@ def adding_student_waiting_login(handler: UserHandler, from_id: int, text: str, 
         return adding_student_waiting_login, data
 
     # If login is incorrect, reset creating
-    if login.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_login(login):
+    if login.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_name(login):
         handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_STUDENT_LOGIN)
         return adding_student_waiting_login, data
 
@@ -721,7 +722,7 @@ def adding_admin_waiting_login(handler: UserHandler, from_id: int, text: str, da
         return adding_admin_waiting_login, None
 
     # If login is incorrect, reset creating
-    if login.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_login(login):
+    if login.count(inline_markups.CALLBACK_SEPARATION_ELEMENT) or not check_new_name(login):
         handler.send_message(send_id=from_id, text=MESSAGE_ON_INVALID_NEW_ADMIN_LOGIN)
         return adding_admin_waiting_login, None
 
