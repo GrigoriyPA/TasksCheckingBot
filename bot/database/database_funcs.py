@@ -226,18 +226,11 @@ class DatabaseHelper:
         if homework is None:
             return None
 
-        # Choosing the task what we need
-        cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
-                    "FROM tasks WHERE homework_id = ? AND task_number = ?",
-                    (homework.homework_id, task_number))
-        task_params = cur.fetchone()
-
-        # Returns None if there is no such task
-        if task_params is None:
+        # If there is no such task return None
+        if task_number >= len(homework.tasks):
             return None
 
-        return Task(task_params[5], task_params[1], loads(task_params[2]), task_params[3],
-                    (self.get_file_data(task_params[4]), task_params[4]), task_params[0])
+        return homework.tasks[task_number - 1]
 
     def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
                                  text_answer: str, text_clarification: str,
@@ -360,12 +353,11 @@ class DatabaseHelper:
 
         # Finding all the tasks for our homework
         cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
-                    "FROM tasks WHERE homework_id = ?", (homework.homework_id,))
+                    "FROM tasks WHERE homework_id = ?", (homework.homework_id_,))
 
         raw_tasks = cur.fetchall()
-        homework.tasks = [Task(raw_task[5], raw_task[1],
-                               loads(raw_task[2]), raw_task[3],
-                               (self.get_file_data(raw_task[4]), raw_task[4]),
+        homework.tasks = [Task(raw_task[1], loads(raw_task[2]), raw_task[3],
+                               (self.get_file_data(raw_task[4]), raw_task[4]), raw_task[5],
                                raw_task[0]) for raw_task in raw_tasks]
 
         return homework
