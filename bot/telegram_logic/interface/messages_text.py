@@ -63,6 +63,12 @@ BUTTON_ADD_EXERCISE = "Задание"  # Add new exercise
 BUTTON_DELETE_ACCOUNT = "Аккаунт"  # Delete exists account
 BUTTON_DELETE_EXERCISE = "Задание"  # Delete exists exercise
 
+# get_adding_exercise_interface_keyboard
+BUTTON_ADD_ANSWER_ON_TASK = "Добавить ответ"
+BUTTON_ADD_STATEMENT_FOR_TASK = "Добавить условие"
+BUTTON_PREVIOUS_TASK_IN_ADDING_TASK_INTERFACE = "Предыдущее задание"
+BUTTON_NEXT_TASK_IN_ADDING_TASK_INTERFACE = "Следующее задание"
+BUTTON_FINISH_CREATING_EXERCISE = "Завершить создание."
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Commands
@@ -78,7 +84,7 @@ MESSAGE_ON_START_COMMAND = "Состояние сессии сброшено..."
 
 
 # common
-MESSAGE_ON_UNAUTHORIZED_USER = "Вы не авторизованы."
+MESSAGE_ON_UNAUTHORIZED_USER = "Вы не авторизованы.\nВведите логин для авторизации:"
 MESSAGE_ON_NOT_STUDENT_USER = "Выбор задания невозможен."
 MESSAGE_ON_NOT_ADMIN_USER = "Вы не обладаете достаточными правами."
 MESSAGE_ON_UNKNOWN_LOGIN = "Выбранный пользователь был удалён."
@@ -175,6 +181,9 @@ MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового у�
 # __compute_button_admin_add_exercise
 MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE = "Выберите для какого класса будет создано задание."
 
+# __compute_button_adding_statement_for_task
+MESSAGE_ON_ADD_STATEMENT_FOR_TASK = "Введите одним сообщением условие задачи (можно закрепить до одного файла)."
+
 # __compute_button_super_admin_add_admin_account
 MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN = "Введите логин для нового аккаунта администратора."
 
@@ -229,6 +238,12 @@ MESSAGE_ON_CORRECT_NUMBER_OF_TASKS = "Введите поочерёдно пра
 MESSAGE_ON_ACCEPTED_RIGHT_ANSWER = "Ответ принят."
 MESSAGE_REQUEST_FOR_NEW_ANSWER = "Введите ответ к задаче номер {task_id}:"
 MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE = "Новая работа успешно создана."
+
+# adding_exercise_waiting_statement
+MESSAGE_ON_SUCCESS_STATEMENT_ADDITION = "Условие успешно добавлено."
+
+# adding_exercise_waiting_answer_on_task_answers
+MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE = "Выберите действие, текущее задание {task_id}."
 
 # adding_student_waiting_login
 MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN = "Введённый логин уже существует, повторите попытку."

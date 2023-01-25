@@ -1,7 +1,8 @@
 from bot import config, constants
 from bot.database.database_funcs import DatabaseHelper
-from bot.entities.user import User
 from bot.entities.homework import Homework
+from bot.entities.task import Task
+from bot.entities.user import User
 from bot.telegram_logic import handling_functions, callback_functions
 from bot.telegram_logic.interface import messages_text
 from bot.telegram_logic.client.telegram_client import TelegramClient, Message, Callback, Attachment, MARKUP_TYPES
@@ -32,6 +33,9 @@ class UserHandler:
 
         # Dict of { telegram_id -> user data }
         self.__user_data: dict[int, Any] = dict()
+
+        # Dict of { telegram_id -> attachment in last message }
+        self.current_user_attachment: dict[int, Optional[Attachment]] = dict()
 
         self.__database = DatabaseHelper(constants.PATH_TO_DATABASE, constants.DATABASE_NAME)  # Main database
 
@@ -82,10 +86,16 @@ class UserHandler:
         return self.__database.get_homework_by_name(exercise_name) is not None
 
     def get_all_exercises_names(self) -> list[str]:
-        return self.__database.get_all_homeworks_names()
+        homeworks_names = []
+        for homework in self.__database.get_all_homeworks():
+            homeworks_names.append(homework.name)
+        return homeworks_names
 
     def get_all_exercises_names_for_grade(self, grade: int) -> list[str]:
-        return self.__database.get_all_homeworks_names_for_grade(grade)
+        homeworks_names = []
+        for homework in self.__database.get_all_homeworks_for_grade(grade):
+            homeworks_names.append(homework.name)
+        return homeworks_names
 
     def get_results_of_students_by_exercise_name(self, exercise_name: str) -> Optional[
         list[tuple[User, list[tuple[str, str]]]]]:
@@ -96,18 +106,18 @@ class UserHandler:
 
     def get_number_of_right_answers_on_task(self, login: str, exercise_name: str) -> int:
         exercise_info = self.__database.get_homework_by_name(exercise_name)
-        tasks_number = len(exercise_info.right_answers)
+        tasks_number = len(exercise_info.tasks)
         solved_tasks_number = 0
         for i in range(1, tasks_number + 1):
-            solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) == \
-                                   exercise_info.right_answers[i - 1]
+            solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) in \
+                                   exercise_info.tasks[i - 1].right_answers
         return solved_tasks_number
 
     def get_user_answer_on_task(self, login: str, exercise_name: str, task_id: int) -> Optional[str]:
         return self.__database.get_user_answer_for_the_task(login, exercise_name, task_id)
 
-    def get_right_answer_on_task(self, exercise_name: str, task_id: int) -> str:
-        return self.__database.get_right_answer_for_the_task(exercise_name, task_id)
+    def get_right_answer_on_task(self, exercise_name: str, task_id: int) -> list[str]:
+        return self.__database.get_right_answers_for_the_task(exercise_name, task_id)
 
     def check_task(self, login: str, homework_name: str, task_id: int) -> Optional[bool]:
         user = self.__database.get_user_by_login(login)
@@ -123,19 +133,19 @@ class UserHandler:
             return None
 
         # Returns True if user answer is right
-        return self.__database.get_right_answer_for_the_task(homework_name, task_id) == user_answer
+        return user_answer in self.__database.get_right_answers_for_the_task(homework_name, task_id)
 
     def get_user_results_on_exercises(self, login: str, exercises_names: list[str]) -> list[tuple[int, int]]:
         user_results: list[tuple[int, int]] = []  # List of pairs (solved tasks number, tasks number)
         for exercise_name in exercises_names:
             exercise_info = self.__database.get_homework_by_name(exercise_name)
-            tasks_number = len(exercise_info.right_answers)
+            tasks_number = len(exercise_info.tasks)
 
             # Calculate solved tasks number in current homework
             solved_tasks_number = 0
             for i in range(1, tasks_number + 1):
-                solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) == \
-                                       exercise_info.right_answers[i - 1]
+                solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) in \
+                                       exercise_info.tasks[i - 1].right_answers
 
             user_results.append((solved_tasks_number, tasks_number))
         return user_results
@@ -162,14 +172,27 @@ class UserHandler:
         self.__user_data[user_id] = new_data
 
     # Change exercise data
-    def add_exercise(self, exercise_name: str, grade: int, answers: list[str]) -> None:
-        self.__database.add_homework(Homework(exercise_name, grade, answers))
+    def add_exercise(self, data) -> None:
+        tasks = []
+        for i in range(1, data["number_tasks"] + 1):
+            if i in data["task_statements"]:
+                tasks.append(
+                    Task(homework_id=-1, task_number=i, right_answers=data["right_answers"][i],
+                         text_statement=data["task_statements"][i]["text_statement"],
+                         file_statement=(data["task_statements"][i]["statement_data"],
+                                         data["task_statements"][i]["statement_ext"])))
+            else:
+                tasks.append(
+                    Task(homework_id=-1, task_number=i, right_answers=data["right_answers"][i],
+                         text_statement='',
+                         file_statement=(bytes(), '')))
+        self.__database.add_homework(Homework(data["exercise_name"], data["exercise_grade"], tasks))
 
     def delete_exercise(self, exercise_name: str) -> None:
         self.__database.delete_homework_by_name(exercise_name)
 
     def send_answer_on_exercise(self, login: str, exercise_name: str, task_id: int, answer: str) -> Optional[str]:
-        return self.__database.send_answer_for_the_task(login, exercise_name, task_id, answer)
+        return self.__database.send_answer_for_the_task(login, exercise_name, task_id, answer, (bytes(), ''))
 
     # Bot interface
     def __add_user(self, user_id: int) -> None:
@@ -202,9 +225,13 @@ class UserHandler:
             handling_functions.default_state(self, message.from_id, message.text, self.__user_data[message.from_id])
             return
 
+        self.current_user_attachment[message.from_id] = message.attachment
+
         self.__add_user(message.from_id)
         self.__user_state[message.from_id], self.__user_data[message.from_id] = \
             self.__user_state[message.from_id](self, message.from_id, message.text, self.__user_data[message.from_id])
+
+        self.current_user_attachment[message.from_id] = None
 
     def edit_message(self, from_id: int, message_id: int, text: str, markup: MARKUP_TYPES = None) -> bool:
         try:

@@ -6,6 +6,11 @@ from typing import Any, Optional
 
 
 def compute_callback(handler, from_id: int, message_id: int, text: str, callback_data: str) -> tuple[Optional[Callable], Any]:
+    # If user is not authorized, reject chooses
+    if not handler.is_authorized(from_id):
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
+        return None, None
+
     # Parsing callback data
     callback_type = callback_data[0]
     callback_data = callback_data[1:].split(inline_markups.CALLBACK_SEPARATION_ELEMENT)
@@ -25,11 +30,6 @@ def compute_show_results_table_callback(handler, from_id: int, message_id: int, 
                                         callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when user chooses homework for show results (in list of homeworks)
 
-    # If user is not authorized, reject choice
-    if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
-        return None, None
-
     exercise_name = callback_data[0]  # Getting stored exercise name
     exercise_info = handler.get_exercise_info_by_name(exercise_name)
 
@@ -41,7 +41,7 @@ def compute_show_results_table_callback(handler, from_id: int, message_id: int, 
     # Creating table of results
     markup = inline_markups.get_results_table_inline_markup(
         handler.get_results_of_students_by_exercise_name(exercise_name), exercise_name,
-        len(exercise_info.right_answers), 1)
+        len(exercise_info.tasks), 1)
 
     # Sending table
     handler.send_message(send_id=from_id,
@@ -55,11 +55,6 @@ def compute_show_login_in_results_table_callback(handler, from_id: int, message_
                                                  callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when user wants to see statistic of one user in results table
 
-    # If user is not authorized, reject choice
-    if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
-        return None, None
-
     login, exercise_name = callback_data[0], callback_data[1]  # Getting chooses login and exercise name
     exercise_info = handler.get_exercise_info_by_name(exercise_name)
 
@@ -69,7 +64,7 @@ def compute_show_login_in_results_table_callback(handler, from_id: int, message_
         return None, None
 
     # Calculation number of right solved tasks
-    tasks_number = len(exercise_info.right_answers)
+    tasks_number = len(exercise_info.tasks)
     solved_tasks_number = handler.get_number_of_right_answers_on_task(login, exercise_name)
 
     # Send statistic
@@ -85,11 +80,6 @@ def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message
     # This function is called when user chooses task for see right answer on this task (in results table)
 
     user = handler.get_user_info_by_id(from_id)
-
-    # If user is not authorized, reject choice
-    if user is None:
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
-        return None, None
 
     # Getting chooses user login, homework name and task id
     login, exercise_name, task_id = callback_data[0], callback_data[1], int(callback_data[2])
@@ -114,7 +104,7 @@ def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message
         return None, None
 
     # Show right answer
-    if answer == correct_answer:
+    if answer in correct_answer:
         if handler.is_admin(from_id):
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
@@ -143,11 +133,6 @@ def compute_refresh_results_table_callback(handler, from_id: int, message_id: in
                                            callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when user wants to refresh results table
 
-    # If user is not authorized, reject choice
-    if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
-        return None, None
-
     # Getting chooses homework name and last first task id
     exercise_name, first_task_id = callback_data[0], int(callback_data[1])
     exercise_info = handler.get_exercise_info_by_name(exercise_name)
@@ -160,7 +145,7 @@ def compute_refresh_results_table_callback(handler, from_id: int, message_id: in
     # Update results table
     markup = inline_markups.get_results_table_inline_markup(
         handler.get_results_of_students_by_exercise_name(exercise_name), exercise_name,
-        len(exercise_info.right_answers), first_task_id)
+        len(exercise_info.tasks), first_task_id)
 
     if not handler.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup):
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE)
@@ -171,11 +156,6 @@ def compute_switch_results_table_callback(handler, from_id: int, message_id: int
                                           callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when user wants to switch page in results table
 
-    # If user is not authorized, reject choice
-    if not handler.is_authorized(from_id):
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAUTHORIZED_USER)
-        return None, None
-
     # Getting chooses homework name and last first task id
     exercise_name, first_task_id = callback_data[0], int(callback_data[1])
     exercise_info = handler.get_exercise_info_by_name(exercise_name)
@@ -188,7 +168,7 @@ def compute_switch_results_table_callback(handler, from_id: int, message_id: int
     # Update results table
     markup = inline_markups.get_results_table_inline_markup(
         handler.get_results_of_students_by_exercise_name(exercise_name), exercise_name,
-        len(exercise_info.right_answers), first_task_id)
+        len(exercise_info.tasks), first_task_id)
 
     handler.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup)
     return None, None
@@ -213,7 +193,7 @@ def compute_select_homework_for_send_answer_callback(handler, from_id: int, mess
         return None, None
 
     # Creating table of tasks
-    markup = inline_markups.get_student_task_list_inline_markup(user_info.login, len(exercise_info.right_answers),
+    markup = inline_markups.get_student_task_list_inline_markup(user_info.login, len(exercise_info.tasks),
                                                                 exercise_name, handler.check_task)
     handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_STUDENT_TASK_LIST, markup=markup)
     return None, None
@@ -238,7 +218,7 @@ def compute_select_task_id_for_send_answer_callback(handler, from_id: int, messa
         return None, None
 
     # Update table of tasks
-    markup = inline_markups.get_student_task_list_inline_markup(user_info.login, len(exercise_info.right_answers),
+    markup = inline_markups.get_student_task_list_inline_markup(user_info.login, len(exercise_info.tasks),
                                                                 exercise_name, handler.check_task)
     handler.edit_message(from_id=from_id, message_id=message_id, text=text, markup=markup)
 
@@ -308,9 +288,9 @@ def compute_show_exercise_description_callback(handler, from_id: int, message_id
 
     # Create and send description of current task
     text = messages_text.FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION.format(grade=exercise_info.grade,
-                                                        number_tasks=str(len(exercise_info.right_answers)))
-    for i in range(len(exercise_info.right_answers)):
-        text += str(i + 1) + ": " + exercise_info.right_answers[i] + "\n"
+                                                        number_tasks=str(len(exercise_info.tasks)))
+    for i in range(len(exercise_info.tasks)):
+        text += str(i + 1) + ": " + exercise_info.tasks[i].right_answers[0] + "\n"
 
     handler.send_message(send_id=from_id, text=text)
     return None, None

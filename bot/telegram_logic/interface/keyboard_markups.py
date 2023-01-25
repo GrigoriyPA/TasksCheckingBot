@@ -43,6 +43,33 @@ def get_adding_interface_keyboard(is_super_admin: bool) -> types.ReplyKeyboardMa
     return markup
 
 
+def get_adding_exercise_interface_keyboard(task_id: int,
+                                           number_tasks: int,
+                                           is_added_task_statement: bool,
+                                           is_finished: bool) -> types.ReplyKeyboardMarkup:
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+    up_row = []
+    if task_id > 1:
+        up_row.append(types.KeyboardButton(text=messages_text.BUTTON_PREVIOUS_TASK_IN_ADDING_TASK_INTERFACE))
+    if task_id < number_tasks:
+        up_row.append(types.KeyboardButton(text=messages_text.BUTTON_NEXT_TASK_IN_ADDING_TASK_INTERFACE))
+    if len(up_row) == 1:
+        markup.add(up_row[0])
+    elif len(up_row) == 2:
+        markup.add(up_row[0], up_row[1])
+
+    markup.add(types.KeyboardButton(text=messages_text.BUTTON_ADD_ANSWER_ON_TASK))
+    if not is_added_task_statement:
+        markup.add(types.KeyboardButton(text=messages_text.BUTTON_ADD_STATEMENT_FOR_TASK))
+
+    if not is_finished:
+        markup.add(types.KeyboardButton(text=messages_text.BUTTON_BACK))
+    else:
+        markup.add(types.KeyboardButton(text=messages_text.BUTTON_FINISH_CREATING_EXERCISE))
+    return markup
+
+
 def get_deleting_interface_keyboard() -> types.ReplyKeyboardMarkup:
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_DELETE_ACCOUNT))

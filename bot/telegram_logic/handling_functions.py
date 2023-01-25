@@ -1,7 +1,7 @@
 from bot import constants
 from bot.telegram_logic.interface import inline_markups, keyboard_markups, messages_text
 from bot.telegram_logic.user_handler import UserHandler, check_new_name, MARKUP_TYPES
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 
 # Special computing functions
@@ -218,6 +218,90 @@ def __compute_button_super_admin_add_admin_account(handler: UserHandler, from_id
 
     # Super-admin add admin account button have pressed, start waiting login of new account
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN, markup=markup)
+    return True
+
+
+# Checking adding answer for task in creation new exercise process button (adding exercise, task settings interface)
+def __compute_button_adding_answer_for_task(handler: UserHandler, from_id: int, text: str, data,
+                                            markup: MARKUP_TYPES = None) -> bool:
+    if text != messages_text.BUTTON_ADD_ANSWER_ON_TASK:
+        # There is no adding answer for task in creation new exercise process button pressed
+        return False
+
+    # Adding answer for task in creation new exercise process button have pressed, start waiting new answer
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=data["task_id"]),
+                         markup=markup)
+    return True
+
+
+# Checking adding statement for task in creation new exercise process button (adding exercise, task settings interface)
+def __compute_button_adding_statement_for_task(handler: UserHandler, from_id: int, text: str, data,
+                                               markup: MARKUP_TYPES = None) -> bool:
+    if text != messages_text.BUTTON_ADD_STATEMENT_FOR_TASK or data["task_id"] in data["task_statements"]:
+        # There is no adding statement for task in creation new exercise process button pressed
+        return False
+
+    # Adding statement for task in creation new exercise process button have pressed, start waiting statement
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_ADD_STATEMENT_FOR_TASK,
+                         markup=markup)
+    return True
+
+
+# Checking go to next task settings button (adding exercise, task settings interface)
+def __compute_button_go_to_next_task_settings(handler: UserHandler, from_id: int, text: str, data) -> Optional[bool]:
+    if text != messages_text.BUTTON_NEXT_TASK_IN_ADDING_TASK_INTERFACE or data["task_id"] == data["number_tasks"]:
+        # There is no go to next task settings button pressed
+        return False
+
+    # Go to next task settings button have pressed, switch interface
+    data["task_id"] += 1
+    if data["task_id"] not in data["right_answers"]:
+        data["right_answers"][data["task_id"]] = []
+        data["number_unchecked_tasks"] -= 1
+        handler.send_message(send_id=from_id,
+                             text=messages_text.MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=data["task_id"]),
+                             markup=keyboard_markups.remove_keyboard())
+        return None
+
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
+                         markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["task_statements"],
+                                                                                        data["number_unchecked_tasks"] == 0))
+    return True
+
+
+# Checking go to previous task settings button (adding exercise, task settings interface)
+def __compute_button_go_to_previous_task_settings(handler: UserHandler, from_id: int, text: str,
+                                                  data) -> Optional[bool]:
+    if text != messages_text.BUTTON_PREVIOUS_TASK_IN_ADDING_TASK_INTERFACE or data["task_id"] == 1:
+        # There is no go to previous task settings button pressed
+        return False
+
+    # Go to previous task settings button have pressed, switch interface
+    data["task_id"] -= 1
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
+                         markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["task_statements"],
+                                                                                        data["number_unchecked_tasks"] == 0))
+    return True
+
+
+# Checking finish creating new exercise button (adding exercise, task settings interface)
+def __compute_button_finish_creating_new_exercise(handler: UserHandler, from_id: int, text: str, data,
+                                                  markup: MARKUP_TYPES = None) -> bool:
+    if text != messages_text.BUTTON_FINISH_CREATING_EXERCISE or data["number_unchecked_tasks"] > 0:
+        # There is no finish creating new exercise button pressed
+        return False
+
+    # Finish creating new exercise button have pressed, start waiting new answer
+    handler.add_exercise(data)
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND,
+                         markup=markup)
     return True
 
 
@@ -497,40 +581,82 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
 
     # Start waiting all right answers in new exercise
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CORRECT_NUMBER_OF_TASKS)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=1),
+                         markup=keyboard_markups.remove_keyboard())
+
 
     # Data description: (grade, exercise name, number of tasks, amount, list of right answers)
-    return adding_exercise_waiting_list_of_right_answers(handler, from_id, text,
-                                                         (data[0], data[1], number_of_tasks, 0, []))
+    return adding_exercise_waiting_answer_on_task, {"exercise_grade": data[0], "exercise_name": data[1],
+                                                    "number_tasks": number_of_tasks, "task_id": 1,
+                                                    "right_answers": {1: []}, "task_statements": {},
+                                                    "number_unchecked_tasks": number_of_tasks - 1}
 
 
-def adding_exercise_waiting_list_of_right_answers(handler: UserHandler, from_id: int,
-                                                  text: str, data) -> tuple[Callable, Any]:
-    # This function is called on admin input during waiting list of right answers for create new exercise
-
+def adding_exercise_task_settings_interface(handler: UserHandler, from_id: int,
+                                            text: str, data) -> tuple[Callable, Any]:
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
                              message_info=messages_text.MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME):
-        return adding_exercise_waiting_number_of_right_answers, (data[0], data[1])
+        return adding_exercise_waiting_number_of_right_answers, (data["exercise_grade"], data["exercise_name"])
 
-    # Waiting right answer starts when current_number > 0 and stop when current_number == amount
-    if data[3] > 0:
-        right_answer = text  # Current right answer
-        data = (data[0], data[1], data[2], data[3], data[4] + [right_answer])
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ACCEPTED_RIGHT_ANSWER)
+    if __compute_button_adding_answer_for_task(handler, from_id, text, data, keyboard_markups.remove_keyboard()):
+        return adding_exercise_waiting_answer_on_task, data
 
-    if data[3] < data[2]:
-        data = (data[0], data[1], data[2], data[3] + 1, data[4])
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=data[3]))
-        return adding_exercise_waiting_list_of_right_answers, data
+    if __compute_button_finish_creating_new_exercise(handler, from_id, text, data,
+                                                     markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id))):
+        return admin_adding_interface, None
 
-    grade = int(data[0])  # Getting stored exercise grade
-    exercise_name = data[1]  # Getting stored exercise name
-    answers = data[4]  # Getting stored right answers for each task
+    if __compute_button_adding_statement_for_task(handler, from_id, text, data,
+                                                  markup=keyboard_markups.get_back_button_keyboard()):
+        return adding_exercise_waiting_statement, data
 
-    handler.add_exercise(exercise_name, grade, answers)  # Add new exercise
+    if __compute_button_go_to_previous_task_settings(handler, from_id, text, data):
+        return adding_exercise_task_settings_interface, data
 
-    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE,
-                         markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)))
-    return admin_adding_interface, None
+    result = __compute_button_go_to_next_task_settings(handler, from_id, text, data)
+    if result is None:
+        return adding_exercise_waiting_answer_on_task, data
+    elif result:
+        return adding_exercise_task_settings_interface, data
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
+    return adding_exercise_task_settings_interface, data
+
+
+def adding_exercise_waiting_answer_on_task(handler: UserHandler, from_id: int,
+                                           text: str, data) -> tuple[Callable, Any]:
+    # This function is called on admin input during waiting of new right answer for create new exercise
+
+    right_answer = text  # Current right answer
+    data["right_answers"][data["task_id"]].append(right_answer)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ACCEPTED_RIGHT_ANSWER)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
+                         markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["task_statements"],
+                                                                                        data["number_unchecked_tasks"] == 0))
+    return adding_exercise_task_settings_interface, data
+
+
+def adding_exercise_waiting_statement(handler: UserHandler, from_id: int,
+                                      text: str, data) -> tuple[Callable, Any]:
+    # This function is called on admin input during waiting of task statement
+
+    text_statement = text
+    statement_data = bytes()
+    statement_ext = ""
+
+    attachment = handler.current_user_attachment[from_id]
+    if attachment is not None:
+        statement_data = attachment.get_content()
+        statement_ext = attachment.get_extension()
+
+    data["task_statements"][data["task_id"]] = {"text_statement": text, "statement_data": statement_data,
+                                                "statement_ext": statement_ext}
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_STATEMENT_ADDITION)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
+                         markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["task_statements"],
+                                                                                        data["number_unchecked_tasks"] == 0))
+    return adding_exercise_task_settings_interface, data
 
 
 # Adding student branch
