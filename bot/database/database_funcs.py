@@ -8,7 +8,7 @@ from bot.entities.task import Task
 from bot.entities.user import User
 from bot.entities.homework import Homework
 from bot.constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, \
-    ADMINS, ADMIN_STATUS, PATH_TO_SOLUTION_FILES, PATH_TO_STATEMENTS_FILES, STUDENT_STATUS
+    ADMINS, ADMIN_STATUS, PATH_TO_SOLUTION_FILES, PATH_TO_STATEMENTS_FILES
 
 
 class DatabaseHelper:
@@ -64,6 +64,7 @@ class DatabaseHelper:
                     "user_id INTEGER NOT NULL,"
                     "task_id INTEGER NOT NULL,"
                     "text_answer TEXT NOT NULL,"
+                    "text_clarification TEXT NOT NULL,"
                     "file_answer STRING NOT NULL,"
                     "FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,"
                     "FOREIGN KEY (task_id) REFERENCES tasks (task_id) ON DELETE CASCADE,"
@@ -203,7 +204,8 @@ class DatabaseHelper:
         con, cur = self.__create_connection_and_cursor()
 
         # We get answer of the user
-        cur.execute("SELECT user_id, task_id, text_answer, file_answer FROM results WHERE user_id = ? AND task_id = ?",
+        cur.execute("SELECT user_id, task_id, text_answer, text_clarification file_answer"
+                    " FROM results WHERE user_id = ? AND task_id = ?",
                     (user.user_id, task.task_id))
         result_params = cur.fetchone()
 
@@ -211,8 +213,8 @@ class DatabaseHelper:
         if result_params is None:
             return None
 
-        return Result(result_params[0], result_params[1], result_params[2],
-                      (self.get_file_data(result_params[3]), result_params[3]))
+        return Result(result_params[0], result_params[1], result_params[2], result_params[3],
+                      (self.get_file_data(result_params[4]), result_params[4]))
 
     def get_task(self, homework_name: str, task_number: int) -> Union[Task, None]:
         # Returns task id with given homework name and task number
@@ -238,7 +240,8 @@ class DatabaseHelper:
                     (self.get_file_data(task_params[4]), task_params[4]), task_params[0])
 
     def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
-                                 text_answer: str, file_answer: tuple[bytes, str]) -> Union[list[str], None]:
+                                 text_answer: str, text_clarification: str,
+                                 file_answer: tuple[bytes, str]) -> Union[list[str], None]:
         # Writes info about user answer for the particular task
 
         # If user has already given an answer to this task we should raise an exception
@@ -266,8 +269,9 @@ class DatabaseHelper:
         self.save_file_data(filename, file_answer[0])
 
         # Writing info about the answer
-        cur.execute("INSERT INTO results (user_id, task_id, text_answer, file_answer) VALUES (?, ?, ?, ?)",
-                    (user.user_id, task.task_id, text_answer, filename))
+        cur.execute("INSERT INTO results (user_id, task_id, text_answer, text_clarification, file_answer) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (user.user_id, task.task_id, text_answer, text_clarification, filename))
         con.commit()
 
         return self.get_right_answers_for_the_task(homework_name, task_number)
