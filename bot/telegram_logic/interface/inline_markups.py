@@ -13,7 +13,7 @@ CALLBACK_DATA_NONE = "0"  # Button do nothing
 
 # get_results_table_inline_markup
 CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = "A"
-CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK = "B"
+CALLBACK_DATA_FROM_CELL_OF_TASK = "B"
 CALLBACK_DATA_MOVE_RESULTS_TABLE = "C"
 CALLBACK_DATA_REFRESH_RESULTS_TABLE = "D"
 
@@ -83,19 +83,21 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
                 if answer is None:
                     # There is no answer from user on this task
                     row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_NOT_SOLVED_TASK,
-                                                          callback_data=CALLBACK_DATA_NONE))
+                                                          callback_data=CALLBACK_DATA_FROM_CELL_OF_TASK +
+                                                                        result[0].login + CALLBACK_SEPARATION_ELEMENT +
+                                                                        homework_name + CALLBACK_SEPARATION_ELEMENT + str(task_id)))
                 elif answer:
                     # User answer is right
                     row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
-                                                          callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK +
-                                                                       result[0].login + CALLBACK_SEPARATION_ELEMENT +
-                                                                       homework_name + CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+                                                          callback_data=CALLBACK_DATA_FROM_CELL_OF_TASK +
+                                                                        result[0].login + CALLBACK_SEPARATION_ELEMENT +
+                                                                        homework_name + CALLBACK_SEPARATION_ELEMENT + str(task_id)))
                 else:
                     # User answer is false
                     row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
-                                                          callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK +
-                                                                       result[0].login + CALLBACK_SEPARATION_ELEMENT +
-                                                                       homework_name + CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+                                                          callback_data=CALLBACK_DATA_FROM_CELL_OF_TASK +
+                                                                        result[0].login + CALLBACK_SEPARATION_ELEMENT +
+                                                                        homework_name + CALLBACK_SEPARATION_ELEMENT + str(task_id)))
 
         rows_order.append((-current_sum, result[0].login, row_id))  # Update rows order by current row
         amount += current_sum  # Update number of right solved tasks
@@ -208,12 +210,12 @@ def get_student_task_list_inline_markup(login: str, homework: Homework, check_ta
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
         elif task_state:
             row.append(types.InlineKeyboardButton(text=str(task_id) + " " + messages_text.BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
-                                                  callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
+                                                  callback_data=CALLBACK_DATA_FROM_CELL_OF_TASK + login +
                                                                 CALLBACK_SEPARATION_ELEMENT + homework.name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
         else:
             row.append(types.InlineKeyboardButton(text=str(task_id) + " " + messages_text.BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
-                                                  callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
+                                                  callback_data=CALLBACK_DATA_FROM_CELL_OF_TASK + login +
                                                                 CALLBACK_SEPARATION_ELEMENT + homework.name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
 

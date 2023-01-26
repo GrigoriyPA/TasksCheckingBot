@@ -76,8 +76,8 @@ def compute_show_login_in_results_table_callback(handler, from_id: int, message_
     return None, None
 
 
-def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message_id: int, text: str,
-                                                  callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+def compute_cell_of_task_in_table_callback(handler, from_id: int, message_id: int, text: str,
+                                           callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when user chooses task for see right answer on this task (in results table)
 
     user = handler.get_user_info_by_id(from_id)
@@ -97,15 +97,31 @@ def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message
 
     # Getting user answer on current task
     answer = handler.get_user_answer_on_task(login, exercise_name, task_id)
-    correct_answer = handler.get_right_answer_on_task(exercise_name, task_id)
+    correct_answers = handler.get_right_answer_on_task(exercise_name, task_id)
 
     # If task was blocked or deleted, reject choice
-    if answer is None or correct_answer is None:
+    if correct_answers is None:
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_TASK)
         return None, None
 
+    correct_answer_text = str(correct_answers[0])
+    for right_answer in correct_answers[1:]:
+        correct_answer_text += messages_text.RIGHT_ANSWERS_SPLITER + str(right_answer)
+
+    if answer is None:
+        if handler.is_admin(from_id):
+            handler.send_message(send_id=from_id,
+                                 text=messages_text.MESSAGE_ON_CELL_OF_NOT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
+                                                                                                     task_id=str(task_id),
+                                                                                                     correct_answer=correct_answer_text))
+        else:
+            handler.send_message(send_id=from_id,
+                                 text=messages_text.MESSAGE_ON_CELL_OF_NOT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id)))
+        return None, None
+    answer = answer.text_answer
+
     # Show right answer
-    if answer in correct_answer:
+    if answer in correct_answers:
         if handler.is_admin(from_id):
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
@@ -120,13 +136,14 @@ def compute_cell_of_solved_task_in_table_callback(handler, from_id: int, message
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
                                                                                                      task_id=str(task_id),
-                                                                                                     correct_answer=correct_answer,
+                                                                                                     correct_answer=correct_answer_text,
                                                                                                      answer=answer))
         else:
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
-                                                                                                       correct_answer=correct_answer,
+                                                                                                       correct_answer=correct_answer_text,
                                                                                                        answer=answer))
+
     return None, None
 
 
@@ -421,7 +438,7 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
     inline_markups.CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE: compute_show_login_in_results_table_callback,
-    inline_markups.CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK: compute_cell_of_solved_task_in_table_callback,
+    inline_markups.CALLBACK_DATA_FROM_CELL_OF_TASK: compute_cell_of_task_in_table_callback,
     inline_markups.CALLBACK_DATA_REFRESH_RESULTS_TABLE: compute_refresh_results_table_callback,
     inline_markups.CALLBACK_DATA_MOVE_RESULTS_TABLE: compute_switch_results_table_callback,
     inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER: compute_select_homework_for_send_answer_callback,

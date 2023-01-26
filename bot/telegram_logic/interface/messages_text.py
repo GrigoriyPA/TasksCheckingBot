@@ -106,11 +106,14 @@ MESSAGE_ON_SHOW_LOGIN_IN_RESULTS_TABLE = "{login}\nРешено {solved_tasks_nu
 
 # compute_cell_of_solved_task_in_table_callback
 MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Правильный ответ '{login}' на задание {task_id}: {answer}"
-MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Правильный ответ на задание {task_id}: {correct_answer}\n" \
-                                                          "Ответ '{login}' на задание: {answer}"
+MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Ответ '{login}' на задание {task_id}: {answer}\n" \
+                                                          "Список правильных ответов на задание:\n{correct_answer}"
+MESSAGE_ON_CELL_OF_NOT_SOLVED_TASK_IN_TABLE_FOR_ADMIN = "Ученик '{login}' не дал ответа на задание {task_id}.\n" \
+                                                        "Список правильных ответов на задание:\n{correct_answer}"
 MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Ваш правильный ответ на задание {task_id}: {answer}"
-MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Правильный ответ на задание {task_id}: {correct_answer}\n" \
-                                                            "Ваш ответ на задание:  {answer}"
+MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Ваш ответ на задание {task_id}: {answer}\n" \
+                                                            "Список правильных ответов на задание:\n{correct_answer}"
+MESSAGE_ON_CELL_OF_NOT_SOLVED_TASK_IN_TABLE_FOR_STUDENT = "Вы не дали ответа на задание {task_id}."
 
 # compute_refresh_results_table_callback
 MESSAGE_ON_ALREADY_ACTUAL_INFORMATION_IN_RESULTS_TABLE = "Информация актуальна."

@@ -1,6 +1,7 @@
 from bot import config, constants
 from bot.database.database_funcs import DatabaseHelper
 from bot.entities.homework import Homework
+from bot.entities.result import Result
 from bot.entities.task import Task
 from bot.entities.user import User
 from bot.telegram_logic import handling_functions, callback_functions
@@ -109,11 +110,12 @@ class UserHandler:
         tasks_number = len(exercise_info.tasks)
         solved_tasks_number = 0
         for i in range(1, tasks_number + 1):
-            solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) in \
+            answer = self.__database.get_user_answer_for_the_task(login, exercise_name, i)
+            solved_tasks_number += answer is not None and answer.text_answer in \
                                    exercise_info.tasks[i - 1].right_answers
         return solved_tasks_number
 
-    def get_user_answer_on_task(self, login: str, exercise_name: str, task_id: int) -> Optional[str]:
+    def get_user_answer_on_task(self, login: str, exercise_name: str, task_id: int) -> Optional[Result]:
         return self.__database.get_user_answer_for_the_task(login, exercise_name, task_id)
 
     def get_right_answer_on_task(self, exercise_name: str, task_id: int) -> list[str]:
@@ -144,7 +146,8 @@ class UserHandler:
             # Calculate solved tasks number in current homework
             solved_tasks_number = 0
             for i in range(1, tasks_number + 1):
-                solved_tasks_number += self.__database.get_user_answer_for_the_task(login, exercise_name, i) in \
+                answer = self.__database.get_user_answer_for_the_task(login, exercise_name, i)
+                solved_tasks_number += answer is not None and answer.text_answer in \
                                        exercise_info.tasks[i - 1].right_answers
 
             user_results.append((solved_tasks_number, tasks_number))
