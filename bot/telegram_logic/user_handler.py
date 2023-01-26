@@ -191,8 +191,11 @@ class UserHandler:
     def delete_exercise(self, exercise_name: str) -> None:
         self.__database.delete_homework_by_name(exercise_name)
 
-    def send_answer_on_exercise(self, login: str, exercise_name: str, task_id: int, answer: str) -> Optional[str]:
-        return self.__database.send_answer_for_the_task(login, exercise_name, task_id, answer, (bytes(), ''))
+    def send_answer_on_exercise(self, login: str, data) -> Optional[list[str]]:
+        return self.__database.send_answer_for_the_task(login=login, homework_name=data["exercise_name"],
+                                                        task_number=data["task_id"], text_answer=data["answer"],
+                                                        text_clarification=data["explanation_text"],
+                                                        file_answer=(data["explanation_data"], data["explanation_ext"]))
 
     # Bot interface
     def __add_user(self, user_id: int) -> None:

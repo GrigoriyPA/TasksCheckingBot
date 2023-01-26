@@ -55,6 +55,10 @@ BUTTON_BACK = "Назад"  # Go to last state
 # Students
 BUTTON_SOLVE_EXERCISE = "Сдать задачу"  # Solve unsolved exercise
 
+# get_student_send_explanation_keyboard
+BUTTON_STUDENT_WANT_TO_SEND_EXPLANATION = "Да"
+BUTTON_STUDENT_DO_NOT_WANT_TO_SEND_EXPLANATION = "Нет"
+
 # Admins:
 BUTTON_ADD = "Добавить"  # Button for select add action type (admin/super-admin)
 BUTTON_DELETE = "Удалить"  # Button for select delete action type (admin/super-admin)
@@ -183,6 +187,9 @@ MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удал
 MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE = "На данный момент для вас нет открытых работ."
 MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
 
+# __compute_button_student_want_to_send_explanation
+MESSAGE_ON_START_WAITING_EXPLANATION = "Отправьте одним сообщением пояснение к решению задачи (можно закрепить до одного файла)."
+
 # __compute_button_admin_add_student
 MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
 
@@ -190,7 +197,7 @@ MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового у�
 MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE = "Выберите для какого класса будет создано задание."
 
 # __compute_button_adding_statement_for_task
-MESSAGE_ON_ADD_STATEMENT_FOR_TASK = "Введите одним сообщением условие задачи (можно закрепить до одного файла)."
+MESSAGE_ON_ADD_STATEMENT_FOR_TASK = "Отправьте одним сообщением условие задачи (можно закрепить до одного файла)."
 
 # __compute_button_super_admin_add_admin_account
 MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN = "Введите логин для нового аккаунта администратора."
@@ -202,6 +209,7 @@ MESSAGE_ON_ADMIN_DELETE_ACCOUNT = "Введите логин аккаунта д
 MESSAGE_ON_ADMIN_DELETE_EXERCISE = "Введите название работы для удаления:"
 
 # common
+RIGHT_ANSWERS_SPLITER = "\n"
 MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда."
 
 # default_state
@@ -226,11 +234,17 @@ MESSAGE_ON_INVALID_ANSWER = "Введён некорректный ответ, �
 MESSAGE_RIGHT_RESULT_MARK = "✅"
 MESSAGE_WRONG_RESULT_MARK = "❌"
 MESSAGE_ON_RIGHT_ANSWER = "Ваш ответ правильный!"
-MESSAGE_ON_WRONG_ANSWER = "Ваш ответ неправильный. Правильный ответ: {correct_answer}"
+MESSAGE_ON_WRONG_ANSWER = "Ваш ответ неправильный. Список правильных ответов:\n{correct_answer}"
 NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK = "'{login}', {grade} класс добавил ответ к заданию {task_id} в работе '{exercise_name}'\n" \
-                                         "Правильный ответ: {correct_answer}\n" \
+                                         "Результат: {result}\n" \
                                          "Ответ ученика: {answer}\n" \
-                                         "Результат: {result}"
+                                         "Список правильных ответов:\n{correct_answer}"
+
+# solving_task_send_explanation_interface
+MESSAGE_ON_MOVING_IN_EXPLANATION_SENDING_INTERFACE = "Добавить пояснение к ответу?"
+
+# solving_task_waiting_explanation
+MESSAGE_ON_SUCCESS_ADDED_EXPLANATION = "Пояснение к задаче успешно добавлено."
 
 # adding_exercise_waiting_exercise_name
 MESSAGE_ON_ALREADY_EXISTS_EXERCISE_NAME = "Работа с введённым именем уже существует, повторите попытку."

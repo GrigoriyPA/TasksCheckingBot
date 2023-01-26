@@ -105,7 +105,6 @@ class TelegramClient:
 
         # Send messages for each attachment
         for attachment in attachments:
-            print(attachment.attach_type)
             if attachment.attach_type == "photo":
                 # Attachment is compressed photo
                 self.__client.send_photo(chat_id=send_id, caption=text, photo=attachment.get_content())

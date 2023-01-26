@@ -410,7 +410,7 @@ def compute_callback_data_show_task_statement_callback(handler, from_id: int, me
     if attachment_data != bytes():
         handler.send_message(send_id=from_id, text=text,
                              attachments=[Attachment(data=attachment_data,
-                                                     file_name=messages_text.STATEMENT_FILE_NAME + attachment_ext)])
+                                                     file_name=messages_text.STATEMENT_FILE_NAME + "." + attachment_ext)])
     else:
         handler.send_message(send_id=from_id, text=text)
 

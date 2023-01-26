@@ -183,6 +183,80 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
     return True
 
 
+# Send correct answer, when student have solved task
+def __send_correct_answer_to_student(handler: UserHandler, from_id: int, text: str, data,
+                                     markup: MARKUP_TYPES = None) -> None:
+    # Getting chooses exercise name, task id and answer
+    exercise_name = data["exercise_name"]
+    task_id = data["task_id"]
+    answer = data["answer"]
+    user_info = handler.get_user_info_by_id(from_id)
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If task was blocked or deleted, reject answer
+    if user_info is None or exercise_info is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_EXERCISE_NAME,
+                             markup=markup)
+        return
+
+    correct_answers = handler.send_answer_on_exercise(user_info.login, data)
+
+    correct_answer_text = str(correct_answers[0])
+    for right_answer in correct_answers[1:]:
+        correct_answer_text += messages_text.RIGHT_ANSWERS_SPLITER + str(right_answer)
+
+    # Checking answer
+    if answer in correct_answers:
+        result = messages_text.MESSAGE_RIGHT_RESULT_MARK
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_RIGHT_ANSWER,
+                             markup=markup)
+    else:
+        result = messages_text.MESSAGE_WRONG_RESULT_MARK
+        handler.send_message(send_id=from_id,
+                             text=messages_text.MESSAGE_ON_WRONG_ANSWER.format(correct_answer=correct_answer_text),
+                             markup=markup)
+
+    # Sending notifications to all admins
+    for admin_info in handler.get_users_info_by_status(constants.ADMIN_STATUS) + \
+                      handler.get_users_info_by_status(constants.SUPER_ADMIN_STATUS):
+        # Scip all not authorized admins
+        if admin_info.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
+            continue
+
+        handler.send_message(send_id=admin_info.telegram_id,
+                             text=messages_text.NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK.format(login=user_info.login,
+                                                                                              grade=user_info.grade,
+                                                                                              exercise_name=exercise_name,
+                                                                                              task_id=str(task_id),
+                                                                                              answer=answer,
+                                                                                              correct_answer=correct_answer_text,
+                                                                                              result=result))
+
+
+# Checking student want to send explanation (send explanation interface)
+def __compute_button_student_want_to_send_explanation(handler: UserHandler, from_id: int, text: str, data,
+                                                      markup: MARKUP_TYPES = None) -> bool:
+    if text != messages_text.BUTTON_STUDENT_WANT_TO_SEND_EXPLANATION:
+        # There is no student want to send explanation button pressed
+        return False
+
+    # Student want to send explanation button have pressed, change state
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_START_WAITING_EXPLANATION, markup=markup)
+    return True
+
+
+# Checking student do not want to send explanation (send explanation interface)
+def __compute_button_student_do_not_want_to_send_explanation(handler: UserHandler, from_id: int, text: str, data,
+                                                             markup: MARKUP_TYPES = None) -> bool:
+    if text != messages_text.BUTTON_STUDENT_DO_NOT_WANT_TO_SEND_EXPLANATION:
+        # There is no student do not want to send explanation button pressed
+        return False
+
+    # Student do not want to send explanation button have pressed, change state
+    __send_correct_answer_to_student(handler, from_id, text, data, markup=markup)
+    return True
+
+
 # Checking admin add student button (adding admin interface)
 def __compute_button_admin_add_student(handler: UserHandler, from_id: int, text: str) -> bool:
     if text != messages_text.BUTTON_ADD_STUDENT:
@@ -251,23 +325,17 @@ def __compute_button_adding_statement_for_task(handler: UserHandler, from_id: in
 
 # Checking go to next task settings button (adding exercise, task settings interface)
 def __compute_button_go_to_next_task_settings(handler: UserHandler, from_id: int, text: str, data) -> Optional[bool]:
-    if text != messages_text.BUTTON_NEXT_TASK_IN_ADDING_TASK_INTERFACE or data["task_id"] == data["number_tasks"]:
+    if text != messages_text.BUTTON_NEXT_TASK_IN_ADDING_TASK_INTERFACE or data["task_id"] == data["number_tasks"] or \
+            data["task_id"] not in data["right_answers"]:
         # There is no go to next task settings button pressed
         return False
 
     # Go to next task settings button have pressed, switch interface
     data["task_id"] += 1
-    if data["task_id"] not in data["right_answers"]:
-        data["right_answers"][data["task_id"]] = []
-        data["number_unchecked_tasks"] -= 1
-        handler.send_message(send_id=from_id,
-                             text=messages_text.MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=data["task_id"]),
-                             markup=keyboard_markups.remove_keyboard())
-        return None
-
     handler.send_message(send_id=from_id,
                          text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
                          markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["right_answers"],
                                                                                         data["task_id"] in data["task_statements"],
                                                                                         data["number_unchecked_tasks"] == 0))
     return True
@@ -276,7 +344,8 @@ def __compute_button_go_to_next_task_settings(handler: UserHandler, from_id: int
 # Checking go to previous task settings button (adding exercise, task settings interface)
 def __compute_button_go_to_previous_task_settings(handler: UserHandler, from_id: int, text: str,
                                                   data) -> Optional[bool]:
-    if text != messages_text.BUTTON_PREVIOUS_TASK_IN_ADDING_TASK_INTERFACE or data["task_id"] == 1:
+    if text != messages_text.BUTTON_PREVIOUS_TASK_IN_ADDING_TASK_INTERFACE or data["task_id"] == 1 or \
+            data["task_id"] not in data["right_answers"]:
         # There is no go to previous task settings button pressed
         return False
 
@@ -285,6 +354,7 @@ def __compute_button_go_to_previous_task_settings(handler: UserHandler, from_id:
     handler.send_message(send_id=from_id,
                          text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
                          markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["right_answers"],
                                                                                         data["task_id"] in data["task_statements"],
                                                                                         data["number_unchecked_tasks"] == 0))
     return True
@@ -450,33 +520,47 @@ def solving_task_waiting_answer(handler: UserHandler, from_id: int, text: str, d
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_ANSWER)
         return solving_task_waiting_answer, data
 
-    correct_answer = handler.send_answer_on_exercise(user_info.login, exercise_name, task_id, answer)
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_MOVING_IN_EXPLANATION_SENDING_INTERFACE,
+                         markup=keyboard_markups.get_student_send_explanation_keyboard())
+    return solving_task_send_explanation_interface, {"exercise_name": exercise_name, "task_id": task_id,
+                                                     "answer": answer, "explanation_text": "",
+                                                     "explanation_data": bytes(), "explanation_ext": ""}
 
-    # Checking answer
-    if answer == correct_answer:
-        result = messages_text.MESSAGE_RIGHT_RESULT_MARK
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_RIGHT_ANSWER,
-                             markup=keyboard_markups.get_default_student_keyboard())
-    else:
-        result = messages_text.MESSAGE_WRONG_RESULT_MARK
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_WRONG_ANSWER.format(correct_answer=correct_answer),
-                             markup=keyboard_markups.get_default_student_keyboard())
 
-    # Sending notifications to all admins
-    for admin_info in handler.get_users_info_by_status(constants.ADMIN_STATUS) + \
-                      handler.get_users_info_by_status(constants.SUPER_ADMIN_STATUS):
-        # Scip all not authorized admins
-        if admin_info.telegram_id == constants.UNAUTHORIZED_TELEGRAM_ID:
-            continue
+def solving_task_send_explanation_interface(handler: UserHandler, from_id: int, text: str,
+                                            data) -> tuple[Callable, Any]:
+    if __compute_button_student_want_to_send_explanation(handler, from_id, text, data,
+                                                         markup=keyboard_markups.get_back_button_keyboard()):
+        return solving_task_waiting_explanation, data
 
-        handler.send_message(send_id=admin_info.telegram_id,
-                             text=messages_text.NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK.format(login=user_info.login,
-                                                                                grade=user_info.grade,
-                                                                                exercise_name=exercise_name,
-                                                                                task_id=str(task_id),
-                                                                                answer=answer,
-                                                                                correct_answer=correct_answer,
-                                                                                result=result))
+    if __compute_button_student_do_not_want_to_send_explanation(handler, from_id, text, data,
+                                                                markup=keyboard_markups.get_default_student_keyboard()):
+        return default_student_page, None
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
+    return solving_task_send_explanation_interface, data
+
+
+def solving_task_waiting_explanation(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called on user input during waiting explanation of answer on some exercise
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_student_send_explanation_keyboard(),
+                             message_info=messages_text.MESSAGE_ON_MOVING_IN_EXPLANATION_SENDING_INTERFACE):
+        return solving_task_send_explanation_interface, data
+
+    # Getting answer explanation
+    data["explanation_text"] = text
+    data["explanation_data"] = bytes()
+    data["explanation_ext"] = ""
+
+    attachment = handler.current_user_attachment[from_id]
+    if attachment is not None:
+        data["explanation_data"] = attachment.get_content()
+        data["explanation_ext"] = attachment.get_extension()
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADDED_EXPLANATION)
+    __send_correct_answer_to_student(handler, from_id, text, data,
+                                     markup=keyboard_markups.get_default_student_keyboard())
     return default_student_page, None
 
 
@@ -583,12 +667,12 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
 
     # Start waiting all right answers in new exercise
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CORRECT_NUMBER_OF_TASKS)
-    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_REQUEST_FOR_NEW_ANSWER.format(task_id=1),
-                         markup=keyboard_markups.remove_keyboard())
-
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=1),
+                         markup=keyboard_markups.get_adding_exercise_interface_keyboard(1, number_of_tasks,
+                                                                                        False, False, False))
 
     # Data description: (grade, exercise name, number of tasks, amount, list of right answers)
-    return adding_exercise_waiting_answer_on_task, {"exercise_grade": data[0], "exercise_name": data[1],
+    return adding_exercise_task_settings_interface, {"exercise_grade": data[0], "exercise_name": data[1],
                                                     "number_tasks": number_of_tasks, "task_id": 1,
                                                     "right_answers": {1: []}, "task_statements": {},
                                                     "number_unchecked_tasks": number_of_tasks - 1}
@@ -614,10 +698,7 @@ def adding_exercise_task_settings_interface(handler: UserHandler, from_id: int,
     if __compute_button_go_to_previous_task_settings(handler, from_id, text, data):
         return adding_exercise_task_settings_interface, data
 
-    result = __compute_button_go_to_next_task_settings(handler, from_id, text, data)
-    if result is None:
-        return adding_exercise_waiting_answer_on_task, data
-    elif result:
+    if __compute_button_go_to_next_task_settings(handler, from_id, text, data):
         return adding_exercise_task_settings_interface, data
 
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
@@ -629,10 +710,16 @@ def adding_exercise_waiting_answer_on_task(handler: UserHandler, from_id: int,
     # This function is called on admin input during waiting of new right answer for create new exercise
 
     right_answer = text  # Current right answer
+
+    if data["task_id"] not in data["right_answers"]:
+        data["right_answers"][data["task_id"]] = []
+        data["number_unchecked_tasks"] -= 1
     data["right_answers"][data["task_id"]].append(right_answer)
+
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ACCEPTED_RIGHT_ANSWER)
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
                          markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["right_answers"],
                                                                                         data["task_id"] in data["task_statements"],
                                                                                         data["number_unchecked_tasks"] == 0))
     return adding_exercise_task_settings_interface, data
@@ -641,6 +728,14 @@ def adding_exercise_waiting_answer_on_task(handler: UserHandler, from_id: int,
 def adding_exercise_waiting_statement(handler: UserHandler, from_id: int,
                                       text: str, data) -> tuple[Callable, Any]:
     # This function is called on admin input during waiting of task statement
+
+    if __compute_button_back(handler, from_id, text,
+                             keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                     data["task_id"] in data["right_answers"],
+                                                                                     data["task_id"] in data["task_statements"],
+                                                                                     data["number_unchecked_tasks"] == 0),
+                             message_info=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"])):
+        return adding_exercise_task_settings_interface, data
 
     text_statement = text
     statement_data = bytes()
@@ -651,11 +746,12 @@ def adding_exercise_waiting_statement(handler: UserHandler, from_id: int,
         statement_data = attachment.get_content()
         statement_ext = attachment.get_extension()
 
-    data["task_statements"][data["task_id"]] = {"text_statement": text, "statement_data": statement_data,
+    data["task_statements"][data["task_id"]] = {"text_statement": text_statement, "statement_data": statement_data,
                                                 "statement_ext": statement_ext}
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_STATEMENT_ADDITION)
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE.format(task_id=data["task_id"]),
                          markup=keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
+                                                                                        data["task_id"] in data["right_answers"],
                                                                                         data["task_id"] in data["task_statements"],
                                                                                         data["number_unchecked_tasks"] == 0))
     return adding_exercise_task_settings_interface, data

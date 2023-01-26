@@ -26,7 +26,7 @@ class Attachment:
         # Returns extension of data on current link
 
         if self.link is None:
-            return ""
+            return self.file_name[self.file_name.rfind(".") + 1:len(self.file_name)]
 
         return self.link[self.link.rfind(".") + 1:len(self.link)]
 

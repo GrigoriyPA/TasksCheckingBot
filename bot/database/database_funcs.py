@@ -175,7 +175,7 @@ class DatabaseHelper:
             return None
 
         # Deleting all user's solutions
-        solutions_filenames = cur.execute("SELECT  FROM results WHERE user_id = ?", (user.user_id,))
+        solutions_filenames = cur.execute("SELECT file_answer FROM results WHERE user_id = ?", (user.user_id,))
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
@@ -214,7 +214,7 @@ class DatabaseHelper:
         con, cur = self.__create_connection_and_cursor()
 
         # We get answer of the user
-        cur.execute("SELECT user_id, task_id, text_answer, text_clarification file_answer"
+        cur.execute("SELECT user_id, task_id, text_answer, text_clarification, file_answer"
                     " FROM results WHERE user_id = ? AND task_id = ?",
                     (user.user_id, task.task_id))
         result_params = cur.fetchone()
@@ -237,7 +237,7 @@ class DatabaseHelper:
             return None
 
         # If there is no such task return None
-        if task_number >= len(homework.tasks):
+        if task_number > len(homework.tasks):
             return None
 
         return homework.tasks[task_number - 1]
@@ -326,7 +326,7 @@ class DatabaseHelper:
             return None
 
         # If there is no such task number return None
-        if task_number >= len(homework.tasks):
+        if task_number > len(homework.tasks):
             return None
 
         return homework.tasks[task_number - 1].right_answers
@@ -368,9 +368,9 @@ class DatabaseHelper:
         raw_tasks = cur.fetchall()
 
         homework.tasks = [Task(raw_task[1], loads(raw_task[2]), raw_task[3],
-                               (self.get_file_data(raw_task[4]), '' if raw_task[4].split('.').empty()
+                               (self.get_file_data(raw_task[4]), '' if len(raw_task[4].split('.')) == 0
                                else raw_task[4].split('.')[-1]),
-                               raw_task[5], raw_task[0]) for raw_task in raw_tasks]
+                               raw_task[0], raw_task[5]) for raw_task in raw_tasks]
 
         return homework
 
