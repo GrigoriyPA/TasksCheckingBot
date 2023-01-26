@@ -27,6 +27,9 @@ BUTTON_NAME_OF_COLUMN_OF_EXERCISE_NAMES = "Работа"
 BUTTON_NAME_OF_COLUMN_OF_NUMBER_RIGHT_SOLVED_TASKS = "Решено"
 BUTTON_NAME_OF_COLUMN_OF_NUMBER_OF_TASKS = "Всего"
 
+# get_student_task_list_inline_markup
+BUTTON_NAME_SHOW_TASK_STATEMENT = "Условие"
+
 # get_exercise_actions_inline_markup
 BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS = "Результаты"
 BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION = "Описание"
@@ -85,7 +88,7 @@ MESSAGE_ON_START_COMMAND = "Состояние сессии сброшено..."
 
 # common
 MESSAGE_ON_UNAUTHORIZED_USER = "Вы не авторизованы.\nВведите логин для авторизации:"
-MESSAGE_ON_NOT_STUDENT_USER = "Выбор задания невозможен."
+MESSAGE_ON_NOT_STUDENT_USER = "Эта команда не может быть вызвана админом."
 MESSAGE_ON_NOT_ADMIN_USER = "Вы не обладаете достаточными правами."
 MESSAGE_ON_UNKNOWN_LOGIN = "Выбранный пользователь был удалён."
 MESSAGE_ON_UNKNOWN_EXERCISE_NAME = "Выбранная работа недоступна."
@@ -134,6 +137,11 @@ MESSAGE_WITH_USER_TELEGRAM_INFO = "Имя: {first_name}\nФамилия: {last_n
 
 # compute_student_account_action_show_results_callback
 TOP_MESSAGE_OF_USER_RESULTS_TABLE = "Результаты '{login}':"
+
+# compute_callback_data_show_task_statement_callback
+MESSAGE_WITH_TEXT_EXERCISE_STATEMENT = "Условие задачи {task_id}:\n{text_statement}"
+MESSAGE_WITH_FILE_EXERCISE_STATEMENT = "Условие задачи {task_id}."
+STATEMENT_FILE_NAME = "statement"
 
 
 # ----------------------------------------------------------------------------------------------------------------------

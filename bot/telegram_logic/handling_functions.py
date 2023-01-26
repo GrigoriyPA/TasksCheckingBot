@@ -300,6 +300,8 @@ def __compute_button_finish_creating_new_exercise(handler: UserHandler, from_id:
     # Finish creating new exercise button have pressed, start waiting new answer
     handler.add_exercise(data)
     handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE)
+    handler.send_message(send_id=from_id,
                          text=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND,
                          markup=markup)
     return True
@@ -703,7 +705,9 @@ def adding_student_waiting_password(handler: UserHandler, from_id: int, text: st
 
     handler.add_user(login, password, constants.STUDENT_STATUS, grade=grade)  # Creating new student account
 
-    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT)
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND,
                          markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)))
     return admin_adding_interface, None
 
@@ -750,8 +754,10 @@ def adding_admin_waiting_password(handler: UserHandler, from_id: int, text: str,
 
     handler.add_user(login, password, constants.ADMIN_STATUS)  # Creating new admin account
 
-    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADDING_NEW_ADMIN_ACCOUNT,
-                         markup=keyboard_markups.get_adding_interface_keyboard(True))
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_ADDING_NEW_ADMIN_ACCOUNT)
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND,
+                         markup=keyboard_markups.get_adding_interface_keyboard(handler.is_super_admin(from_id)))
     return admin_adding_interface, None
 
 
@@ -801,7 +807,9 @@ def deleting_account_waiting_login(handler: UserHandler, from_id: int, text: str
 
     handler.delete_user(login)  # Deleting account
 
-    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_DELETION_ACCOUNT,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_DELETION_ACCOUNT)
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_ADMIN_DELETE_COMMAND,
                          markup=keyboard_markups.get_deleting_interface_keyboard())
     return admin_deletion_interface, None
 
@@ -823,6 +831,8 @@ def deleting_exercise_waiting_name(handler: UserHandler, from_id: int, text: str
 
     handler.delete_exercise(exercise_name)  # Deleting exercise
 
-    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_DELETION_EXERCISE,
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_DELETION_EXERCISE)
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_ADMIN_DELETE_COMMAND,
                          markup=keyboard_markups.get_deleting_interface_keyboard())
     return admin_deletion_interface, None

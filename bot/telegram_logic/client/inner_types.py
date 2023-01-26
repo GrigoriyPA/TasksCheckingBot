@@ -7,17 +7,26 @@ MARKUP_TYPES = Optional[
 
 
 class Attachment:
-    def __init__(self, attach_type: str, link: str) -> None:
+    def __init__(self, attach_type: str = "document", link: Optional[str] = None, data: Optional[bytes] = None,
+                 file_name: Optional[str] = None) -> None:
         self.attach_type = attach_type
+        self.data = data
         self.link = link
+        self.file_name = file_name
+
+        if self.data is None:
+            self.data = requests.get(self.link).content
 
     def get_content(self) -> bytes:
         # Returns data of current link
 
-        return requests.get(self.link).content
+        return self.data
 
     def get_extension(self) -> str:
         # Returns extension of data on current link
+
+        if self.link is None:
+            return ""
 
         return self.link[self.link.rfind(".") + 1:len(self.link)]
 

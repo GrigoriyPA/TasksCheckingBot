@@ -105,12 +105,14 @@ class TelegramClient:
 
         # Send messages for each attachment
         for attachment in attachments:
+            print(attachment.attach_type)
             if attachment.attach_type == "photo":
                 # Attachment is compressed photo
                 self.__client.send_photo(chat_id=send_id, caption=text, photo=attachment.get_content())
             elif attachment.attach_type == "document":
                 # Attachment is some document
-                self.__client.send_document(chat_id=send_id, caption=text, document=attachment.get_content())
+                self.__client.send_document(chat_id=send_id, caption=text, document=attachment.get_content(),
+                                            visible_file_name=attachment.file_name)
 
             text = ''  # Drop message text after first message
 

@@ -1,4 +1,5 @@
 from bot import constants
+from bot.entities.homework import Homework
 from bot.telegram_logic.interface import messages_text
 from telebot import types
 from typing import Optional
@@ -11,26 +12,27 @@ CALLBACK_SEPARATION_ELEMENT = "$"  # Element that divide callback data
 CALLBACK_DATA_NONE = "0"  # Button do nothing
 
 # get_results_table_inline_markup
-CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = "J"
-CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK = "E"
-CALLBACK_DATA_MOVE_RESULTS_TABLE = "I"
-CALLBACK_DATA_REFRESH_RESULTS_TABLE = "G"
+CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = "A"
+CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK = "B"
+CALLBACK_DATA_MOVE_RESULTS_TABLE = "C"
+CALLBACK_DATA_REFRESH_RESULTS_TABLE = "D"
 
 # get_student_task_list_inline_markup
-CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER = "D"
+CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER = "E"
+CALLBACK_DATA_SHOW_TASK_STATEMENT = "F"
 
 # get_exercise_actions_inline_markup
-CALLBACK_DATA_SHOW_RESULTS_TABLE = "C"
+CALLBACK_DATA_SHOW_RESULTS_TABLE = "G"
 CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION = "H"
 
 # get_admin_account_actions_inline_markup
 # get_student_account_actions_inline_markup
-CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = "F"
-CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = "K"
-CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "L"
+CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = "I"
+CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = "J"
+CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "K"
 
 # other (used in handling_functions)
-CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = "A"
+CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = "L"
 CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE = "M"
 CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE = "N"
 
@@ -72,17 +74,17 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
             task_id += 1
 
             # If user answer is correct, update sum of right answers
-            if answer[0] == answer[1]:
+            if answer is not None and answer:
                 current_sum += 1
                 sum_in_column[task_id - 1] += 1
 
             # If current task is visible (his id in [first_task_id, first_task_id + number_tasks)) add button for him
             if first_task_id <= task_id < first_task_id + number_tasks:
-                if answer[0] is None or answer[0] == '':
+                if answer is None:
                     # There is no answer from user on this task
                     row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_NOT_SOLVED_TASK,
                                                           callback_data=CALLBACK_DATA_NONE))
-                elif answer[0] == answer[1]:
+                elif answer:
                     # User answer is right
                     row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
                                                           callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK +
@@ -189,36 +191,43 @@ def get_user_results_table_inline_markup(homework_list: list[str], user_results)
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_student_task_list_inline_markup(login: str, homework_size: int, homework_name: str, check_task):
+def get_student_task_list_inline_markup(login: str, homework: Homework, check_task):
     # This function returns table of buttons for tasks list
 
     keyboard = []  # Final keyboard storage
     row = []  # Temporary storage for current row
-    for task_id in range(1, homework_size + 1):
+    for task_id in range(1, len(homework.tasks) + 1):
         # None - there is no user answer, True - user answer is right, False otherwise
-        task_state = check_task(login, homework_name, task_id)
+        task_state = check_task(login, homework.name, task_id)
 
         # Add button depend on task state
         if task_state is None:
             row.append(types.InlineKeyboardButton(text=str(task_id),
                                                   callback_data=CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER +
-                                                                homework_name +
+                                                                homework.name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
         elif task_state:
             row.append(types.InlineKeyboardButton(text=str(task_id) + " " + messages_text.BUTTON_NAME_OF_CELL_OF_RIGHT_SOLVED_TASK,
                                                   callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
-                                                                CALLBACK_SEPARATION_ELEMENT + homework_name +
+                                                                CALLBACK_SEPARATION_ELEMENT + homework.name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
         else:
             row.append(types.InlineKeyboardButton(text=str(task_id) + " " + messages_text.BUTTON_NAME_OF_CELL_OF_WRONG_SOLVED_TASK,
                                                   callback_data=CALLBACK_DATA_FROM_CELL_OF_SOLVED_TASK + login +
-                                                                CALLBACK_SEPARATION_ELEMENT + homework_name +
+                                                                CALLBACK_SEPARATION_ELEMENT + homework.name +
                                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
 
+        if homework.tasks[task_id - 1].text_statement != "" or homework.tasks[task_id - 1].file_statement[0] != bytes():
+            row.append(
+                types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_SHOW_TASK_STATEMENT,
+                                           callback_data=CALLBACK_DATA_SHOW_TASK_STATEMENT + homework.name +
+                                                         CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+        else:
+            row.append(types.InlineKeyboardButton(text=" ", callback_data=CALLBACK_DATA_NONE))
+
         # End current row on length TASKS_NUMBER_IN_LINE
-        if len(row) == constants.TASKS_NUMBER_IN_LINE:
-            keyboard.append(row)
-            row = []
+        keyboard.append(row)
+        row = []
 
     # Add last row to table
     if len(row) > 0:
