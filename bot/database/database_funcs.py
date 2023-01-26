@@ -175,12 +175,7 @@ class DatabaseHelper:
             return None
 
         # Deleting all user's solutions
-        solution_filenames = cur.execute("SELECT file_answer FROM results WHERE user_id = ?", (user.user_id,))
-        for solution_filename in solution_filenames:
-            try:
-                os.remove(solution_filename)
-            except FileNotFoundError:
-                pass
+        solutions_filenames = cur.execute("SELECT file_answer FROM results WHERE user_id = ?", (user.user_id,))
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
@@ -219,7 +214,7 @@ class DatabaseHelper:
         con, cur = self.__create_connection_and_cursor()
 
         # We get answer of the user
-        cur.execute("SELECT user_id, task_id, text_answer, text_clarification file_answer"
+        cur.execute("SELECT user_id, task_id, text_answer, text_clarification, file_answer"
                     " FROM results WHERE user_id = ? AND task_id = ?",
                     (user.user_id, task.task_id))
         result_params = cur.fetchone()
@@ -242,7 +237,7 @@ class DatabaseHelper:
             return None
 
         # If there is no such task return None
-        if task_number >= len(homework.tasks):
+        if task_number > len(homework.tasks):
             return None
 
         return homework.tasks[task_number - 1]
@@ -284,22 +279,6 @@ class DatabaseHelper:
 
         return self.get_right_answers_for_the_task(homework_name, task_number)
 
-    def change_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
-                                        new_text_answer: str):
-        user = self.get_user_by_login(login)
-        if user is None:
-            return None
-
-        task = self.get_task(homework_name, task_number)
-        if task is None:
-            return None
-
-        con, cur = self.__create_connection_and_cursor()
-
-        cur.execute("UPDATE results SET text_answer = ? WHERE user_id = ? AND task_id = ?",
-                    (new_text_answer, user.user_id, task.task_id))
-        cur.commit()
-
     def add_homework(self, homework: Homework) -> None:
         # Creating new homework with the given parameters
 
@@ -334,16 +313,6 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
-        homework = self.get_homework_by_name(homework_name)
-        if homework is None:
-            return None
-
-        for task in homework.tasks:
-            try:
-                os.remove(task.file_statement[1])
-            except FileNotFoundError:
-                pass
-
         cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
         con.commit()
 
@@ -357,7 +326,7 @@ class DatabaseHelper:
             return None
 
         # If there is no such task number return None
-        if task_number >= len(homework.tasks):
+        if task_number > len(homework.tasks):
             return None
 
         return homework.tasks[task_number - 1].right_answers
@@ -399,9 +368,9 @@ class DatabaseHelper:
         raw_tasks = cur.fetchall()
 
         homework.tasks = [Task(raw_task[1], loads(raw_task[2]), raw_task[3],
-                               (self.get_file_data(raw_task[4]), '' if raw_task[4].split('.').empty()
+                               (self.get_file_data(raw_task[4]), '' if len(raw_task[4].split('.')) == 0
                                else raw_task[4].split('.')[-1]),
-                               raw_task[5], raw_task[0]) for raw_task in raw_tasks]
+                               raw_task[0], raw_task[5]) for raw_task in raw_tasks]
 
         return homework
 
