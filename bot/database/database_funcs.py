@@ -366,10 +366,11 @@ class DatabaseHelper:
                     "FROM tasks WHERE homework_id = ?", (homework.homework_id_,))
 
         raw_tasks = cur.fetchall()
-        file_extension = '' if raw_tasks[4].split('.').empty() else raw_tasks[4].split('.')[-1]
+
         homework.tasks = [Task(raw_task[1], loads(raw_task[2]), raw_task[3],
-                               (self.get_file_data(raw_task[4]), file_extension), raw_task[5],
-                               raw_task[0]) for raw_task in raw_tasks]
+                               (self.get_file_data(raw_task[4]), '' if raw_task[4].split('.').empty()
+                               else raw_task[4].split('.')[-1]),
+                               raw_task[5], raw_task[0]) for raw_task in raw_tasks]
 
         return homework
 
