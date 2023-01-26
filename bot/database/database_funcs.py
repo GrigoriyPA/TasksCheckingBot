@@ -175,7 +175,12 @@ class DatabaseHelper:
             return None
 
         # Deleting all user's solutions
-        solutions_filenames = cur.execute("SELECT  FROM results WHERE user_id = ?", (user.user_id,))
+        solution_filenames = cur.execute("SELECT  FROM results WHERE user_id = ?", (user.user_id,))
+        for solution_filename in solution_filenames:
+            try:
+                os.remove(solution_filename)
+            except FileNotFoundError:
+                pass
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
@@ -312,6 +317,16 @@ class DatabaseHelper:
         # Deletes homework by its name
 
         con, cur = self.__create_connection_and_cursor()
+
+        homework = self.get_homework_by_name(homework_name)
+        if homework is None:
+            return None
+
+        for task in homework.tasks:
+            try:
+                os.remove(task.file_statement[1])
+            except FileNotFoundError:
+                pass
 
         cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
         con.commit()
