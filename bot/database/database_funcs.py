@@ -167,6 +167,16 @@ class DatabaseHelper:
     def delete_user_by_login(self, login: str) -> None:
         con, cur = self.__create_connection_and_cursor()
 
+        # Getting user with such login
+        user = self.get_user_by_login(login)
+
+        # If there is no such user just do nothing
+        if user is None:
+            return None
+
+        # Deleting all user's solutions
+        solutions_filenames = cur.execute("SELECT  FROM results WHERE user_id = ?", (user.user_id,))
+
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
 
@@ -280,7 +290,7 @@ class DatabaseHelper:
 
         # Writing information about the new homework and getting its id
         cur.execute("INSERT INTO homeworks (homework_name, grade) VALUES (?, ?)", (homework.name, homework.grade))
-        cur.execute("SELECT homework_id from homeworks WHERE homework_name = ?", (homework.name, ))
+        cur.execute("SELECT homework_id from homeworks WHERE homework_name = ?", (homework.name,))
         homework_id = cur.fetchone()[0]
 
         # Writing info about all tasks in another table
@@ -356,8 +366,9 @@ class DatabaseHelper:
                     "FROM tasks WHERE homework_id = ?", (homework.homework_id_,))
 
         raw_tasks = cur.fetchall()
+        file_extension = '' if raw_tasks[4].split('.').empty() else raw_tasks[4].split('.')[-1]
         homework.tasks = [Task(raw_task[1], loads(raw_task[2]), raw_task[3],
-                               (self.get_file_data(raw_task[4]), raw_task[4]), raw_task[5],
+                               (self.get_file_data(raw_task[4]), file_extension), raw_task[5],
                                raw_task[0]) for raw_task in raw_tasks]
 
         return homework
