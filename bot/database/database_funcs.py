@@ -8,7 +8,7 @@ from bot.entities.task import Task
 from bot.entities.user import User
 from bot.entities.homework import Homework
 from bot.constants import SUPER_ADMIN_STATUS, SUPER_ADMIN_LOGIN, SUPER_ADMIN_PASSWORD, UNAUTHORIZED_TELEGRAM_ID, \
-    ADMINS, ADMIN_STATUS, PATH_TO_SOLUTION_FILES, PATH_TO_STATEMENTS_FILES, STUDENT_STATUS
+    ADMINS, ADMIN_STATUS, PATH_TO_SOLUTION_FILES, PATH_TO_STATEMENTS_FILES
 
 
 class DatabaseHelper:
@@ -64,6 +64,7 @@ class DatabaseHelper:
                     "user_id INTEGER NOT NULL,"
                     "task_id INTEGER NOT NULL,"
                     "text_answer TEXT NOT NULL,"
+                    "text_clarification TEXT NOT NULL,"
                     "file_answer STRING NOT NULL,"
                     "FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,"
                     "FOREIGN KEY (task_id) REFERENCES tasks (task_id) ON DELETE CASCADE,"
@@ -166,6 +167,16 @@ class DatabaseHelper:
     def delete_user_by_login(self, login: str) -> None:
         con, cur = self.__create_connection_and_cursor()
 
+        # Getting user with such login
+        user = self.get_user_by_login(login)
+
+        # If there is no such user just do nothing
+        if user is None:
+            return None
+
+        # Deleting all user's solutions
+        solutions_filenames = cur.execute("SELECT  FROM results WHERE user_id = ?", (user.user_id,))
+
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
 
@@ -203,7 +214,8 @@ class DatabaseHelper:
         con, cur = self.__create_connection_and_cursor()
 
         # We get answer of the user
-        cur.execute("SELECT user_id, task_id, text_answer, file_answer FROM results WHERE user_id = ? AND task_id = ?",
+        cur.execute("SELECT user_id, task_id, text_answer, text_clarification file_answer"
+                    " FROM results WHERE user_id = ? AND task_id = ?",
                     (user.user_id, task.task_id))
         result_params = cur.fetchone()
 
@@ -211,8 +223,8 @@ class DatabaseHelper:
         if result_params is None:
             return None
 
-        return Result(result_params[0], result_params[1], result_params[2],
-                      (self.get_file_data(result_params[3]), result_params[3]))
+        return Result(result_params[0], result_params[1], result_params[2], result_params[3],
+                      (self.get_file_data(result_params[4]), result_params[4]))
 
     def get_task(self, homework_name: str, task_number: int) -> Union[Task, None]:
         # Returns task id with given homework name and task number
@@ -224,21 +236,15 @@ class DatabaseHelper:
         if homework is None:
             return None
 
-        # Choosing the task what we need
-        cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
-                    "FROM tasks WHERE homework_id = ? AND task_number = ?",
-                    (homework.homework_id, task_number))
-        task_params = cur.fetchone()
-
-        # Returns None if there is no such task
-        if task_params is None:
+        # If there is no such task return None
+        if task_number >= len(homework.tasks):
             return None
 
-        return Task(task_params[5], task_params[1], loads(task_params[2]), task_params[3],
-                    (self.get_file_data(task_params[4]), task_params[4]), task_params[0])
+        return homework.tasks[task_number - 1]
 
     def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
-                                 text_answer: str, file_answer: tuple[bytes, str]) -> Union[list[str], None]:
+                                 text_answer: str, text_clarification: str,
+                                 file_answer: tuple[bytes, str]) -> Union[list[str], None]:
         # Writes info about user answer for the particular task
 
         # If user has already given an answer to this task we should raise an exception
@@ -266,8 +272,9 @@ class DatabaseHelper:
         self.save_file_data(filename, file_answer[0])
 
         # Writing info about the answer
-        cur.execute("INSERT INTO results (user_id, task_id, text_answer, file_answer) VALUES (?, ?, ?, ?)",
-                    (user.user_id, task.task_id, text_answer, filename))
+        cur.execute("INSERT INTO results (user_id, task_id, text_answer, text_clarification, file_answer) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (user.user_id, task.task_id, text_answer, text_clarification, filename))
         con.commit()
 
         return self.get_right_answers_for_the_task(homework_name, task_number)
@@ -283,7 +290,7 @@ class DatabaseHelper:
 
         # Writing information about the new homework and getting its id
         cur.execute("INSERT INTO homeworks (homework_name, grade) VALUES (?, ?)", (homework.name, homework.grade))
-        cur.execute("SELECT homework_id from homeworks WHERE homework_name = ?", (homework.name, ))
+        cur.execute("SELECT homework_id from homeworks WHERE homework_name = ?", (homework.name,))
         homework_id = cur.fetchone()[0]
 
         # Writing info about all tasks in another table
@@ -356,12 +363,12 @@ class DatabaseHelper:
 
         # Finding all the tasks for our homework
         cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
-                    "FROM tasks WHERE homework_id = ?", (homework.homework_id,))
+                    "FROM tasks WHERE homework_id = ?", (homework.homework_id_,))
 
         raw_tasks = cur.fetchall()
-        homework.tasks = [Task(raw_task[5], raw_task[1],
-                               loads(raw_task[2]), raw_task[3],
-                               (self.get_file_data(raw_task[4]), raw_task[4]),
+        file_extension = '' if raw_tasks[4].split('.').empty() else raw_tasks[4].split('.')[-1]
+        homework.tasks = [Task(raw_task[1], loads(raw_task[2]), raw_task[3],
+                               (self.get_file_data(raw_task[4]), file_extension), raw_task[5],
                                raw_task[0]) for raw_task in raw_tasks]
 
         return homework
