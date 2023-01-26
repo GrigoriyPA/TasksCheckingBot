@@ -175,7 +175,7 @@ class DatabaseHelper:
             return None
 
         # Deleting all user's solutions
-        solution_filenames = cur.execute("SELECT  FROM results WHERE user_id = ?", (user.user_id,))
+        solution_filenames = cur.execute("SELECT file_answer FROM results WHERE user_id = ?", (user.user_id,))
         for solution_filename in solution_filenames:
             try:
                 os.remove(solution_filename)
