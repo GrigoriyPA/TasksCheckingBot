@@ -178,6 +178,8 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
 def get_user_results_table_inline_markup(homework_list: list[str], user_results):
     # This function returns table of buttons for table of one user results
 
+    homework_list.sort()
+
     keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_EXERCISE_NAMES,
                                             callback_data=CALLBACK_DATA_NONE),
                  types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_NUMBER_RIGHT_SOLVED_TASKS,
@@ -244,17 +246,20 @@ def get_student_task_list_inline_markup(login: str, homework: Homework, check_ta
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_list_of_all_homeworks_inline_markup(homework_list: list[str],
+def get_list_of_all_homeworks_inline_markup(homework_list: list[Homework],
                                             callback_data: str) -> Optional[types.InlineKeyboardMarkup]:
     # This function returns table of buttons for list of homeworks
 
-    homework_list.sort()
+    homework_list.sort(key=lambda cur_homework: cur_homework.name)
 
     keyboard = []  # Final keyboard storage
     row = []  # Temporary storage for current row
-    for name in homework_list:
+    for homework in homework_list:
         # Add button with name of current homework to table
-        row.append(types.InlineKeyboardButton(text=name, callback_data=callback_data + name))
+        row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_CELL_WITH_EXERCISE_NAME.format(
+            exercise_name=homework.name,
+            grade=homework.grade),
+                                              callback_data=callback_data + homework.name))
 
         # End current row on length HOMEWORKS_NUMBER_IN_LINE
         if len(row) == constants.HOMEWORKS_NUMBER_IN_LINE:

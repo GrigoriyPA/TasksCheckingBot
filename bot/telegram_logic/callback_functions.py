@@ -307,7 +307,7 @@ def compute_show_exercise_description_callback(handler, from_id: int, message_id
 
     # Create and send description of current task
     text = messages_text.FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION.format(grade=exercise_info.grade,
-                                                        number_tasks=str(len(exercise_info.tasks)))
+                                                                      exercise_name=exercise_name)
     for i in range(len(exercise_info.tasks)):
         text += str(i + 1) + ": " + exercise_info.tasks[i].right_answers[0] + "\n"
 
@@ -392,7 +392,11 @@ def compute_student_account_action_show_results_callback(handler, from_id: int, 
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_LOGIN)
         return None, None
 
-    homeworks_names = handler.get_all_exercises_names_for_grade(user_info.grade)
+    homeworks = handler.get_all_exercises_names_for_grade(user_info.grade)
+    homeworks_names = []
+    for homework in homeworks:
+        homeworks_names.append(homework.name)
+
     user_results = handler.get_user_results_on_exercises(login, homeworks_names)
 
     # Create table of user results and send results
@@ -405,17 +409,12 @@ def compute_show_task_statement_callback(handler, from_id: int, message_id: int,
                                          callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when admin wants to see results of chooses user (in list of logins)
 
-    # If user is not student, reject choice
-    if not handler.is_student(from_id):
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_STUDENT_USER)
-        return None, None
-
     exercise_name, task_id = callback_data[0], int(callback_data[1])  # Getting chooses exercise name, task id
     exercise_info = handler.get_exercise_info_by_name(exercise_name)
     user_info = handler.get_user_info_by_id(from_id)
 
     # If homework was blocked or deleted, reject choice
-    if exercise_info is None or exercise_info.grade != user_info.grade:
+    if exercise_info is None or (not handler.is_admin(from_id) and exercise_info.grade != user_info.grade):
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
         return None, None
 

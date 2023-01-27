@@ -78,17 +78,19 @@ def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: 
         return False
 
     # Admin get list of exercises button have pressed, print list of exists exercises
-    exercises_names = handler.get_all_exercises_names()
-    exercises_names.sort()
+    exercises = handler.get_all_exercises_names()
+    exercises.sort(key=lambda cur_exercise: cur_exercise.name)
 
-    if len(exercises_names) == 0:
+    if len(exercises) == 0:
         # There is no homeworks created
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED)
         return True
 
     # Send list of homeworks
-    for name in exercises_names:
-        handler.send_message(send_id=from_id, text=name, markup=inline_markups.get_exercise_actions_inline_markup(name))
+    for exercise in exercises:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_EXERCISE_NAME_IN_LIST_OF_EXERCISES.format(exercise_name=exercise.name,
+                                                                                                                   grade=exercise.grade),
+                             markup=inline_markups.get_exercise_actions_inline_markup(exercise.name))
     return True
 
 

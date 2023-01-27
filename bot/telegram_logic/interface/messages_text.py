@@ -30,6 +30,9 @@ BUTTON_NAME_OF_COLUMN_OF_NUMBER_OF_TASKS = "Всего"
 # get_student_task_list_inline_markup
 BUTTON_NAME_SHOW_TASK_STATEMENT = "Условие"
 
+# get_list_of_all_homeworks_inline_markup
+BUTTON_NAME_CELL_WITH_EXERCISE_NAME = "{exercise_name}, {grade} класс"
+
 # get_exercise_actions_inline_markup
 BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS = "Результаты"
 BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION = "Описание"
@@ -138,7 +141,7 @@ MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE = "Введите назван
                                                     "(доступны латинские символы, цифры и знаки препинания):"
 
 # compute_show_exercise_description_callback
-FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION = "Класс работы: {grade}\nВсего задач: {number_tasks}\nПравильные ответы:\n"
+FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION = "Описание работы '{exercise_name}', {grade} класс.\n"
 
 # compute_account_action_show_password_callback
 MESSAGE_WITH_PASSWORD_DESCRIPTION = "Пароль пользователя '{login}': {password}"
@@ -190,6 +193,7 @@ MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
 
 # __compute_button_admin_get_list_of_exercises
 MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
+MESSAGE_EXERCISE_NAME_IN_LIST_OF_EXERCISES = "{exercise_name}, {grade} класс"
 
 # __compute_button_admin_get_list_of_accounts
 TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS = "Супер-администраторы:"

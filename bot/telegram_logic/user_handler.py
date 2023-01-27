@@ -86,17 +86,11 @@ class UserHandler:
     def is_exists_exercise_name(self, exercise_name: str) -> bool:
         return self.__database.get_homework_by_name(exercise_name) is not None
 
-    def get_all_exercises_names(self) -> list[str]:
-        homeworks_names = []
-        for homework in self.__database.get_all_homeworks():
-            homeworks_names.append(homework.name)
-        return homeworks_names
+    def get_all_exercises_names(self) -> list[Homework]:
+        return self.__database.get_all_homeworks()
 
-    def get_all_exercises_names_for_grade(self, grade: int) -> list[str]:
-        homeworks_names = []
-        for homework in self.__database.get_all_homeworks_for_grade(grade):
-            homeworks_names.append(homework.name)
-        return homeworks_names
+    def get_all_exercises_names_for_grade(self, grade: int) -> list[Homework]:
+        return self.__database.get_all_homeworks_for_grade(grade)
 
     def get_results_of_students_by_exercise_name(self, exercise_name: str) -> Optional[
         list[tuple[User, list[tuple[str, str]]]]]:
