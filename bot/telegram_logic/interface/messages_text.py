@@ -29,6 +29,7 @@ BUTTON_NAME_OF_COLUMN_OF_NUMBER_OF_TASKS = "Всего"
 
 # get_student_task_list_inline_markup
 BUTTON_NAME_SHOW_TASK_STATEMENT = "Условие"
+BUTTON_NAME_SHOW_RIGHT_ANSWERS_ON_TASK = "Ответы"
 
 # get_list_of_all_homeworks_inline_markup
 BUTTON_NAME_CELL_WITH_EXERCISE_NAME = "{exercise_name}, {grade} класс"
@@ -170,6 +171,9 @@ EXPLANATION_FILE_NAME = "explanation"
 MESSAGE_NOTIFICATION_FOR_STUDENT_ON_ACCEPTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был принят."
 MESSAGE_NOTIFICATION_FOR_STUDENT_ON_REJECTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был отклонён."
 MESSAGE_SUCCESS_SWITCH_STUDENT_ANSWER = "Ответ на задание успешно отредактирован."
+
+# compute_show_right_answers_on_task_callback
+MESSAGE_WITH_LIST_OF_RIGHT_ANSWERS_ON_TASK = "Список правильных ответов к задаче {task_id}:\n{correct_answer}"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Messages text

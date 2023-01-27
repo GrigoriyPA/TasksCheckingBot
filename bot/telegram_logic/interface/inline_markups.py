@@ -41,6 +41,9 @@ CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = chr(14)
 CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION = chr(15)
 CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER = chr(16)
 
+# get_exercise_description_in_list_of_exercises_inline_markup
+CALLBACK_DATA_SHOW_RIGHT_ANSWERS_ON_TASK = chr(17)
+
 
 def get_results_table_inline_markup(results, homework_name: str, homework_size: int,
                                     first_task_id: int) -> types.InlineKeyboardMarkup:
@@ -370,6 +373,10 @@ def get_exercise_description_in_list_of_exercises_inline_markup(homework: Homewo
     row = []  # Temporary storage for current row
     for task_id in range(1, len(homework.tasks) + 1):
         row.append(types.InlineKeyboardButton(text=str(task_id), callback_data=CALLBACK_DATA_NONE))
+
+        row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_SHOW_RIGHT_ANSWERS_ON_TASK,
+                                   callback_data=CALLBACK_DATA_SHOW_RIGHT_ANSWERS_ON_TASK + homework.name +
+                                                 CALLBACK_SEPARATION_ELEMENT + str(task_id)))
 
         if homework.tasks[task_id - 1].text_statement != "" or homework.tasks[task_id - 1].file_statement[0] != bytes():
             row.append(

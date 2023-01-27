@@ -549,6 +549,42 @@ def compute_solved_task_description_action_switch_student_answer_callback(handle
     return None, None
 
 
+def compute_show_right_answers_on_task_callback(handler, from_id: int, message_id: int, text: str,
+                                                callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to see right answer on task (in task description from task list)
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    # Getting chooses user login, homework name and task id
+    exercise_name, task_id = callback_data[0], int(callback_data[1])
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # Getting correct answers on current task
+    correct_answers = handler.get_right_answer_on_task(exercise_name, task_id)
+
+    # If task was blocked or deleted, reject choice
+    if correct_answers is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_TASK)
+        return None, None
+
+    correct_answer_text = str(correct_answers[0])
+    for right_answer in correct_answers[1:]:
+        correct_answer_text += messages_text.RIGHT_ANSWERS_SPLITER + str(right_answer)
+
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_WITH_LIST_OF_RIGHT_ANSWERS_ON_TASK.format(task_id=str(task_id),
+                                                                                              correct_answer=correct_answer_text))
+    return None, None
+
+
 CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], tuple[Optional[Callable], Any]]] = {
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
@@ -566,5 +602,6 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS: compute_student_account_action_show_results_callback,
     inline_markups.CALLBACK_DATA_SHOW_TASK_STATEMENT: compute_show_task_statement_callback,
     inline_markups.CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION: compute_solved_task_description_action_show_explanation_callback,
-    inline_markups.CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER: compute_solved_task_description_action_switch_student_answer_callback
+    inline_markups.CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER: compute_solved_task_description_action_switch_student_answer_callback,
+    inline_markups.CALLBACK_DATA_SHOW_RIGHT_ANSWERS_ON_TASK: compute_show_right_answers_on_task_callback
 }
