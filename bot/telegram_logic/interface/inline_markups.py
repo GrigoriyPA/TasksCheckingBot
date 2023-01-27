@@ -234,13 +234,8 @@ def get_student_task_list_inline_markup(login: str, homework: Homework, check_ta
         else:
             row.append(types.InlineKeyboardButton(text=" ", callback_data=CALLBACK_DATA_NONE))
 
-        # End current row on length TASKS_NUMBER_IN_LINE
         keyboard.append(row)
         row = []
-
-    # Add last row to table
-    if len(row) > 0:
-        keyboard.append(row)
 
     # Returns created keyboard
     return types.InlineKeyboardMarkup(keyboard)
@@ -332,31 +327,60 @@ def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboar
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_solved_task_description_actions_inline_markup(login: str, homework_name: str, task_id: int,
+def get_solved_task_description_actions_inline_markup(login: str, homework: Homework, task_id: int,
                                                       user_answer: Optional[Result], correct_answers: list[str],
                                                       is_admin: str) -> types.InlineKeyboardMarkup:
     # This function returns list of solved task description actions inline markup
 
     row = []
+    if homework.tasks[task_id - 1].text_statement != "" or homework.tasks[task_id - 1].file_statement[0] != bytes():
+        row.append(
+            types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_SHOW_TASK_STATEMENT,
+                                       callback_data=CALLBACK_DATA_SHOW_TASK_STATEMENT + homework.name +
+                                                     CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+
     if user_answer is not None and (user_answer.text_clarification != "" or user_answer.file_answer[0] != bytes()):
         row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION,
                                               callback_data=CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION + login +
-                                                            CALLBACK_SEPARATION_ELEMENT + homework_name +
+                                                            CALLBACK_SEPARATION_ELEMENT + homework.name +
                                                             CALLBACK_SEPARATION_ELEMENT + str(task_id)))
     if is_admin:
         if user_answer is None or user_answer.text_answer not in correct_answers:
             row.append(types.InlineKeyboardButton(
                 text=messages_text.BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_ACCEPT_ANSWER,
                 callback_data=CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER + login +
-                              CALLBACK_SEPARATION_ELEMENT + homework_name +
+                              CALLBACK_SEPARATION_ELEMENT + homework.name +
                               CALLBACK_SEPARATION_ELEMENT + str(task_id)))
         else:
             row.append(types.InlineKeyboardButton(
                 text=messages_text.BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_REJECT_ANSWER,
                 callback_data=CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER + login +
-                              CALLBACK_SEPARATION_ELEMENT + homework_name +
+                              CALLBACK_SEPARATION_ELEMENT + homework.name +
                               CALLBACK_SEPARATION_ELEMENT + str(task_id)))
 
     if len(row) == 0:
         return types.InlineKeyboardMarkup()
     return types.InlineKeyboardMarkup([row])
+
+
+def get_exercise_description_in_list_of_exercises_inline_markup(homework: Homework):
+    # This function returns description table of exercise (in list of exercises)
+
+    keyboard = []  # Final keyboard storage
+    row = []  # Temporary storage for current row
+    for task_id in range(1, len(homework.tasks) + 1):
+        row.append(types.InlineKeyboardButton(text=str(task_id), callback_data=CALLBACK_DATA_NONE))
+
+        if homework.tasks[task_id - 1].text_statement != "" or homework.tasks[task_id - 1].file_statement[0] != bytes():
+            row.append(
+                types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_SHOW_TASK_STATEMENT,
+                                           callback_data=CALLBACK_DATA_SHOW_TASK_STATEMENT + homework.name +
+                                                         CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+        else:
+            row.append(types.InlineKeyboardButton(text=" ", callback_data=CALLBACK_DATA_NONE))
+
+        keyboard.append(row)
+        row = []
+
+    # Returns created keyboard
+    return types.InlineKeyboardMarkup(keyboard)

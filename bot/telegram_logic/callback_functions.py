@@ -25,7 +25,8 @@ def __get_solver_task_cell_description(handler, from_id, login, task_id, correct
             return messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
                                                                                                 task_id=str(task_id),
                                                                                                 answer=answer.text_answer)
-        return messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id))
+        return messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
+                                                                                              answer=answer.text_answer)
 
     if handler.is_admin(from_id):
         return messages_text.MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
@@ -140,7 +141,7 @@ def compute_cell_of_task_in_table_callback(handler, from_id: int, message_id: in
         correct_answer_text += messages_text.RIGHT_ANSWERS_SPLITER + str(right_answer)
 
     # Create solved task options markup
-    markup = inline_markups.get_solved_task_description_actions_inline_markup(login, exercise_name, task_id, answer,
+    markup = inline_markups.get_solved_task_description_actions_inline_markup(login, exercise_info, task_id, answer,
                                                                               correct_answers,
                                                                               handler.is_admin(from_id))
 
@@ -306,12 +307,10 @@ def compute_show_exercise_description_callback(handler, from_id: int, message_id
         return None, None
 
     # Create and send description of current task
-    text = messages_text.FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION.format(grade=exercise_info.grade,
-                                                                      exercise_name=exercise_name)
-    for i in range(len(exercise_info.tasks)):
-        text += str(i + 1) + ": " + exercise_info.tasks[i].right_answers[0] + "\n"
-
-    handler.send_message(send_id=from_id, text=text)
+    handler.send_message(send_id=from_id,
+                         text=messages_text.FIRST_MESSAGE_IN_EXERCISE_DESCRIPTION.format(grade=exercise_info.grade,
+                                                                                         exercise_name=exercise_name),
+                         markup=inline_markups.get_exercise_description_in_list_of_exercises_inline_markup(exercise_info))
     return None, None
 
 
@@ -534,8 +533,8 @@ def compute_solved_task_description_action_switch_student_answer_callback(handle
             handler.send_message(send_id=user_info.telegram_id, text=notification)
 
     # Create and update solved task options markup
-    markup = inline_markups.get_solved_task_description_actions_inline_markup(login, exercise_name, task_id, answer,
-                                                                              exercise_info.tasks[task_id - 1].right_answers,
+    markup = inline_markups.get_solved_task_description_actions_inline_markup(login, exercise_info, task_id, answer,
+                                                                              correct_answers,
                                                                               handler.is_admin(from_id))
     handler.edit_message(from_id=from_id, message_id=message_id,
                          text=__get_solver_task_cell_description(handler, from_id, login, task_id, correct_answers, answer),
