@@ -279,6 +279,22 @@ class DatabaseHelper:
 
         return self.get_right_answers_for_the_task(homework_name, task_number)
 
+    def change_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
+                                        new_text_answer: str):
+        user = self.get_user_by_login(login)
+        if user is None:
+            return None
+
+        task = self.get_task(homework_name, task_number)
+        if task is None:
+            return None
+
+        con, cur = self.__create_connection_and_cursor()
+
+        cur.execute("UPDATE results SET text_answer = ? WHERE user_id = ? AND task_id = ?",
+                    (new_text_answer, user.user_id, task.task_id))
+        con.commit()
+
     def add_homework(self, homework: Homework) -> None:
         # Creating new homework with the given parameters
 
