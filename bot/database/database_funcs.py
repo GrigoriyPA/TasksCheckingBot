@@ -39,6 +39,7 @@ class DatabaseHelper:
                     "password TEXT NOT NULL,"
                     "status TEXT NOT NULL,"
                     "telegram_id INTEGER NOT NULL,"
+                    "amount_of_mana INTEGER NOT NULL,"
                     "grade INTEGER);")
 
         # Creating table with info about the homeworks
@@ -92,8 +93,9 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("INSERT INTO users (login, password, status, telegram_id, grade) "
-                    "VALUES (?, ?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id, user.grade))
+        cur.execute("INSERT INTO users (login, password, status, telegram_id, grade, amount_of_mana) "
+                    "VALUES (?, ?, ?, ?, ?, ?)", (user.login, user.password, user.status,
+                                                  user.telegram_id, user.grade, user.amount_of_mana))
         con.commit()
 
     def get_user_by_login(self, login: str) -> Union[User, None]:
@@ -101,7 +103,7 @@ class DatabaseHelper:
 
         # Getting user with the given login
 
-        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, amount_of_mana, grade, user_id "
                     "FROM users "
                     "WHERE login = ?", (login,))
 
@@ -119,7 +121,7 @@ class DatabaseHelper:
 
         # Getting user with the corresponding user id
 
-        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, grade, user_id "
                     "FROM users "
                     "WHERE user_id = ?", (user_id,))
 
@@ -137,7 +139,7 @@ class DatabaseHelper:
 
         # Getting user with the given telegram_id
 
-        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, grade, user_id "
                     "FROM users "
                     "WHERE telegram_id = ?", (telegram_id,))
 
