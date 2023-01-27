@@ -30,8 +30,6 @@ class DatabaseHelper:
     def create_database(self) -> None:
         con, cur = self.__create_connection_and_cursor()
 
-        # USE ONLY WHEN CREATING NEW DATABASE
-
         # Creates database with particular tables and relationships between them
 
         # Creating table with info about the users
@@ -41,6 +39,7 @@ class DatabaseHelper:
                     "password TEXT NOT NULL,"
                     "status TEXT NOT NULL,"
                     "telegram_id INTEGER NOT NULL,"
+                    "amount_of_mana INTEGER NOT NULL,"
                     "grade INTEGER);")
 
         # Creating table with info about the homeworks
@@ -94,8 +93,9 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("INSERT INTO users (login, password, status, telegram_id, grade) "
-                    "VALUES (?, ?, ?, ?, ?)", (user.login, user.password, user.status, user.telegram_id, user.grade))
+        cur.execute("INSERT INTO users (login, password, status, telegram_id, grade, amount_of_mana) "
+                    "VALUES (?, ?, ?, ?, ?, ?)", (user.login, user.password, user.status,
+                                                  user.telegram_id, user.grade, user.amount_of_mana))
         con.commit()
 
     def get_user_by_login(self, login: str) -> Union[User, None]:
@@ -103,7 +103,7 @@ class DatabaseHelper:
 
         # Getting user with the given login
 
-        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, amount_of_mana, grade, user_id "
                     "FROM users "
                     "WHERE login = ?", (login,))
 
@@ -121,7 +121,7 @@ class DatabaseHelper:
 
         # Getting user with the corresponding user id
 
-        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, grade, user_id "
                     "FROM users "
                     "WHERE user_id = ?", (user_id,))
 
@@ -139,7 +139,7 @@ class DatabaseHelper:
 
         # Getting user with the given telegram_id
 
-        cur.execute("SELECT login, password, status, telegram_id, grade, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, grade, user_id "
                     "FROM users "
                     "WHERE telegram_id = ?", (telegram_id,))
 
@@ -176,6 +176,8 @@ class DatabaseHelper:
 
         # Deleting all user's solutions
         solutions_filenames = cur.execute("SELECT file_answer FROM results WHERE user_id = ?", (user.user_id,))
+        for solution_filename in solutions_filenames:
+            self.delete_file(solution_filename)
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
@@ -329,6 +331,14 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
+        homework = self.get_homework_by_name(homework_name)
+        if homework is None:
+            return None
+
+        # Deleting all files with statements for this homework
+        for task in homework.tasks:
+            self.delete_file(task.file_statement[1])
+
         cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
         con.commit()
 
@@ -466,3 +476,14 @@ class DatabaseHelper:
         # Writes data in bytes to the file called "filename"
         with open(filename, 'wb') as f:
             f.write(data)
+
+    @staticmethod
+    def delete_file(filename: str) -> None:
+        try:
+            os.remove(filename)
+        except OSError as error:
+            pass
+
+    @staticmethod
+    def get_extension(filename: str) -> str:
+        return os.path.splitext(filename)[1]
