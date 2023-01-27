@@ -39,6 +39,7 @@ CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = chr(14)
 
 # get_solved_task_description_actions_inline_markup
 CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION = chr(15)
+CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER = chr(16)
 
 
 def get_results_table_inline_markup(results, homework_name: str, homework_size: int,
@@ -327,7 +328,8 @@ def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboar
 
 
 def get_solved_task_description_actions_inline_markup(login: str, homework_name: str, task_id: int,
-                                                      user_answer: Optional[Result]) -> types.InlineKeyboardMarkup:
+                                                      user_answer: Optional[Result], correct_answers: list[str],
+                                                      is_admin: str) -> types.InlineKeyboardMarkup:
     # This function returns list of solved task description actions inline markup
 
     row = []
@@ -336,6 +338,19 @@ def get_solved_task_description_actions_inline_markup(login: str, homework_name:
                                               callback_data=CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION + login +
                                                             CALLBACK_SEPARATION_ELEMENT + homework_name +
                                                             CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+    if is_admin:
+        if user_answer is None or user_answer.text_answer not in correct_answers:
+            row.append(types.InlineKeyboardButton(
+                text=messages_text.BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_ACCEPT_ANSWER,
+                callback_data=CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER + login +
+                              CALLBACK_SEPARATION_ELEMENT + homework_name +
+                              CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+        else:
+            row.append(types.InlineKeyboardButton(
+                text=messages_text.BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_REJECT_ANSWER,
+                callback_data=CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER + login +
+                              CALLBACK_SEPARATION_ELEMENT + homework_name +
+                              CALLBACK_SEPARATION_ELEMENT + str(task_id)))
 
     if len(row) == 0:
         return types.InlineKeyboardMarkup()

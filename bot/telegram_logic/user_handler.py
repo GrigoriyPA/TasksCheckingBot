@@ -200,6 +200,9 @@ class UserHandler:
                                                         text_clarification=data["explanation_text"],
                                                         file_answer=(data["explanation_data"], data["explanation_ext"]))
 
+    def change_user_answer_on_exercise(self, login: str, exercise_name: str, task_id: int, new_answer: str):
+        self.__database.change_user_answer_for_the_task(login, exercise_name, task_id, new_answer)
+
     # Bot interface
     def __add_user(self, user_id: int) -> None:
         # Add new user state, if user is not exists

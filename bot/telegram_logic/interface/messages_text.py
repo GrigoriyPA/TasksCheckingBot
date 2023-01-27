@@ -42,6 +42,8 @@ BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
 
 # get_solved_task_description_actions_inline_markup
 BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION = "Пояснение"
+BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_ACCEPT_ANSWER = "Засчитать"
+BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_REJECT_ANSWER = "Отклонить"
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -160,6 +162,11 @@ MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_ADMIN = "Пояснение '{login}' к 
 MESSAGE_WITH_TASK_TEXT_EXPLANATION_FOR_STUDENT = "Ваше пояснение к задаче {task_id}:\n{text_explanation}"
 MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_STUDENT = "Ваше пояснение к задаче к задаче {task_id}."
 EXPLANATION_FILE_NAME = "explanation"
+
+# compute_solved_task_description_action_switch_student_answer_callback
+MESSAGE_NOTIFICATION_FOR_STUDENT_ON_ACCEPTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был принят."
+MESSAGE_NOTIFICATION_FOR_STUDENT_ON_REJECTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был отклонён."
+MESSAGE_SUCCESS_SWITCH_STUDENT_ANSWER = "Ответ на задание успешно отредактирован."
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Messages text
