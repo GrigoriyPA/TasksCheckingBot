@@ -30,8 +30,6 @@ class DatabaseHelper:
     def create_database(self) -> None:
         con, cur = self.__create_connection_and_cursor()
 
-        # USE ONLY WHEN CREATING NEW DATABASE
-
         # Creates database with particular tables and relationships between them
 
         # Creating table with info about the users
@@ -176,6 +174,8 @@ class DatabaseHelper:
 
         # Deleting all user's solutions
         solutions_filenames = cur.execute("SELECT file_answer FROM results WHERE user_id = ?", (user.user_id,))
+        for solution_filename in solutions_filenames:
+            self.delete_file(solution_filename)
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
@@ -329,6 +329,14 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
+        homework = self.get_homework_by_name(homework_name)
+        if homework is None:
+            return None
+
+        # Deleting all files with statements for this homework
+        for task in homework.tasks:
+            self.delete_file(task.file_statement[1])
+
         cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
         con.commit()
 
@@ -466,3 +474,14 @@ class DatabaseHelper:
         # Writes data in bytes to the file called "filename"
         with open(filename, 'wb') as f:
             f.write(data)
+
+    @staticmethod
+    def delete_file(filename: str) -> None:
+        try:
+            os.remove(filename)
+        except OSError as error:
+            pass
+
+    @staticmethod
+    def get_extension(filename: str) -> str:
+        return os.path.splitext(filename)[1]
