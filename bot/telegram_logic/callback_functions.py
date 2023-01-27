@@ -1,4 +1,5 @@
 from bot import constants
+from bot.entities.result import Result
 from bot.telegram_logic import handling_functions
 from bot.telegram_logic.client.inner_types import Attachment
 from bot.telegram_logic.interface import inline_markups, keyboard_markups, messages_text
@@ -96,7 +97,7 @@ def compute_cell_of_task_in_table_callback(handler, from_id: int, message_id: in
         return None, None
 
     # Getting user answer on current task
-    answer = handler.get_user_answer_on_task(login, exercise_name, task_id)
+    answer: Optional[Result] = handler.get_user_answer_on_task(login, exercise_name, task_id)
     correct_answers = handler.get_right_answer_on_task(exercise_name, task_id)
 
     # If task was blocked or deleted, reject choice
@@ -108,17 +109,22 @@ def compute_cell_of_task_in_table_callback(handler, from_id: int, message_id: in
     for right_answer in correct_answers[1:]:
         correct_answer_text += messages_text.RIGHT_ANSWERS_SPLITER + str(right_answer)
 
+    # Create solved task options markup
+    markup = inline_markups.get_solved_task_description_actions_inline_markup(login, exercise_name, task_id, answer)
+
     if answer is None:
         if handler.is_admin(from_id):
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_NOT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
                                                                                                      task_id=str(task_id),
-                                                                                                     correct_answer=correct_answer_text))
+                                                                                                     correct_answer=correct_answer_text),
+                                 markup=markup)
         else:
             handler.send_message(send_id=from_id,
-                                 text=messages_text.MESSAGE_ON_CELL_OF_NOT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id)))
+                                 text=messages_text.MESSAGE_ON_CELL_OF_NOT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id)),
+                                 markup=markup)
         return None, None
-    answer = answer.text_answer
+    answer: str = answer.text_answer
 
     # Show right answer
     if answer in correct_answers:
@@ -126,23 +132,27 @@ def compute_cell_of_task_in_table_callback(handler, from_id: int, message_id: in
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
                                                                                                      task_id=str(task_id),
-                                                                                                     answer=answer))
+                                                                                                     answer=answer),
+                                 markup=markup)
         else:
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_RIGHT_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
-                                                                                                       answer=answer))
+                                                                                                       answer=answer),
+                                 markup=markup)
     else:
         if handler.is_admin(from_id):
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_ADMIN.format(login=login,
                                                                                                      task_id=str(task_id),
                                                                                                      correct_answer=correct_answer_text,
-                                                                                                     answer=answer))
+                                                                                                     answer=answer),
+                                 markup=markup)
         else:
             handler.send_message(send_id=from_id,
                                  text=messages_text.MESSAGE_ON_CELL_OF_WRONG_SOLVED_TASK_IN_TABLE_FOR_STUDENT.format(task_id=str(task_id),
                                                                                                        correct_answer=correct_answer_text,
-                                                                                                       answer=answer))
+                                                                                                       answer=answer),
+                                 markup=markup)
 
     return None, None
 
@@ -398,7 +408,7 @@ def compute_student_account_action_show_results_callback(handler, from_id: int, 
     return None, None
 
 
-def compute_callback_data_show_task_statement_callback(handler, from_id: int, message_id: int, text: str,
+def compute_show_task_statement_callback(handler, from_id: int, message_id: int, text: str,
                                                        callback_data: list[str]) -> tuple[Optional[Callable], Any]:
     # This function is called when admin wants to see results of chooses user (in list of logins)
 
@@ -434,6 +444,59 @@ def compute_callback_data_show_task_statement_callback(handler, from_id: int, me
     return None, None
 
 
+def compute_solved_task_description_action_show_explanation_callback(handler, from_id: int, message_id: int, text: str,
+                                                                     callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when user wants to see explanation of chooses task (in solved task description)
+
+    user = handler.get_user_info_by_id(from_id)
+
+    # Getting chooses user login, homework name and task id
+    login, exercise_name, task_id = callback_data[0], callback_data[1], int(callback_data[2])
+    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+
+    # If homework was blocked or deleted, reject choice
+    if exercise_info is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_EXERCISE_NAME)
+        return None, None
+
+    # If user is not admin, and he want to see someone else's answer, reject choice
+    if not handler.is_admin(from_id) and login != user.login:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    # Getting user answer on current task
+    answer: Optional[Result] = handler.get_user_answer_on_task(login, exercise_name, task_id)
+
+    # If task was blocked or deleted, reject choice
+    if answer is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNAVAILABLE_ANSWER_EXPLANATION)
+        return None, None
+
+    # Getting text explanation
+    text_explanation = answer.text_clarification
+    if handler.is_admin(from_id):
+        text = messages_text.MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_ADMIN.format(login=login, task_id=str(task_id))
+        if text_explanation != "":
+            text = messages_text.MESSAGE_WITH_TASK_TEXT_EXPLANATION_FOR_ADMIN.format(login=login, task_id=str(task_id),
+                                                                       text_explanation=text_explanation)
+    else:
+        text = messages_text.MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_STUDENT.format(task_id=str(task_id))
+        if text_explanation != "":
+            text = messages_text.MESSAGE_WITH_TASK_TEXT_EXPLANATION_FOR_STUDENT.format(task_id=str(task_id),
+                                                                       text_explanation=text_explanation)
+
+    # Getting explanation file and send explanation
+    attachment_data, attachment_ext = answer.file_answer
+    if attachment_data != bytes():
+        handler.send_message(send_id=from_id, text=text,
+                             attachments=[Attachment(data=attachment_data,
+                                                     file_name=messages_text.EXPLANATION_FILE_NAME + "." + attachment_ext)])
+    else:
+        handler.send_message(send_id=from_id, text=text)
+
+    return None, None
+
+
 CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], tuple[Optional[Callable], Any]]] = {
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
@@ -449,5 +512,6 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD: compute_account_action_show_password_callback,
     inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER: compute_account_action_show_user_callback,
     inline_markups.CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS: compute_student_account_action_show_results_callback,
-    inline_markups.CALLBACK_DATA_SHOW_TASK_STATEMENT: compute_callback_data_show_task_statement_callback
+    inline_markups.CALLBACK_DATA_SHOW_TASK_STATEMENT: compute_show_task_statement_callback,
+    inline_markups.CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION: compute_solved_task_description_action_show_explanation_callback
 }

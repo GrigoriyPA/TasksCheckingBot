@@ -1,5 +1,6 @@
 from bot import constants
 from bot.entities.homework import Homework
+from bot.entities.result import Result
 from bot.telegram_logic.interface import messages_text
 from telebot import types
 from typing import Optional
@@ -9,32 +10,35 @@ from typing import Optional
 
 # common
 CALLBACK_SEPARATION_ELEMENT = "$"  # Element that divide callback data
-CALLBACK_DATA_NONE = "0"  # Button do nothing
+CALLBACK_DATA_NONE = chr(0)  # Button do nothing
+
+# other (used in handling_functions)
+CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = chr(1)
+CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE = chr(2)
+CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE = chr(3)
 
 # get_results_table_inline_markup
-CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = "A"
-CALLBACK_DATA_FROM_CELL_OF_TASK = "B"
-CALLBACK_DATA_MOVE_RESULTS_TABLE = "C"
-CALLBACK_DATA_REFRESH_RESULTS_TABLE = "D"
+CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = chr(4)
+CALLBACK_DATA_FROM_CELL_OF_TASK = chr(5)
+CALLBACK_DATA_MOVE_RESULTS_TABLE = chr(6)
+CALLBACK_DATA_REFRESH_RESULTS_TABLE = chr(7)
 
 # get_student_task_list_inline_markup
-CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER = "E"
-CALLBACK_DATA_SHOW_TASK_STATEMENT = "F"
+CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER = chr(8)
+CALLBACK_DATA_SHOW_TASK_STATEMENT = chr(9)
 
 # get_exercise_actions_inline_markup
-CALLBACK_DATA_SHOW_RESULTS_TABLE = "G"
-CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION = "H"
+CALLBACK_DATA_SHOW_RESULTS_TABLE = chr(10)
+CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION = chr(11)
 
 # get_admin_account_actions_inline_markup
 # get_student_account_actions_inline_markup
-CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = "I"
-CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = "J"
-CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "K"
+CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = chr(12)
+CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = chr(13)
+CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = chr(14)
 
-# other (used in handling_functions)
-CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = "L"
-CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE = "M"
-CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE = "N"
+# get_solved_task_description_actions_inline_markup
+CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION = chr(15)
 
 
 def get_results_table_inline_markup(results, homework_name: str, homework_size: int,
@@ -269,6 +273,8 @@ def get_list_of_all_homeworks_inline_markup(homework_list: list[str],
 
 
 def get_list_of_all_grades_inline_markup(callback_data: str) -> types.InlineKeyboardMarkup:
+    # This function returns list of all grades inline markup
+
     keyboard = []  # Final keyboard storage
     row = []  # Temporary storage for current row
     for grade_id in range(1, 12):
@@ -289,6 +295,8 @@ def get_list_of_all_grades_inline_markup(callback_data: str) -> types.InlineKeyb
 
 
 def get_exercise_actions_inline_markup(exercise_name: str) -> types.InlineKeyboardMarkup:
+    # This function returns list of exercise actions inline markup
+
     keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS,
                                             callback_data=CALLBACK_DATA_SHOW_RESULTS_TABLE + exercise_name),
                  types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION,
@@ -297,6 +305,8 @@ def get_exercise_actions_inline_markup(exercise_name: str) -> types.InlineKeyboa
 
 
 def get_admin_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
+    # This function returns list of admin account actions inline markup
+
     keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD + login),
                  types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
@@ -305,6 +315,8 @@ def get_admin_account_actions_inline_markup(login: str) -> types.InlineKeyboardM
 
 
 def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboardMarkup:
+    # This function returns list of account actions inline markup
+
     keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD + login),
                  types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
@@ -312,3 +324,19 @@ def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboar
                  types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS,
                                             callback_data=CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS + login)]]
     return types.InlineKeyboardMarkup(keyboard)
+
+
+def get_solved_task_description_actions_inline_markup(login: str, homework_name: str, task_id: int,
+                                                      user_answer: Optional[Result]) -> types.InlineKeyboardMarkup:
+    # This function returns list of solved task description actions inline markup
+
+    row = []
+    if user_answer is not None and (user_answer.text_clarification != "" or user_answer.file_answer[0] != bytes()):
+        row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION,
+                                              callback_data=CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION + login +
+                                                            CALLBACK_SEPARATION_ELEMENT + homework_name +
+                                                            CALLBACK_SEPARATION_ELEMENT + str(task_id)))
+
+    if len(row) == 0:
+        return types.InlineKeyboardMarkup()
+    return types.InlineKeyboardMarkup([row])

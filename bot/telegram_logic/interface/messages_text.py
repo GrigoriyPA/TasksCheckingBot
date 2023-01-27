@@ -40,6 +40,9 @@ BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD = "Пароль"
 BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER = "Пользователь"
 BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
 
+# get_solved_task_description_actions_inline_markup
+BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION = "Пояснение"
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Keyboard markups names
@@ -150,6 +153,13 @@ MESSAGE_WITH_TEXT_EXERCISE_STATEMENT = "Условие задачи {task_id}:\n
 MESSAGE_WITH_FILE_EXERCISE_STATEMENT = "Условие задачи {task_id}."
 STATEMENT_FILE_NAME = "statement"
 
+# compute_solved_task_description_action_show_explanation_callback
+MESSAGE_ON_UNAVAILABLE_ANSWER_EXPLANATION = "Пояснение к выбранной задаче недоступно."
+MESSAGE_WITH_TASK_TEXT_EXPLANATION_FOR_ADMIN = "Пояснение '{login}' к задаче {task_id}:\n{text_explanation}"
+MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_ADMIN = "Пояснение '{login}' к задаче {task_id}."
+MESSAGE_WITH_TASK_TEXT_EXPLANATION_FOR_STUDENT = "Ваше пояснение к задаче {task_id}:\n{text_explanation}"
+MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_STUDENT = "Ваше пояснение к задаче к задаче {task_id}."
+EXPLANATION_FILE_NAME = "explanation"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Messages text
