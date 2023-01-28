@@ -131,6 +131,10 @@ class UserHandler:
         # Returns True if user answer is right
         return user_answer.text_answer in self.__database.get_right_answers_for_the_task(homework_name, task_id)
 
+    # TODO
+    def check_grade(self, grade: int) -> bool:
+        return True
+
     def get_user_results_on_exercises(self, login: str, exercises_names: list[str]) -> list[tuple[int, int]]:
         user_results: list[tuple[int, int]] = []  # List of pairs (solved tasks number, tasks number)
         for exercise_name in exercises_names:

@@ -3,7 +3,7 @@ from bot.entities.homework import Homework
 from bot.entities.result import Result
 from bot.telegram_logic.interface import messages_text
 from telebot import types
-from typing import Optional
+from typing import Optional, Callable
 
 # Callback codes description
 # All callback codes must be different and represented by one char
@@ -16,6 +16,7 @@ CALLBACK_DATA_NONE = chr(0)  # Button do nothing
 CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER = chr(1)
 CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE = chr(2)
 CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE = chr(3)
+CALLBACK_DATA_SELECT_QUEST_GRADE_FOR_CREATE = chr(18)
 
 # get_results_table_inline_markup
 CALLBACK_DATA_FROM_LOGIN_IN_RESULTS_TABLE = chr(4)
@@ -203,7 +204,8 @@ def get_user_results_table_inline_markup(homework_list: list[str], user_results)
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_student_task_list_inline_markup(login: str, homework: Homework, check_task):
+def get_student_task_list_inline_markup(login: str, homework: Homework,
+                                        check_task: Callable[[str, str, int], Optional[None]]) -> types.InlineKeyboardMarkup:
     # This function returns table of buttons for tasks list
 
     keyboard = []  # Final keyboard storage
@@ -276,12 +278,16 @@ def get_list_of_all_homeworks_inline_markup(homework_list: list[Homework],
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_list_of_all_grades_inline_markup(callback_data: str) -> types.InlineKeyboardMarkup:
+def get_list_of_all_grades_inline_markup(callback_data: str,
+                                         check_grade: Callable[[int], bool]) -> Optional[types.InlineKeyboardMarkup]:
     # This function returns list of all grades inline markup
 
     keyboard = []  # Final keyboard storage
     row = []  # Temporary storage for current row
     for grade_id in range(1, 12):
+        if not check_grade(grade_id):
+            continue
+
         # Add for current grade
         row.append(types.InlineKeyboardButton(text=str(grade_id), callback_data=callback_data + str(grade_id)))
 
@@ -366,7 +372,7 @@ def get_solved_task_description_actions_inline_markup(login: str, homework: Home
     return types.InlineKeyboardMarkup([row])
 
 
-def get_exercise_description_in_list_of_exercises_inline_markup(homework: Homework):
+def get_exercise_description_in_list_of_exercises_inline_markup(homework: Homework) -> types.InlineKeyboardMarkup:
     # This function returns description table of exercise (in list of exercises)
 
     keyboard = []  # Final keyboard storage

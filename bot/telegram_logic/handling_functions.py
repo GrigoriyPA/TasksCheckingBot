@@ -268,7 +268,25 @@ def __compute_button_admin_add_student(handler: UserHandler, from_id: int, text:
     # Admin add student button have pressed, print list of all grades
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_ADD_NEW_STUDENT,
                          markup=inline_markups.get_list_of_all_grades_inline_markup(
-                                inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE))
+                                inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE, lambda g: True))
+    return True
+
+
+# Checking admin add quest button (adding admin interface)
+def __compute_button_admin_add_quest(handler: UserHandler, from_id: int, text: str) -> bool:
+    if text != messages_text.BUTTON_ADD_QUEST:
+        # There is no admin add quest button pressed
+        return False
+
+    # Admin add quest button have pressed, print list of all grades
+    markup = inline_markups.get_list_of_all_grades_inline_markup(
+                                inline_markups.CALLBACK_DATA_SELECT_QUEST_GRADE_FOR_CREATE, handler.check_grade)
+    if markup is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_EMPTY_GRADES_LIST_FOR_CREATE_QUEST)
+        return False
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_ADD_NEW_QUEST,
+                         markup=markup)
     return True
 
 
@@ -281,7 +299,7 @@ def __compute_button_admin_add_exercise(handler: UserHandler, from_id: int, text
     # Admin add exercise button have pressed, print list of all grades
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE,
                          markup=inline_markups.get_list_of_all_grades_inline_markup(
-                                inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE))
+                                inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE, lambda g: True))
     return True
 
 
@@ -610,6 +628,9 @@ def admin_adding_interface(handler: UserHandler, from_id: int, text: str, data) 
     if __compute_button_admin_add_student(handler, from_id, text):
         return admin_adding_interface, None
 
+    if __compute_button_admin_add_quest(handler, from_id, text):
+        return admin_adding_interface, None
+
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_COMMAND)
     return admin_adding_interface, None
 
@@ -623,7 +644,9 @@ def adding_exercise_waiting_exercise_name(handler: UserHandler, from_id: int, te
                              message_info=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND):
         return admin_adding_interface, None
 
-    grade = int(data)  # Getting chooses grade
+    # TODO adding quests
+
+    grade = int(data[0])  # Getting chooses grade
     exercise_name: str = text  # Current exercise name
 
     # If exercise with same name already exists, reset creating
@@ -652,7 +675,7 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
                              message_info=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE):
-        return adding_exercise_waiting_exercise_name, data[0]
+        return adding_exercise_waiting_exercise_name, (data[0], False)  # TODO
 
     # Try to extract number of tasks from the message text
     success = True
@@ -676,8 +699,8 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
     # Data description: (grade, exercise name, number of tasks, amount, list of right answers)
     return adding_exercise_task_settings_interface, {"exercise_grade": data[0], "exercise_name": data[1],
                                                     "number_tasks": number_of_tasks, "task_id": 1,
-                                                    "right_answers": {1: []}, "task_statements": {},
-                                                    "number_unchecked_tasks": number_of_tasks - 1}
+                                                    "right_answers": {}, "task_statements": {},
+                                                    "number_unchecked_tasks": number_of_tasks}
 
 
 def adding_exercise_task_settings_interface(handler: UserHandler, from_id: int,
@@ -730,6 +753,8 @@ def adding_exercise_waiting_answer_on_task(handler: UserHandler, from_id: int,
 def adding_exercise_waiting_statement(handler: UserHandler, from_id: int,
                                       text: str, data) -> tuple[Callable, Any]:
     # This function is called on admin input during waiting of task statement
+
+    stop = None
 
     if __compute_button_back(handler, from_id, text,
                              keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],

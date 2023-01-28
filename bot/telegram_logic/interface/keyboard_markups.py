@@ -46,6 +46,7 @@ def get_adding_interface_keyboard(is_super_admin: bool) -> types.ReplyKeyboardMa
     if is_super_admin:
         markup.add(types.KeyboardButton(text=messages_text.BUTTON_ADD_ADMIN))
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_ADD_EXERCISE))
+    markup.add(types.KeyboardButton(text=messages_text.BUTTON_ADD_QUEST))
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_BACK))
     return markup
 
@@ -83,5 +84,13 @@ def get_deleting_interface_keyboard() -> types.ReplyKeyboardMarkup:
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_DELETE_ACCOUNT))
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_DELETE_EXERCISE))
+    markup.add(types.KeyboardButton(text=messages_text.BUTTON_BACK))
+    return markup
+
+
+def get_choosing_exercise_or_quest_interface_keyboard() -> types.ReplyKeyboardMarkup:
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(types.KeyboardButton(text=messages_text.BUTTON_CHOOSE_QUEST))
+    markup.add(types.KeyboardButton(text=messages_text.BUTTON_CHOOSE_EXERCISE))
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_BACK))
     return markup

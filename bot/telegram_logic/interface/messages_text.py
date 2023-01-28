@@ -76,6 +76,7 @@ BUTTON_EXERCISES_LIST = "Список заданий"  # Show exercises list (ad
 BUTTON_ADD_STUDENT = "Ученик"  # Add new student account
 BUTTON_ADD_ADMIN = "Администратор"  # Add new admin account
 BUTTON_ADD_EXERCISE = "Задание"  # Add new exercise
+BUTTON_ADD_QUEST = "Квест"  # Add new quest
 BUTTON_DELETE_ACCOUNT = "Аккаунт"  # Delete exists account
 BUTTON_DELETE_EXERCISE = "Задание"  # Delete exists exercise
 
@@ -85,6 +86,11 @@ BUTTON_ADD_STATEMENT_FOR_TASK = "Добавить условие"
 BUTTON_PREVIOUS_TASK_IN_ADDING_TASK_INTERFACE = "Предыдущее задание"
 BUTTON_NEXT_TASK_IN_ADDING_TASK_INTERFACE = "Следующее задание"
 BUTTON_FINISH_CREATING_EXERCISE = "Завершить создание."
+
+# get_choosing_exercise_or_quest_interface_keyboard
+BUTTON_CHOOSE_QUEST = "Квест"
+BUTTON_CHOOSE_EXERCISE = "Домашняя работа"
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Commands
@@ -139,6 +145,10 @@ MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT = "Введите логи
 
 # compute_select_exercise_grade_for_create_callback
 MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE = "Введите название новой работы " \
+                                                    "(доступны латинские символы, цифры и знаки препинания):"
+
+# compute_select_exercise_grade_for_create_callback
+MESSAGE_ON_START_WAITING_QUEST_NAME_FOR_CREATE = "Введите название нового квеста " \
                                                     "(доступны латинские символы, цифры и знаки препинания):"
 
 # compute_show_exercise_description_callback
@@ -220,6 +230,10 @@ MESSAGE_ON_START_WAITING_EXPLANATION = "Отправьте одним сообщ
 
 # __compute_button_admin_add_student
 MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
+
+# __compute_button_admin_add_quest
+MESSAGE_ON_EMPTY_GRADES_LIST_FOR_CREATE_QUEST = "Уже добавленны квесты для всех классов."
+MESSAGE_ON_ADMIN_ADD_NEW_QUEST = "Выберите для какого класса будет квест."
 
 # __compute_button_admin_add_exercise
 MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE = "Выберите для какого класса будет создано задание."

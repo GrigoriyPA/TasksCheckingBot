@@ -286,7 +286,27 @@ def compute_select_exercise_grade_for_create_callback(handler, from_id: int, mes
     handler.send_message(send_id=from_id,
                          text=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE,
                          markup=keyboard_markups.get_back_button_keyboard())
-    return handling_functions.adding_exercise_waiting_exercise_name, grade
+    return handling_functions.adding_exercise_waiting_exercise_name, (grade, False)
+
+
+def compute_select_quest_grade_for_create_callback(handler, from_id: int, message_id: int, text: str,
+                                                   callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to create new quest
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    grade = int(callback_data[0])  # Getting chooses grade
+
+    # TODO check chooses grade
+
+    # Start waiting of exercise name for create
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_START_WAITING_QUEST_NAME_FOR_CREATE,
+                         markup=keyboard_markups.get_back_button_keyboard())
+    return handling_functions.adding_exercise_waiting_exercise_name, (grade, True)
 
 
 def compute_show_exercise_description_callback(handler, from_id: int, message_id: int, text: str,
@@ -596,6 +616,7 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_SELECT_EXERCISE_FOR_SEND_ANSWER: compute_select_task_id_for_send_answer_callback,
     inline_markups.CALLBACK_DATA_SELECT_STUDENT_GRADE_FOR_CREATE: compute_select_student_grade_for_create_callback,
     inline_markups.CALLBACK_DATA_SELECT_EXERCISE_GRADE_FOR_CREATE: compute_select_exercise_grade_for_create_callback,
+    inline_markups.CALLBACK_DATA_SELECT_QUEST_GRADE_FOR_CREATE: compute_select_quest_grade_for_create_callback,
     inline_markups.CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION: compute_show_exercise_description_callback,
     inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD: compute_account_action_show_password_callback,
     inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER: compute_account_action_show_user_callback,
