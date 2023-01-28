@@ -89,8 +89,14 @@ class UserHandler:
     def get_all_exercises_names(self) -> list[Homework]:
         return self.__database.get_all_homeworks()
 
+    def get_all_quests_names(self) -> list[Homework]:
+        return self.__database.get_all_homeworks(is_quest=1)
+
     def get_all_exercises_names_for_grade(self, grade: int) -> list[Homework]:
         return self.__database.get_all_homeworks_for_grade(grade)
+
+    def get_all_quests_names_for_grade(self, grade: int) -> list[Homework]:
+        return self.__database.get_all_homeworks_for_grade(grade, is_quest=1)
 
     def get_results_of_students_by_exercise_name(self, exercise_name: str) -> Optional[
         list[tuple[User, list[tuple[str, str]]]]]:
@@ -131,9 +137,8 @@ class UserHandler:
         # Returns True if user answer is right
         return user_answer.text_answer in self.__database.get_right_answers_for_the_task(homework_name, task_id)
 
-    # TODO
     def check_grade(self, grade: int) -> bool:
-        return True
+        return len(self.__database.get_all_homeworks_for_grade(grade, 1)) == 0
 
     def get_user_results_on_exercises(self, login: str, exercises_names: list[str]) -> list[tuple[int, int]]:
         user_results: list[tuple[int, int]] = []  # List of pairs (solved tasks number, tasks number)
@@ -152,6 +157,10 @@ class UserHandler:
         return user_results
 
     # Change user data
+    def change_user_mana(self, login: str, delta) -> None:
+        user_info = self.__database.get_user_by_login(login)
+        self.__database.change_user_mana_amount(login, max(user_info.amount_of_mana + delta, 0))
+
     def sign_in_user(self, login: str, user_id: int) -> None:
         self.__database.change_user_telegram_id(login, user_id)
 
@@ -187,7 +196,8 @@ class UserHandler:
                     Task(homework_id=-1, task_number=i, right_answers=data["right_answers"][i],
                          text_statement='',
                          file_statement=(bytes(), '')))
-        self.__database.add_homework(Homework(data["exercise_name"], data["exercise_grade"], tasks))
+        self.__database.add_homework(Homework(data["exercise_name"], data["exercise_grade"], tasks,
+                                              is_quest=data["is_quest"]))
 
     def delete_exercise(self, exercise_name: str) -> None:
         self.__database.delete_homework_by_name(exercise_name)

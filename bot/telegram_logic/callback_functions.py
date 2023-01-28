@@ -1,6 +1,7 @@
 from bot import constants
 from bot.entities.homework import Homework
 from bot.entities.result import Result
+from bot.entities.user import User
 from bot.telegram_logic import handling_functions
 from bot.telegram_logic.client.inner_types import Attachment
 from bot.telegram_logic.interface import inline_markups, keyboard_markups, messages_text
@@ -300,7 +301,9 @@ def compute_select_quest_grade_for_create_callback(handler, from_id: int, messag
 
     grade = int(callback_data[0])  # Getting chooses grade
 
-    # TODO check chooses grade
+    if not handler.check_grade(grade):
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_QUEST_GRADE)
+        return None, None
 
     # Start waiting of exercise name for create
     handler.send_message(send_id=from_id,
@@ -391,6 +394,31 @@ def compute_account_action_show_user_callback(handler, from_id: int, message_id:
                          text=messages_text.MESSAGE_WITH_USER_TELEGRAM_INFO.format(first_name=current_user_info.first_name,
                                                                      last_name=current_user_info.last_name,
                                                                      username=current_user_info.username))
+    return None, None
+
+
+def compute_student_account_action_show_mana_callback(handler, from_id: int, message_id: int, text: str,
+                                                      callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to see amount mana of student (in list of logins)
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    login = callback_data[0]  # Getting chooses user login
+    user_info: User = handler.get_user_info_by_login(login)
+
+    # If current user was deleted, reject choice
+    if user_info is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_LOGIN)
+        return None, None
+
+    # Show amount of mana
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_WITH_STUDENT_AMOUNT_MANA.format(login=login,
+                                                                                    mana=user_info.amount_of_mana),
+                         markup=inline_markups.get_user_mana_description_inline_markup(login))
     return None, None
 
 
@@ -605,6 +633,30 @@ def compute_show_right_answers_on_task_callback(handler, from_id: int, message_i
     return None, None
 
 
+def compute_student_account_change_mana_callback(handler, from_id: int, message_id: int, text: str,
+                                                 callback_data: list[str]) -> tuple[Optional[Callable], Any]:
+    # This function is called when admin wants to change amount mana of student (in student mana description)
+
+    # If user is not admin, reject choice
+    if not handler.is_admin(from_id):
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_NOT_ADMIN_USER)
+        return None, None
+
+    login = callback_data[0]  # Getting chooses user login
+    user_info: User = handler.get_user_info_by_login(login)
+
+    # If current user was deleted, reject choice
+    if user_info is None:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_LOGIN)
+        return None, None
+
+    # Show amount of mana
+    handler.send_message(send_id=from_id,
+                         text=messages_text.MESSAGE_ON_START_WAITING_MANA_DELT,
+                         markup=keyboard_markups.get_back_button_keyboard())
+    return handling_functions.changing_student_mana_waiting_delta, login
+
+
 CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], tuple[Optional[Callable], Any]]] = {
     inline_markups.CALLBACK_DATA_NONE: compute_none_callback,
     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE: compute_show_results_table_callback,
@@ -620,9 +672,11 @@ CALLBACK_HANDLING_FUNCTION: dict[str, Callable[[Any, int, int, str, list[str]], 
     inline_markups.CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION: compute_show_exercise_description_callback,
     inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD: compute_account_action_show_password_callback,
     inline_markups.CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER: compute_account_action_show_user_callback,
+    inline_markups.CALLBACK_DATA_STUDEN_ACCOUNT_ACTION_SHOW_MANA: compute_student_account_action_show_mana_callback,
     inline_markups.CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS: compute_student_account_action_show_results_callback,
     inline_markups.CALLBACK_DATA_SHOW_TASK_STATEMENT: compute_show_task_statement_callback,
     inline_markups.CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION: compute_solved_task_description_action_show_explanation_callback,
     inline_markups.CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER: compute_solved_task_description_action_switch_student_answer_callback,
-    inline_markups.CALLBACK_DATA_SHOW_RIGHT_ANSWERS_ON_TASK: compute_show_right_answers_on_task_callback
+    inline_markups.CALLBACK_DATA_SHOW_RIGHT_ANSWERS_ON_TASK: compute_show_right_answers_on_task_callback,
+    inline_markups.CALLBACK_DATA_CHANGE_USER_MANA: compute_student_account_change_mana_callback
 }

@@ -45,7 +45,8 @@ def __compute_button_status(handler: UserHandler, from_id: int, text: str) -> bo
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STATUS_STUDENT_ACCOUNT.format(login=user_info.login,
                                                                                             password=user_info.password,
                                                                                             status=user_info.status,
-                                                                                            grade=user_info.grade))
+                                                                                            grade=user_info.grade,
+                                                                                            mana=user_info.amount_of_mana))
     else:
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STATUS_ADMIN_ACCOUNT.format(login=user_info.login,
                                                                                           password=user_info.password,
@@ -60,7 +61,7 @@ def __compute_button_show_results_table(handler: UserHandler, from_id: int, text
         return False
 
     # Create list of exists homeworks
-    markup = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_exercises_names(),
+    markup = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_exercises_names() + handler.get_all_quests_names(),
                                                                     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE)
     if markup is None:
         # There is no opened homeworks
@@ -78,8 +79,8 @@ def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: 
         return False
 
     # Admin get list of exercises button have pressed, print list of exists exercises
-    exercises = handler.get_all_exercises_names()
-    exercises.sort(key=lambda cur_exercise: cur_exercise.name)
+    exercises = handler.get_all_exercises_names() + handler.get_all_quests_names()
+    exercises.sort(key=lambda cur_exercise: (cur_exercise.is_quest, cur_exercise.name))
 
     if len(exercises) == 0:
         # There is no homeworks created
@@ -88,9 +89,14 @@ def __compute_button_admin_get_list_of_exercises(handler: UserHandler, from_id: 
 
     # Send list of homeworks
     for exercise in exercises:
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_EXERCISE_NAME_IN_LIST_OF_EXERCISES.format(exercise_name=exercise.name,
-                                                                                                                   grade=exercise.grade),
-                             markup=inline_markups.get_exercise_actions_inline_markup(exercise.name))
+        if not exercise.is_quest:
+            handler.send_message(send_id=from_id, text=messages_text.MESSAGE_EXERCISE_NAME_IN_LIST_OF_EXERCISES.format(exercise_name=exercise.name,
+                                                                                                                       grade=exercise.grade),
+                                 markup=inline_markups.get_exercise_actions_inline_markup(exercise.name))
+        else:
+            handler.send_message(send_id=from_id, text=messages_text.MESSAGE_QUEST_NAME_IN_LIST_OF_EXERCISES.format(exercise_name=exercise.name,
+                                                                                                                       grade=exercise.grade),
+                                 markup=inline_markups.get_exercise_actions_inline_markup(exercise.name))
     return True
 
 
@@ -170,7 +176,7 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
     # Create list of available homeworks
     if user_info is not None:
         markup = inline_markups.get_list_of_all_homeworks_inline_markup(
-            handler.get_all_exercises_names_for_grade(user_info.grade),
+            handler.get_all_exercises_names_for_grade(user_info.grade) + handler.get_all_quests_names_for_grade(user_info.grade),
             inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER)
     else:
         markup = None
@@ -212,6 +218,11 @@ def __send_correct_answer_to_student(handler: UserHandler, from_id: int, text: s
         result = messages_text.MESSAGE_RIGHT_RESULT_MARK
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_RIGHT_ANSWER,
                              markup=markup)
+
+        if data["is_quest"]:
+            handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_MANA_CHANGING.format(count=1),
+                                 markup=markup)
+            handler.change_user_mana(user_info.login, 1)
     else:
         result = messages_text.MESSAGE_WRONG_RESULT_MARK
         handler.send_message(send_id=from_id,
@@ -389,11 +400,12 @@ def __compute_button_finish_creating_new_exercise(handler: UserHandler, from_id:
 
     # Finish creating new exercise button have pressed, start waiting new answer
     handler.add_exercise(data)
-    handler.send_message(send_id=from_id,
-                         text=messages_text.MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE)
-    handler.send_message(send_id=from_id,
-                         text=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND,
-                         markup=markup)
+    if not data["is_quest"]:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE)
+    else:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_CREATION_OF_NEW_QUEST)
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND, markup=markup)
     return True
 
 
@@ -544,7 +556,8 @@ def solving_task_waiting_answer(handler: UserHandler, from_id: int, text: str, d
                          markup=keyboard_markups.get_student_send_explanation_keyboard())
     return solving_task_send_explanation_interface, {"exercise_name": exercise_name, "task_id": task_id,
                                                      "answer": answer, "explanation_text": "",
-                                                     "explanation_data": bytes(), "explanation_ext": ""}
+                                                     "explanation_data": bytes(), "explanation_ext": "",
+                                                     "is_quest": exercise_info.is_quest}
 
 
 def solving_task_send_explanation_interface(handler: UserHandler, from_id: int, text: str,
@@ -644,9 +657,7 @@ def adding_exercise_waiting_exercise_name(handler: UserHandler, from_id: int, te
                              message_info=messages_text.MESSAGE_ON_ADMIN_ADD_COMMAND):
         return admin_adding_interface, None
 
-    # TODO adding quests
-
-    grade = int(data[0])  # Getting chooses grade
+    grade, is_quest = int(data[0]), data[1]  # Getting chooses grade
     exercise_name: str = text  # Current exercise name
 
     # If exercise with same name already exists, reset creating
@@ -666,7 +677,7 @@ def adding_exercise_waiting_exercise_name(handler: UserHandler, from_id: int, te
 
     # Start waiting number of tasks in new exercise
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME)
-    return adding_exercise_waiting_number_of_right_answers, (grade, exercise_name)
+    return adding_exercise_waiting_number_of_right_answers, (grade, exercise_name, is_quest)
 
 
 def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_id: int,
@@ -675,7 +686,7 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
                              message_info=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE):
-        return adding_exercise_waiting_exercise_name, (data[0], False)  # TODO
+        return adding_exercise_waiting_exercise_name, (data[0], data[2])
 
     # Try to extract number of tasks from the message text
     success = True
@@ -700,14 +711,15 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
     return adding_exercise_task_settings_interface, {"exercise_grade": data[0], "exercise_name": data[1],
                                                     "number_tasks": number_of_tasks, "task_id": 1,
                                                     "right_answers": {}, "task_statements": {},
-                                                    "number_unchecked_tasks": number_of_tasks}
+                                                    "number_unchecked_tasks": number_of_tasks, "is_quest": data[2]}
 
 
 def adding_exercise_task_settings_interface(handler: UserHandler, from_id: int,
                                             text: str, data) -> tuple[Callable, Any]:
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
                              message_info=messages_text.MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME):
-        return adding_exercise_waiting_number_of_right_answers, (data["exercise_grade"], data["exercise_name"])
+        return adding_exercise_waiting_number_of_right_answers, (data["exercise_grade"], data["exercise_name"],
+                                                                 data["is_quest"])
 
     if __compute_button_adding_answer_for_task(handler, from_id, text, data, keyboard_markups.remove_keyboard()):
         return adding_exercise_waiting_answer_on_task, data
@@ -753,8 +765,6 @@ def adding_exercise_waiting_answer_on_task(handler: UserHandler, from_id: int,
 def adding_exercise_waiting_statement(handler: UserHandler, from_id: int,
                                       text: str, data) -> tuple[Callable, Any]:
     # This function is called on admin input during waiting of task statement
-
-    stop = None
 
     if __compute_button_back(handler, from_id, text,
                              keyboard_markups.get_adding_exercise_interface_keyboard(data["task_id"], data["number_tasks"],
@@ -959,3 +969,37 @@ def deleting_exercise_waiting_name(handler: UserHandler, from_id: int, text: str
                          text=messages_text.MESSAGE_ON_ADMIN_DELETE_COMMAND,
                          markup=keyboard_markups.get_deleting_interface_keyboard())
     return admin_deletion_interface, None
+
+
+# Changing student mana branch
+def changing_student_mana_waiting_delta(handler: UserHandler, from_id: int, text: str, data) -> tuple[Callable, Any]:
+    # This function is called when admin wants to change amount mana of student (in student mana description)
+
+    if __compute_button_back(handler, from_id, text, keyboard_markups.get_default_admin_keyboard()):
+        return default_admin_page, None
+
+    login = data  # Getting chooses current user login
+
+    # If there is no such user, stop changing
+    if not handler.is_exists_login(login):
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_USER_LOGIN)
+        return default_admin_page, None
+
+    # Try to extract delta of mana from the message text
+    success = True
+    delta_of_mana = 0
+    try:
+        delta_of_mana = int(text)
+    except:
+        success = False
+
+    # If delta of mana is incorrect, reset changing
+    if not success:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_INVALID_DELTA_OF_MANA)
+        return changing_student_mana_waiting_delta, data
+
+    handler.change_user_mana(login, delta_of_mana)  # Changing user mana
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_SUCCESS_CHANGING_STUDENT_MANA,
+                         markup=keyboard_markups.get_default_admin_keyboard())
+    return default_admin_page, None

@@ -35,6 +35,7 @@ CALLBACK_DATA_SHOW_EXERCISE_DESCRIPTION = chr(11)
 # get_admin_account_actions_inline_markup
 # get_student_account_actions_inline_markup
 CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD = chr(12)
+CALLBACK_DATA_STUDEN_ACCOUNT_ACTION_SHOW_MANA = chr(19)
 CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER = chr(13)
 CALLBACK_DATA_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = chr(14)
 
@@ -44,6 +45,9 @@ CALLBACK_DATA_SOLVED_TASK_DESCRIPTION_ACTION_SWITCH_STUDENT_ANSWER = chr(16)
 
 # get_exercise_description_in_list_of_exercises_inline_markup
 CALLBACK_DATA_SHOW_RIGHT_ANSWERS_ON_TASK = chr(17)
+
+# get_user_mana_description_inline_markup
+CALLBACK_DATA_CHANGE_USER_MANA = chr(20)
 
 
 def get_results_table_inline_markup(results, homework_name: str, homework_size: int,
@@ -250,16 +254,22 @@ def get_list_of_all_homeworks_inline_markup(homework_list: list[Homework],
                                             callback_data: str) -> Optional[types.InlineKeyboardMarkup]:
     # This function returns table of buttons for list of homeworks
 
-    homework_list.sort(key=lambda cur_homework: cur_homework.name)
+    homework_list.sort(key=lambda cur_homework: (cur_homework.is_quest, cur_homework.name))
 
     keyboard = []  # Final keyboard storage
     row = []  # Temporary storage for current row
     for homework in homework_list:
         # Add button with name of current homework to table
-        row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_CELL_WITH_EXERCISE_NAME.format(
-            exercise_name=homework.name,
-            grade=homework.grade),
-                                              callback_data=callback_data + homework.name))
+        if not homework.is_quest:
+            row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_CELL_WITH_EXERCISE_NAME.format(
+                exercise_name=homework.name,
+                grade=homework.grade),
+                                                  callback_data=callback_data + homework.name))
+        else:
+            row.append(types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_CELL_WITH_QUEST_NAME.format(
+                exercise_name=homework.name,
+                grade=homework.grade),
+                                                  callback_data=callback_data + homework.name))
 
         # End current row on length HOMEWORKS_NUMBER_IN_LINE
         if len(row) == constants.HOMEWORKS_NUMBER_IN_LINE:
@@ -329,6 +339,8 @@ def get_student_account_actions_inline_markup(login: str) -> types.InlineKeyboar
 
     keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_PASSWORD + login),
+                 types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_MANA,
+                                            callback_data=CALLBACK_DATA_STUDEN_ACCOUNT_ACTION_SHOW_MANA + login),
                  types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER,
                                             callback_data=CALLBACK_DATA_ACCOUNT_ACTION_SHOW_USER + login),
                  types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS,
@@ -396,4 +408,12 @@ def get_exercise_description_in_list_of_exercises_inline_markup(homework: Homewo
         row = []
 
     # Returns created keyboard
+    return types.InlineKeyboardMarkup(keyboard)
+
+
+def get_user_mana_description_inline_markup(login: str):
+    # This function returns actions with user mana for admin
+
+    keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_CHANGE_STUDENT_MANA,
+                                            callback_data=CALLBACK_DATA_CHANGE_USER_MANA + login)]]
     return types.InlineKeyboardMarkup(keyboard)

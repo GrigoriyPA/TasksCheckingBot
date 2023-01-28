@@ -33,6 +33,7 @@ BUTTON_NAME_SHOW_RIGHT_ANSWERS_ON_TASK = "Ответы"
 
 # get_list_of_all_homeworks_inline_markup
 BUTTON_NAME_CELL_WITH_EXERCISE_NAME = "{exercise_name}, {grade} класс"
+BUTTON_NAME_CELL_WITH_QUEST_NAME = "Квест {exercise_name}, {grade} класс"
 
 # get_exercise_actions_inline_markup
 BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS = "Результаты"
@@ -41,6 +42,7 @@ BUTTON_NAME_EXERCISE_ACTION_SHOW_DESCRIPTION = "Описание"
 # get_admin_account_actions_inline_markup
 # get_student_account_actions_inline_markup
 BUTTON_NAME_ACCOUNT_ACTION_SHOW_PASSWORD = "Пароль"
+BUTTON_NAME_ACCOUNT_ACTION_SHOW_MANA = "Мана"
 BUTTON_NAME_ACCOUNT_ACTION_SHOW_USER = "Пользователь"
 BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
 
@@ -48,6 +50,9 @@ BUTTON_NAME_STUDENT_ACCOUNT_ACTION_SHOW_RESULTS = "Результаты"
 BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_SHOW_EXPLANATION = "Пояснение"
 BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_ACCEPT_ANSWER = "Засчитать"
 BUTTON_NAME_SOLVED_TASK_DESCRIPTION_ACTION_REJECT_ANSWER = "Отклонить"
+
+# get_user_mana_description_inline_markup
+BUTTON_NAME_CHANGE_STUDENT_MANA = "Изменить"
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -147,7 +152,8 @@ MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT = "Введите логи
 MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE = "Введите название новой работы " \
                                                     "(доступны латинские символы, цифры и знаки препинания):"
 
-# compute_select_exercise_grade_for_create_callback
+# compute_select_quest_grade_for_create_callback
+MESSAGE_ON_INVALID_QUEST_GRADE = "Для выбранного класса уже создан квест."
 MESSAGE_ON_START_WAITING_QUEST_NAME_FOR_CREATE = "Введите название нового квеста " \
                                                     "(доступны латинские символы, цифры и знаки препинания):"
 
@@ -160,6 +166,9 @@ MESSAGE_WITH_PASSWORD_DESCRIPTION = "Пароль пользователя '{log
 # compute_account_action_show_user_callback
 MESSAGE_ON_UNAUTHORIZED_USER_LOGIN = "В этот аккаунт никто не вошёл."
 MESSAGE_WITH_USER_TELEGRAM_INFO = "Имя: {first_name}\nФамилия: {last_name}\nХэндл: @{username}"
+
+# compute_student_account_action_show_mana_callback
+MESSAGE_WITH_STUDENT_AMOUNT_MANA = "Общее количество маны пользователя '{login}': {mana}"
 
 # compute_student_account_action_show_results_callback
 TOP_MESSAGE_OF_USER_RESULTS_TABLE = "Результаты '{login}':"
@@ -185,6 +194,9 @@ MESSAGE_SUCCESS_SWITCH_STUDENT_ANSWER = "Ответ на задание успе
 # compute_show_right_answers_on_task_callback
 MESSAGE_WITH_LIST_OF_RIGHT_ANSWERS_ON_TASK = "Список правильных ответов к задаче {task_id}:\n{correct_answer}"
 
+# compute_student_account_change_mana_callback
+MESSAGE_ON_START_WAITING_MANA_DELT = "Введите на сколько изменить ману пользователя:"
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Messages text
 # ----------------------------------------------------------------------------------------------------------------------
@@ -199,7 +211,7 @@ MESSAGE_ON_LOG_OUT_FROM_CURRENT_ACCOUNT = "Вы вышли из текущего
 # __compute_button_status
 MESSAGE_ON_STATUS_UNAUTHORIZED_ACCOUNT = "Статус: не авторизован"
 MESSAGE_ON_STATUS_ADMIN_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}"
-MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}\nКласс: {grade}"
+MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {password}\nСтатус: {status}\nКласс: {grade}\nМана: {mana}"
 
 # __compute_button_show_results_table
 MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
@@ -208,6 +220,7 @@ MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
 # __compute_button_admin_get_list_of_exercises
 MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
 MESSAGE_EXERCISE_NAME_IN_LIST_OF_EXERCISES = "{exercise_name}, {grade} класс"
+MESSAGE_QUEST_NAME_IN_LIST_OF_EXERCISES = "Квест {exercise_name}, {grade} класс"
 
 # __compute_button_admin_get_list_of_accounts
 TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS = "Супер-администраторы:"
@@ -276,6 +289,7 @@ MESSAGE_ON_INVALID_ANSWER = "Введён некорректный ответ, �
 MESSAGE_RIGHT_RESULT_MARK = "✅"
 MESSAGE_WRONG_RESULT_MARK = "❌"
 MESSAGE_ON_RIGHT_ANSWER = "Ваш ответ правильный!"
+MESSAGE_ON_MANA_CHANGING = "Вам начислино {count} единиц маны."
 MESSAGE_ON_WRONG_ANSWER = "Ваш ответ неправильный. Список правильных ответов:\n{correct_answer}"
 NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK = "'{login}', {grade} класс добавил ответ к заданию {task_id} в работе '{exercise_name}'\n" \
                                          "Результат: {result}\n" \
@@ -302,6 +316,7 @@ MESSAGE_ON_CORRECT_NUMBER_OF_TASKS = "Введите поочерёдно пра
 MESSAGE_ON_ACCEPTED_RIGHT_ANSWER = "Ответ принят."
 MESSAGE_REQUEST_FOR_NEW_ANSWER = "Введите ответ к задаче номер {task_id}:"
 MESSAGE_ON_SUCCESS_CREATION_OF_NEW_EXERCISE = "Новая работа успешно создана."
+MESSAGE_ON_SUCCESS_CREATION_OF_NEW_QUEST = "Новый квест успешно создан."
 
 # adding_exercise_waiting_statement
 MESSAGE_ON_SUCCESS_STATEMENT_ADDITION = "Условие успешно добавлено."
@@ -336,3 +351,8 @@ MESSAGE_ON_SUCCESS_DELETION_ACCOUNT = "Аккаунт успешно удалё�
 # deleting_exercise_waiting_name
 MESSAGE_ON_INVALID_EXERCISE_NAME_FOR_DELETE = "Не существует работы с введённым именем, повторите попытку."
 MESSAGE_ON_SUCCESS_DELETION_EXERCISE = "Работа успешно удалена."
+
+# changing_student_mana_waiting_delta
+MESSAGE_ON_INVALID_USER_LOGIN = "Пользователь с выбранным логином был удалён."
+MESSAGE_ON_INVALID_DELTA_OF_MANA = "Введено некорректное изменение маны пользователя."
+MESSAGE_ON_SUCCESS_CHANGING_STUDENT_MANA = "Количество маны было успешно изменено."
