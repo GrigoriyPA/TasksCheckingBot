@@ -61,14 +61,24 @@ def __compute_button_show_results_table(handler: UserHandler, from_id: int, text
         return False
 
     # Create list of exists homeworks
-    markup = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_exercises_names() + handler.get_all_quests_names(),
+    markup_exercises = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_exercises_names(),
                                                                     inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE)
-    if markup is None:
+    markup_quests = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_quests_names(),
+                                                                    inline_markups.CALLBACK_DATA_SHOW_RESULTS_TABLE)
+
+    if markup_exercises is None and markup_quests is None:
         # There is no opened homeworks
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED)
-    else:
-        # Print list of exists homework
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE, markup=markup)
+        return True
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE)
+    if markup_exercises is not None:
+        # Print list of exists exercises
+        handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_LIST_OF_EXERCISES, markup=markup_exercises)
+
+    if markup_quests is not None:
+        # Print list of exists quests
+        handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_LIST_OF_QUESTS, markup=markup_quests)
     return True
 
 
@@ -175,19 +185,28 @@ def __compute_button_student_send_answer(handler: UserHandler, from_id: int, tex
 
     # Create list of available homeworks
     if user_info is not None:
-        markup = inline_markups.get_list_of_all_homeworks_inline_markup(
-            handler.get_all_exercises_names_for_grade(user_info.grade) + handler.get_all_quests_names_for_grade(user_info.grade),
-            inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER)
+        markup_exercises = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_exercises_names_for_grade(user_info.grade),
+                                                                        inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER)
+        markup_quests = inline_markups.get_list_of_all_homeworks_inline_markup(handler.get_all_quests_names_for_grade(user_info.grade),
+                                                                        inline_markups.CALLBACK_DATA_SELECT_HOMEWORK_FOR_SEND_ANSWER)
     else:
-        markup = None
+        markup_exercises, markup_quests = None, None
 
     # Student send answer button have pressed, print list of available exercises
-    if markup is None:
-        # There is no available homeworks
+    if markup_exercises is None and markup_quests is None:
+        # There is no opened homeworks
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE)
-    else:
-        # Print list of exists homework
-        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STUDENT_SEND_ANSWER, markup=markup)
+        return True
+
+    handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_STUDENT_SEND_ANSWER)
+    if markup_exercises is not None:
+        # Print list of exists exercises
+        handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_LIST_OF_EXERCISES,
+                             markup=markup_exercises)
+
+    if markup_quests is not None:
+        # Print list of exists quests
+        handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_LIST_OF_QUESTS, markup=markup_quests)
     return True
 
 

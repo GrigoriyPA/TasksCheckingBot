@@ -33,7 +33,7 @@ BUTTON_NAME_SHOW_RIGHT_ANSWERS_ON_TASK = "Ответы"
 
 # get_list_of_all_homeworks_inline_markup
 BUTTON_NAME_CELL_WITH_EXERCISE_NAME = "{exercise_name}, {grade} класс"
-BUTTON_NAME_CELL_WITH_QUEST_NAME = "Квест {exercise_name}, {grade} класс"
+BUTTON_NAME_CELL_WITH_QUEST_NAME = "{exercise_name}, {grade} класс"
 
 # get_exercise_actions_inline_markup
 BUTTON_NAME_EXERCISE_ACTION_SHOW_RESULTS = "Результаты"
@@ -91,10 +91,6 @@ BUTTON_ADD_STATEMENT_FOR_TASK = "Добавить условие"
 BUTTON_PREVIOUS_TASK_IN_ADDING_TASK_INTERFACE = "Предыдущее задание"
 BUTTON_NEXT_TASK_IN_ADDING_TASK_INTERFACE = "Следующее задание"
 BUTTON_FINISH_CREATING_EXERCISE = "Завершить создание."
-
-# get_choosing_exercise_or_quest_interface_keyboard
-BUTTON_CHOOSE_QUEST = "Квест"
-BUTTON_CHOOSE_EXERCISE = "Домашняя работа"
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -220,7 +216,7 @@ MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
 # __compute_button_admin_get_list_of_exercises
 MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
 MESSAGE_EXERCISE_NAME_IN_LIST_OF_EXERCISES = "{exercise_name}, {grade} класс"
-MESSAGE_QUEST_NAME_IN_LIST_OF_EXERCISES = "Квест {exercise_name}, {grade} класс"
+MESSAGE_QUEST_NAME_IN_LIST_OF_EXERCISES = "[квест] {exercise_name}, {grade} класс"
 
 # __compute_button_admin_get_list_of_accounts
 TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS = "Супер-администраторы:"
@@ -266,6 +262,8 @@ MESSAGE_ON_ADMIN_DELETE_EXERCISE = "Введите название работы
 # common
 RIGHT_ANSWERS_SPLITER = "\n"
 MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда."
+TOP_MESSAGE_OF_LIST_OF_EXERCISES = "Домашние работы."
+TOP_MESSAGE_OF_LIST_OF_QUESTS = "Квесты."
 
 # default_state
 WELCOME_MESSAGE_FOR_ADMIN = "С возвращением. Статус аккаунта: администратор."
