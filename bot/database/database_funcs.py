@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Union
+from typing import Optional
 from json import dumps, loads
 import os
 
@@ -46,6 +46,7 @@ class DatabaseHelper:
         cur.execute("CREATE TABLE IF NOT EXISTS homeworks("
                     "homework_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                     "homework_name TEXT NOT NULL UNIQUE,"
+                    "is_quest INTEGER NOT NULL,"
                     "grade INTEGER NOT NULL)")
 
         # Creating table with info about the tasks
@@ -98,12 +99,12 @@ class DatabaseHelper:
                                                   user.telegram_id, user.grade, user.amount_of_mana))
         con.commit()
 
-    def get_user_by_login(self, login: str) -> Union[User, None]:
+    def get_user_by_login(self, login: str) -> Optional[User]:
         con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the given login
 
-        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, amount_of_mana, grade, user_id "
+        cur.execute("SELECT login, password, status, telegram_id, amount_of_mana, grade, user_id "
                     "FROM users "
                     "WHERE login = ?", (login,))
 
@@ -116,7 +117,7 @@ class DatabaseHelper:
         # Returning user with the given parameters
         return User(*user_parameters)
 
-    def get_user_by_user_id(self, user_id: int) -> Union[User, None]:
+    def get_user_by_user_id(self, user_id: int) -> Optional[User]:
         con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the corresponding user id
@@ -134,7 +135,7 @@ class DatabaseHelper:
         # Returning user login with the given parameters
         return User(*user_data)
 
-    def get_user_by_telegram_id(self, telegram_id: int) -> Union[User, None]:
+    def get_user_by_telegram_id(self, telegram_id: int) -> Optional[User]:
         con, cur = self.__create_connection_and_cursor()
 
         # Getting user with the given telegram_id
@@ -198,7 +199,7 @@ class DatabaseHelper:
 
         return users
 
-    def get_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int) -> Union[Result, None]:
+    def get_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int) -> Optional[Result]:
         # Returns the answer user gave for the given task
 
         user = self.get_user_by_login(login)
@@ -228,7 +229,7 @@ class DatabaseHelper:
         return Result(result_params[0], result_params[1], result_params[2], result_params[3],
                       (self.get_file_data(result_params[4]), result_params[4]))
 
-    def get_task(self, homework_name: str, task_number: int) -> Union[Task, None]:
+    def get_task(self, homework_name: str, task_number: int) -> Optional[Task]:
         # Returns task id with given homework name and task number
 
         con, cur = self.__create_connection_and_cursor()
@@ -246,7 +247,7 @@ class DatabaseHelper:
 
     def send_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
                                  text_answer: str, text_clarification: str,
-                                 file_answer: tuple[bytes, str]) -> Union[list[str], None]:
+                                 file_answer: tuple[bytes, str]) -> Optional[list[str]]:
         # Writes info about user answer for the particular task
 
         # If user has already given an answer to this task we should raise an exception
@@ -307,7 +308,8 @@ class DatabaseHelper:
         con, cur = self.__create_connection_and_cursor()
 
         # Writing information about the new homework and getting its id
-        cur.execute("INSERT INTO homeworks (homework_name, grade) VALUES (?, ?)", (homework.name, homework.grade))
+        cur.execute("INSERT INTO homeworks (homework_name, grade, is_quest) VALUES (?, ?, ?)",
+                    (homework.name, homework.grade, homework.is_quest))
         cur.execute("SELECT homework_id from homeworks WHERE homework_name = ?", (homework.name,))
         homework_id = cur.fetchone()[0]
 
@@ -316,7 +318,7 @@ class DatabaseHelper:
             task = homework.tasks[i]
 
             # Saving task statement file in the special directory
-            filename = f"{PATH_TO_STATEMENTS_FILES}/{str(task.task_id)}.{task.file_statement[1]}"
+            filename = f"{PATH_TO_STATEMENTS_FILES}/{str(homework.homework_id_)}-{str(task.task_id)}.{task.file_statement[1]}"
             self.save_file_data(filename, task.file_statement[0])
 
             # Adding info about the task
@@ -342,7 +344,7 @@ class DatabaseHelper:
         cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
         con.commit()
 
-    def get_right_answers_for_the_task(self, homework_name: str, task_number: int) -> Union[None, list[str]]:
+    def get_right_answers_for_the_task(self, homework_name: str, task_number: int) -> Optional[list[str]]:
         # Returns right answers for the task with given homework name and task number
 
         homework = self.get_homework_by_name(homework_name)
@@ -357,35 +359,37 @@ class DatabaseHelper:
 
         return homework.tasks[task_number - 1].right_answers
 
-    def get_all_homeworks(self) -> list[Homework]:
+    def get_all_homeworks(self, is_quest: int = 0) -> list[Homework]:
         # Returns list of homeworks
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("SELECT homework_name FROM homeworks")
+        cur.execute("SELECT homework_name FROM homeworks WHERE is_quest = ?", (is_quest, ))
+
         # We need only the first element in the tuples
         homeworks_names = [item[0] for item in cur.fetchall()]
 
-        return [self.get_homework_by_name(homework_name) for homework_name in homeworks_names]
+        return [self.get_homework_by_name(homework_name, is_quest) for homework_name in homeworks_names]
 
-    def get_all_homeworks_for_grade(self, grade: int) -> list[Homework]:
+    def get_all_homeworks_for_grade(self, grade: int, is_quest: int = 0) -> list[Homework]:
         # Returns list of homeworks names for given grade
 
-        return [homework for homework in self.get_all_homeworks() if homework.grade == grade]
+        return [homework for homework in self.get_all_homeworks(is_quest) if homework.grade == grade]
 
-    def get_homework_by_name(self, homework_name: str) -> Union[Homework, None]:
+    def get_homework_by_name(self, homework_name: str) -> Optional[Homework]:
         # Returns the object of class Homework corresponding to the given homework name
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("SELECT homework_id, homework_name, grade FROM homeworks WHERE homework_name = ?", (homework_name,))
+        cur.execute("SELECT homework_id, homework_name, grade, is_quest FROM homeworks "
+                    "WHERE homework_name = ?", (homework_name,))
         raw_homework = cur.fetchone()
 
         # If there is no such homework with given name we return None
         if raw_homework is None:
             return None
 
-        homework = Homework(raw_homework[1], raw_homework[2], [], raw_homework[0])
+        homework = Homework(raw_homework[1], raw_homework[2], [], raw_homework[0], raw_homework[3])
 
         # Finding all the tasks for our homework
         cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
@@ -400,7 +404,7 @@ class DatabaseHelper:
 
         return homework
 
-    def get_list_of_unsolved_tasks(self, login: str, homework_name: str) -> Union[None, list[int]]:
+    def get_list_of_unsolved_tasks(self, login: str, homework_name: str) -> Optional[list[int]]:
         # Returns a list of tasks in particular homework on which user didn't give any answer
 
         homework = self.get_homework_by_name(homework_name)
@@ -423,7 +427,7 @@ class DatabaseHelper:
 
         return unsolved_tasks
 
-    def get_results(self, status, homework_name: str) -> Union[None, list[tuple[User, list[Union[bool, None]]]]]:
+    def get_results(self, status: str, homework_name: str) -> Optional[list[tuple[User, list[Optional[bool]]]]]:
         """
         Returns list of the next pairs:
         First element - User object
@@ -438,14 +442,14 @@ class DatabaseHelper:
         if homework is None:
             return None
 
-        results: list[tuple[User, list[Union[bool, None]]]] = []
+        results: list[tuple[User, list[Optional[bool]]]] = []
         for user in users:
             # We need only user with the same grade as in the homework
             if user.grade != homework.grade:
                 continue
 
             # Going through all the tasks and collecting info about given answers
-            answers: list[Union[bool, None]] = []
+            answers: list[Optional[bool]] = []
             for i in range(len(homework.tasks)):
                 user_answer = self.get_user_answer_for_the_task(user.login, homework_name, i + 1)
                 right_answers = homework.tasks[i].right_answers
@@ -463,7 +467,7 @@ class DatabaseHelper:
         return results
 
     @staticmethod
-    def get_file_data(filename: str) -> Union[bytes, None]:
+    def get_file_data(filename: str) -> Optional[bytes]:
         # Gets data in bytes from the file called "filename"
         if os.path.exists(filename):
             with open(filename, 'rb') as f:
