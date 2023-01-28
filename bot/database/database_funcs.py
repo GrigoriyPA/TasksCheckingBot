@@ -159,6 +159,12 @@ class DatabaseHelper:
         cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
         con.commit()
 
+    def change_user_mana_amount(self, login: str, new_mana_amount: int) -> None:
+        con, cur = self.__create_connection_and_cursor()
+
+        cur.execute("UPDATE users SET amount_of_mana = ? WHERE login = ?", (new_mana_amount, login))
+        con.commit()
+
     def change_user_telegram_id(self, login: str, new_telegram_id: int) -> None:
         con, cur = self.__create_connection_and_cursor()
 
@@ -176,9 +182,9 @@ class DatabaseHelper:
             return None
 
         # Deleting all user's solutions
-        solutions_filenames = cur.execute("SELECT file_answer FROM results WHERE user_id = ?", (user.user_id,))
-        for solution_filename in solutions_filenames:
-            self.delete_file(solution_filename)
+        solutions_data = cur.execute("SELECT file_answer, task_id FROM results WHERE user_id = ?", (user.user_id,))
+        for solution_extension, task_id in solutions_data:
+            self.delete_file(self.__get_solution_filename(user.user_id, task_id, solution_extension))
 
         cur.execute("DELETE FROM users WHERE login = ?", (login,))
         con.commit()
@@ -226,13 +232,12 @@ class DatabaseHelper:
         if result_params is None:
             return None
 
+        filename = self.__get_solution_filename(user.user_id, task.task_id, result_params[4])
         return Result(result_params[0], result_params[1], result_params[2], result_params[3],
-                      (self.get_file_data(result_params[4]), result_params[4]))
+                      (self.get_file_data(filename), result_params[4]))
 
     def get_task(self, homework_name: str, task_number: int) -> Optional[Task]:
         # Returns task id with given homework name and task number
-
-        con, cur = self.__create_connection_and_cursor()
 
         homework = self.get_homework_by_name(homework_name)
         # If there is no such homework return None
@@ -271,19 +276,21 @@ class DatabaseHelper:
 
         # Saving our solution file to special directory
         # Even if there is no solution file we will create an empty file
-        filename = f"{PATH_TO_SOLUTION_FILES}/{str(user.user_id)}_{str(task.task_id)}.{file_answer[1]}"
+        filename = self.__get_solution_filename(user.user_id, task.task_id, file_answer[1])
         self.save_file_data(filename, file_answer[0])
 
         # Writing info about the answer
         cur.execute("INSERT INTO results (user_id, task_id, text_answer, text_clarification, file_answer) "
                     "VALUES (?, ?, ?, ?, ?)",
-                    (user.user_id, task.task_id, text_answer, text_clarification, filename))
+                    (user.user_id, task.task_id, text_answer, text_clarification, file_answer[1]))
         con.commit()
 
         return self.get_right_answers_for_the_task(homework_name, task_number)
 
     def change_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
-                                        new_text_answer: str):
+                                        new_text_answer: str) -> None:
+        # Changes user answer for the given task
+
         user = self.get_user_by_login(login)
         if user is None:
             return None
@@ -305,32 +312,46 @@ class DatabaseHelper:
         if self.get_homework_by_name(homework.name) is not None:
             raise RuntimeError("There is already a homework with the given name")
 
-        con, cur = self.__create_connection_and_cursor()
+        self.__add_homework_without_checking(homework)
 
-        # Writing information about the new homework and getting its id
-        cur.execute("INSERT INTO homeworks (homework_name, grade, is_quest) VALUES (?, ?, ?)",
-                    (homework.name, homework.grade, homework.is_quest))
-        cur.execute("SELECT homework_id from homeworks WHERE homework_name = ?", (homework.name,))
-        homework_id = cur.fetchone()[0]
+        # We need to refresh our homework_id
+        homework.homework_id = self.get_homework_by_name(homework.name).homework_id
 
-        # Writing info about all tasks in another table
         for i in range(len(homework.tasks)):
             task = homework.tasks[i]
+            self.__add_task(task, homework)
 
-            # Saving task statement file in the special directory
-            filename = f"{PATH_TO_STATEMENTS_FILES}/{str(homework.homework_id_)}-{str(task.task_id)}.{task.file_statement[1]}"
-            self.save_file_data(filename, task.file_statement[0])
+    def __add_homework_without_checking(self, homework: Homework) -> None:
+        con, cur = self.__create_connection_and_cursor()
 
-            # Adding info about the task
-            cur.execute("INSERT INTO tasks (task_number, right_answers, text_statement, file_statement, homework_id) "
-                        "VALUES (?, ?, ?, ?, ?)", (task.task_number, dumps(task.right_answers), task.text_statement,
-                                                   filename, homework_id))
+        cur.execute("INSERT INTO homeworks (homework_name, grade, is_quest) VALUES (?, ?, ?)",
+                    (homework.name, homework.grade, homework.is_quest))
 
         con.commit()
 
-    def delete_homework_by_name(self, homework_name: str) -> None:
-        # Deletes homework by its name
+    def __add_task_without_checking(self, task: Task, homework: Homework) -> None:
+        con, cur = self.__create_connection_and_cursor()
 
+        cur.execute("INSERT INTO tasks (task_number, right_answers, text_statement, file_statement, homework_id) "
+                    "VALUES (?, ?, ?, ?, ?)", (task.task_number, dumps(task.right_answers), task.text_statement,
+                                               task.file_statement[1], homework.homework_id))
+
+        con.commit()
+
+    def __add_task(self, task: Task, homework: Homework) -> None:
+        if self.get_task(homework.name, task.task_number) is not None:
+            return None
+
+        self.__add_task_without_checking(task, homework)
+
+        # We need to refresh our task_id
+        task.task_id = self.get_task(homework.name, task.task_number).task_id
+
+        # Saving task statement file in the special directory
+        self.save_file_data(self.__get_task_filename(homework.homework_id, task.task_id,
+                                                     task.file_statement[1]), task.file_statement[0])
+
+    def delete_homework_by_name(self, homework_name: str) -> None:
         con, cur = self.__create_connection_and_cursor()
 
         homework = self.get_homework_by_name(homework_name)
@@ -339,7 +360,7 @@ class DatabaseHelper:
 
         # Deleting all files with statements for this homework
         for task in homework.tasks:
-            self.delete_file(task.file_statement[1])
+            self.delete_file(self.__get_task_filename(homework.homework_id, task.task_id, task.file_statement[1]))
 
         cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
         con.commit()
@@ -364,12 +385,12 @@ class DatabaseHelper:
 
         con, cur = self.__create_connection_and_cursor()
 
-        cur.execute("SELECT homework_name FROM homeworks WHERE is_quest = ?", (is_quest, ))
+        cur.execute("SELECT homework_name FROM homeworks WHERE is_quest = ?", (is_quest,))
 
         # We need only the first element in the tuples
         homeworks_names = [item[0] for item in cur.fetchall()]
 
-        return [self.get_homework_by_name(homework_name, is_quest) for homework_name in homeworks_names]
+        return [self.get_homework_by_name(homework_name) for homework_name in homeworks_names]
 
     def get_all_homeworks_for_grade(self, grade: int, is_quest: int = 0) -> list[Homework]:
         # Returns list of homeworks names for given grade
@@ -393,14 +414,13 @@ class DatabaseHelper:
 
         # Finding all the tasks for our homework
         cur.execute("SELECT task_id, task_number, right_answers, text_statement, file_statement, homework_id "
-                    "FROM tasks WHERE homework_id = ?", (homework.homework_id_,))
+                    "FROM tasks WHERE homework_id = ?", (homework.homework_id,))
 
         raw_tasks = cur.fetchall()
 
         homework.tasks = [Task(raw_task[1], loads(raw_task[2]), raw_task[3],
-                               (self.get_file_data(raw_task[4]), '' if len(raw_task[4].split('.')) == 0
-                               else raw_task[4].split('.')[-1]),
-                               raw_task[0], raw_task[5]) for raw_task in raw_tasks]
+                               (self.get_file_data(self.__get_task_filename(raw_task[5], raw_task[0], raw_task[4])),
+                                raw_task[4]), raw_task[0], raw_task[5]) for raw_task in raw_tasks]
 
         return homework
 
@@ -479,6 +499,8 @@ class DatabaseHelper:
     def save_file_data(filename: str, data: bytes) -> None:
         # Writes data in bytes to the file called "filename"
         with open(filename, 'wb') as f:
+            if data is None:
+                return
             f.write(data)
 
     @staticmethod
@@ -490,4 +512,17 @@ class DatabaseHelper:
 
     @staticmethod
     def get_extension(filename: str) -> str:
-        return os.path.splitext(filename)[1]
+        ext = os.path.splitext(filename)[1]
+        if ext.startswith('.'):  # We don't want to have dot in the beginning of the extension
+            ext = ext[1:]
+        return ext
+
+    @staticmethod
+    def __get_task_filename(homework_id: int, task_id: int, extension: str) -> str:
+        filename = f"{PATH_TO_STATEMENTS_FILES}/{str(homework_id)}_{str(task_id)}.{extension}"
+        return filename
+
+    @staticmethod
+    def __get_solution_filename(user_id: int, task_id: int, extension: str) -> str:
+        filename = f"{PATH_TO_SOLUTION_FILES}/{str(user_id)}_{str(task_id)}.{extension}"
+        return filename

@@ -6,7 +6,7 @@ class Homework:
         self.name: str = name
         self.grade: int = grade
         self.tasks: list[Task] = tasks
-        self.homework_id_: int = homework_id_
+        self.homework_id: int = homework_id_
         self.is_quest: int = is_quest
 
     def __str__(self):
