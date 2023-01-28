@@ -159,6 +159,12 @@ class DatabaseHelper:
         cur.execute("UPDATE users SET status = ? WHERE login = ?", (new_status, login))
         con.commit()
 
+    def change_user_mana_amount(self, login: str, new_mana_amount: int) -> None:
+        con, cur = self.__create_connection_and_cursor()
+
+        cur.execute("UPDATE users SET amount_of_mana = ? WHERE login = ?", (new_mana_amount, login))
+        con.commit()
+
     def change_user_telegram_id(self, login: str, new_telegram_id: int) -> None:
         con, cur = self.__create_connection_and_cursor()
 
@@ -282,7 +288,9 @@ class DatabaseHelper:
         return self.get_right_answers_for_the_task(homework_name, task_number)
 
     def change_user_answer_for_the_task(self, login: str, homework_name: str, task_number: int,
-                                        new_text_answer: str):
+                                        new_text_answer: str) -> None:
+        # Changes user answer for the given task
+
         user = self.get_user_by_login(login)
         if user is None:
             return None
@@ -505,7 +513,7 @@ class DatabaseHelper:
     @staticmethod
     def get_extension(filename: str) -> str:
         ext = os.path.splitext(filename)[1]
-        if ext.startswith('.'):
+        if ext.startswith('.'):  # We don't want to have dot in the beginning of the extension
             ext = ext[1:]
         return ext
 
