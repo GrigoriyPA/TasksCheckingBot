@@ -224,7 +224,7 @@ MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Выберите имя работы."
 # __compute_button_admin_get_list_of_exercises
 MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
 MESSAGE_EXERCISE_NAME_IN_LIST_OF_EXERCISES = "{exercise_name}, {grade} класс"
-MESSAGE_QUEST_NAME_IN_LIST_OF_EXERCISES = "[квест] {exercise_name}, {grade} класс"
+MESSAGE_QUEST_NAME_IN_LIST_OF_EXERCISES = "Квест: {exercise_name}, {grade} класс"
 
 # __compute_button_admin_get_list_of_accounts
 TOP_MESSAGE_OF_LIST_OF_SUPER_ADMINS = "Супер-администраторы:"
