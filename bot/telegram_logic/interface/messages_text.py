@@ -161,13 +161,16 @@ MESSAGE_WITH_PASSWORD_DESCRIPTION = "Пароль пользователя '{log
 
 # compute_account_action_show_user_callback
 MESSAGE_ON_UNAUTHORIZED_USER_LOGIN = "В этот аккаунт никто не вошёл."
-MESSAGE_WITH_USER_TELEGRAM_INFO = "Имя: {first_name}\nФамилия: {last_name}\nХэндл: @{username}"
+MESSAGE_WITH_USER_TELEGRAM_INFO = "Имя: {first_name}\nФамилия: {last_name}\nЛогин в телеграмме: @{username}."
 
 # compute_student_account_action_show_mana_callback
 MESSAGE_WITH_STUDENT_AMOUNT_MANA = "Общее количество маны пользователя '{login}': {mana}"
 
 # compute_student_account_action_show_results_callback
+MESSAGE_ON_EMPTY_LIST_OF_OPEN_WORKS = "На данный момент для пользователя '{login}' нет открытых работ."
 TOP_MESSAGE_OF_USER_RESULTS_TABLE = "Результаты '{login}':"
+TOP_MESSAGE_OF_USER_RESULTS_TABLE_EXERCISES = "Домашние работы:"
+TOP_MESSAGE_OF_USER_RESULTS_TABLE_QUESTS = "Квесты:"
 
 # compute_callback_data_show_task_statement_callback
 MESSAGE_WITH_TEXT_EXERCISE_STATEMENT = "Условие задачи {task_id}:\n{text_statement}"
@@ -186,6 +189,7 @@ EXPLANATION_FILE_NAME = "explanation"
 MESSAGE_NOTIFICATION_FOR_STUDENT_ON_ACCEPTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был принят."
 MESSAGE_NOTIFICATION_FOR_STUDENT_ON_REJECTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был отклонён."
 MESSAGE_SUCCESS_SWITCH_STUDENT_ANSWER = "Ответ на задание успешно отредактирован."
+MESSAGE_ON_CHANGED_USER_MANA_BY_CHANGING_ANSWER = "Значение маны пользователя было изменено."
 
 # compute_show_right_answers_on_task_callback
 MESSAGE_WITH_LIST_OF_RIGHT_ANSWERS_ON_TASK = "Список правильных ответов к задаче {task_id}:\n{correct_answer}"
@@ -211,7 +215,7 @@ MESSAGE_ON_STATUS_STUDENT_ACCOUNT = "Логин: {login}\nПароль: {passwor
 
 # __compute_button_show_results_table
 MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
-MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Веберите имя работы."
+MESSAGE_ON_COMMAND_SHOW_RESULTS_TABLE = "Выберите имя работы."
 
 # __compute_button_admin_get_list_of_exercises
 MESSAGE_ON_GET_LIST_OF_EXERCISES_NO_HOMEWORKS_OPENED = "На данный момент нет открытых работ."
@@ -232,23 +236,29 @@ MESSAGE_ON_ADMIN_DELETE_COMMAND = "Выберите объект для удал
 
 # __compute_button_student_send_answer
 MESSAGE_ON_STUDENT_SEND_ANSWER_NO_HOMEWORKS_AVAILABLE = "На данный момент для вас нет открытых работ."
-MESSAGE_ON_STUDENT_SEND_ANSWER = "Веберите имя работы."
+MESSAGE_ON_STUDENT_SEND_ANSWER = "Выберите имя работы."
 
 # __compute_button_student_want_to_send_explanation
-MESSAGE_ON_START_WAITING_EXPLANATION = "Отправьте одним сообщением пояснение к решению задачи (можно закрепить до одного файла)."
+MESSAGE_ON_START_WAITING_EXPLANATION = "Следующим сообщением вы должны отправить решение задачи. " \
+                                    "Для этого можно либо приложить файл, либо написать условие текстом, " \
+                                    "либо сделать и то, и другое." \
+                                    " ВАЖНО: и файл, и текстовое сообщение должны быть отправлены одним сообщением."
 
 # __compute_button_admin_add_student
 MESSAGE_ON_ADMIN_ADD_NEW_STUDENT = "Выберите класс нового ученика."
 
 # __compute_button_admin_add_quest
-MESSAGE_ON_EMPTY_GRADES_LIST_FOR_CREATE_QUEST = "Уже добавленны квесты для всех классов."
-MESSAGE_ON_ADMIN_ADD_NEW_QUEST = "Выберите для какого класса будет квест."
+MESSAGE_ON_EMPTY_GRADES_LIST_FOR_CREATE_QUEST = "Уже добавлены квесты для всех классов."
+MESSAGE_ON_ADMIN_ADD_NEW_QUEST = "Выберите для какого класса будет создан квест."
 
 # __compute_button_admin_add_exercise
 MESSAGE_ON_ADMIN_ADD_NEW_EXERCISE = "Выберите для какого класса будет создано задание."
 
 # __compute_button_adding_statement_for_task
-MESSAGE_ON_ADD_STATEMENT_FOR_TASK = "Отправьте одним сообщением условие задачи (можно закрепить до одного файла)."
+MESSAGE_ON_ADD_STATEMENT_FOR_TASK = "Следующим сообщением вы должны отправить условие задачи. " \
+                                    "Для этого можно либо приложить файл, либо написать условие текстом, " \
+                                    "либо сделать и то, и другое." \
+                                    " ВАЖНО: и файл, и текстовое сообщение должны быть отправлены одним сообщением."
 
 # __compute_button_super_admin_add_admin_account
 MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN = "Введите логин для нового аккаунта администратора."
@@ -257,13 +267,13 @@ MESSAGE_ON_SUPER_ADMIN_ADD_NEW_ADMIN = "Введите логин для нов�
 MESSAGE_ON_ADMIN_DELETE_ACCOUNT = "Введите логин аккаунта для удаления:"
 
 # __compute_button_admin_delete_exercise
-MESSAGE_ON_ADMIN_DELETE_EXERCISE = "Введите название работы для удаления:"
+MESSAGE_ON_ADMIN_DELETE_EXERCISE = "Введите имя работы для удаления:"
 
 # common
 RIGHT_ANSWERS_SPLITER = "\n"
-MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда."
-TOP_MESSAGE_OF_LIST_OF_EXERCISES = "Домашние работы."
-TOP_MESSAGE_OF_LIST_OF_QUESTS = "Квесты."
+MESSAGE_ON_UNKNOWN_COMMAND = "Неизвестная команда"
+TOP_MESSAGE_OF_LIST_OF_EXERCISES = "Домашние работы"
+TOP_MESSAGE_OF_LIST_OF_QUESTS = "Квесты"
 
 # default_state
 WELCOME_MESSAGE_FOR_ADMIN = "С возвращением. Статус аккаунта: администратор."
@@ -271,23 +281,23 @@ WELCOME_MESSAGE_FOR_STUDENT = "С возвращением. Статус акк�
 WELCOME_MESSAGE_FOR_UNAUTHORIZED_USERS = "Введите логин аккаунта для авторизации:"
 
 # unauthorized_user_waiting_login
-MESSAGE_ON_INVALID_LOGIN = "Введённый логин не существует, повторите попытку."
+MESSAGE_ON_INVALID_LOGIN = "Пользователя с таким логином не существует, повторите попытку."
 MESSAGE_ON_VALID_LOGIN = "Введите пароль:"
 
 # unauthorized_user_waiting_password
 MESSAGE_ON_INVALID_PASSWORD = "Введён неправильный пароль, повторите попытку."
 NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT = "В ваш профиль выполнен вход с другого телеграм аккаунта, " \
-                                                   "вы были разлогинены. Введите логин для авторизации."
+                                                   "ваша сессия прекращена. Введите логин для авторизации:"
 MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: администратор."
 MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: ученик."
 
 # solving_task_waiting_answer
-MESSAGE_ON_INVALID_EXERCISE_NAME = "Выбранное задание более недоступно."
+MESSAGE_ON_INVALID_EXERCISE_NAME = "Выбранное задание сейчас недоступно."
 MESSAGE_ON_INVALID_ANSWER = "Введён некорректный ответ, повторите попытку сдачи."
 MESSAGE_RIGHT_RESULT_MARK = "✅"
 MESSAGE_WRONG_RESULT_MARK = "❌"
 MESSAGE_ON_RIGHT_ANSWER = "Ваш ответ правильный!"
-MESSAGE_ON_MANA_CHANGING = "Вам начислино {count} единиц маны."
+MESSAGE_ON_MANA_CHANGING = "Вам начислено {count} единиц маны."
 MESSAGE_ON_WRONG_ANSWER = "Ваш ответ неправильный. Список правильных ответов:\n{correct_answer}"
 NOTIFICATION_FOR_ADMINS_ON_SOLVED_TASK = "'{login}', {grade} класс добавил ответ к заданию {task_id} в работе '{exercise_name}'\n" \
                                          "Результат: {result}\n" \
@@ -304,11 +314,11 @@ MESSAGE_ON_SUCCESS_ADDED_EXPLANATION = "Пояснение к задаче ус�
 MESSAGE_ON_ALREADY_EXISTS_EXERCISE_NAME = "Работа с введённым именем уже существует, повторите попытку."
 MESSAGE_ON_INVALID_NEW_EXERCISE_NAME = "Введённое имя работы содержит запрещённые символы, повторите попытку."
 MESSAGE_ON_TOO_LONG_NEW_EXERCISE_NAME = "Введённое имя работы слишком длинное, повторите попытку."
-MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME = "Введите число заданий в новой работе:"
+MESSAGE_ON_CORRECT_NEW_EXERCISE_NAME = "Введите количество заданий в новой работе:"
 
 # adding_exercise_waiting_number_of_right_answers
 MESSAGE_ON_INVALID_NUMBER_OF_TASKS = "Введено некорректное число задач, повторите попытку."
-MESSAGE_ON_CORRECT_NUMBER_OF_TASKS = "Введите поочерёдно правильный ответ к каждому заданию."
+MESSAGE_ON_CORRECT_NUMBER_OF_TASKS = "Поочерёдно заполните информацию о каждом задании."
 
 # adding_exercise_waiting_list_of_right_answers
 MESSAGE_ON_ACCEPTED_RIGHT_ANSWER = "Ответ принят."
@@ -320,10 +330,10 @@ MESSAGE_ON_SUCCESS_CREATION_OF_NEW_QUEST = "Новый квест успешно
 MESSAGE_ON_SUCCESS_STATEMENT_ADDITION = "Условие успешно добавлено."
 
 # adding_exercise_waiting_answer_on_task_answers
-MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE = "Выберите действие, текущее задание {task_id}."
+MESSAGE_ON_MOVE_INTO_TASK_ADDING_INTERFACE = "Выберите действие для текущего задания {task_id}."
 
 # adding_student_waiting_login
-MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN = "Введённый логин уже существует, повторите попытку."
+MESSAGE_ON_ALREADY_EXISTS_STUDENT_LOGIN = "Пользователь с таким логином уже существует, повторите попытку."
 MESSAGE_ON_INVALID_NEW_STUDENT_LOGIN = "Введённый логин содержит запрещённые символы, повторите попытку."
 MESSAGE_ON_TOO_LONG_NEW_STUDENT_LOGIN = "Введённый логин слишком длинный, повторите попытку."
 MESSAGE_ON_CORRECT_NEW_STUDENT_LOGIN = "Введите пароль для нового аккаунта ученика:"
@@ -332,7 +342,7 @@ MESSAGE_ON_CORRECT_NEW_STUDENT_LOGIN = "Введите пароль для но�
 MESSAGE_ON_SUCCESS_ADDING_NEW_STUDENT_ACCOUNT = "Новый аккаунт ученика успешно создан."
 
 # adding_admin_waiting_login
-MESSAGE_ON_ALREADY_EXISTS_ADMIN_LOGIN = "Введённый логин уже существует, повторите попытку."
+MESSAGE_ON_ALREADY_EXISTS_ADMIN_LOGIN = "Пользователь с таким логином уже существует, повторите попытку."
 MESSAGE_ON_INVALID_NEW_ADMIN_LOGIN = "Введённый логин содержит запрещённые символы, повторите попытку."
 MESSAGE_ON_TOO_LONG_NEW_ADMIN_LOGIN = "Введённый логин слишком длинный, повторите попытку."
 MESSAGE_ON_CORRECT_NEW_ADMIN_LOGIN = "Введите пароль для нового аккаунта администратора:"
@@ -351,6 +361,6 @@ MESSAGE_ON_INVALID_EXERCISE_NAME_FOR_DELETE = "Не существует раб�
 MESSAGE_ON_SUCCESS_DELETION_EXERCISE = "Работа успешно удалена."
 
 # changing_student_mana_waiting_delta
-MESSAGE_ON_INVALID_USER_LOGIN = "Пользователь с выбранным логином был удалён."
-MESSAGE_ON_INVALID_DELTA_OF_MANA = "Введено некорректное изменение маны пользователя."
+MESSAGE_ON_INVALID_USER_LOGIN = "Пользователя с выбранным логином не существует."
+MESSAGE_ON_INVALID_DELTA_OF_MANA = "Введено некорректное изменение маны."
 MESSAGE_ON_SUCCESS_CHANGING_STUDENT_MANA = "Количество маны было успешно изменено."
