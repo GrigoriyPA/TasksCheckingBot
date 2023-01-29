@@ -267,7 +267,8 @@ def compute_select_student_grade_for_create_callback(handler, from_id: int, mess
 
     # Start waiting of login for create new student account
     handler.send_message(send_id=from_id,
-                         text=messages_text.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT,
+                         text=messages_text.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT.format(
+                                 max_login_length=constants.MAX_LOGIN_SIZE),
                          markup=keyboard_markups.get_back_button_keyboard())
     return handling_functions.adding_student_waiting_login, grade
 
@@ -285,7 +286,8 @@ def compute_select_exercise_grade_for_create_callback(handler, from_id: int, mes
 
     # Start waiting of exercise name for create
     handler.send_message(send_id=from_id,
-                         text=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE,
+                         text=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE.format(
+                                     max_exercise_name_length=constants.MAX_HOMEWORK_NAME_SIZE),
                          markup=keyboard_markups.get_back_button_keyboard())
     return handling_functions.adding_exercise_waiting_exercise_name, (grade, False)
 
@@ -307,7 +309,8 @@ def compute_select_quest_grade_for_create_callback(handler, from_id: int, messag
 
     # Start waiting of exercise name for create
     handler.send_message(send_id=from_id,
-                         text=messages_text.MESSAGE_ON_START_WAITING_QUEST_NAME_FOR_CREATE,
+                         text=messages_text.MESSAGE_ON_START_WAITING_QUEST_NAME_FOR_CREATE.format(
+                                     max_exercise_name_length=constants.MAX_HOMEWORK_NAME_SIZE),
                          markup=keyboard_markups.get_back_button_keyboard())
     return handling_functions.adding_exercise_waiting_exercise_name, (grade, True)
 

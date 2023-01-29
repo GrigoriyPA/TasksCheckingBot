@@ -703,9 +703,16 @@ def adding_exercise_waiting_number_of_right_answers(handler: UserHandler, from_i
                                                     text: str, data) -> tuple[Callable, Any]:
     # This function is called on admin input during waiting number of tasks for create new exercise
 
-    if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
-                             message_info=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE):
-        return adding_exercise_waiting_exercise_name, (data[0], data[2])
+    if not data[2]:
+        if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
+                                 message_info=messages_text.MESSAGE_ON_START_WAITING_EXERCISE_NAME_FOR_CREATE.format(
+                                     max_exercise_name_length=constants.MAX_HOMEWORK_NAME_SIZE)):
+            return adding_exercise_waiting_exercise_name, (data[0], data[2])
+    else:
+        if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
+                                 message_info=messages_text.MESSAGE_ON_START_WAITING_QUEST_NAME_FOR_CREATE.format(
+                                     max_exercise_name_length=constants.MAX_HOMEWORK_NAME_SIZE)):
+            return adding_exercise_waiting_exercise_name, (data[0], data[2])
 
     # Try to extract number of tasks from the message text
     success = True
@@ -849,7 +856,8 @@ def adding_student_waiting_password(handler: UserHandler, from_id: int, text: st
     # This function is called on admin input during waiting password for create new student account
 
     if __compute_button_back(handler, from_id, text, keyboard_markups.get_back_button_keyboard(),
-                             message_info=messages_text.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT):
+                             message_info=messages_text.MESSAGE_ON_START_WAITING_LOGIN_OF_NEW_STUDENT_ACCOUNT.format(
+                                 max_login_length=constants.MAX_LOGIN_SIZE)):
         return adding_student_waiting_login, data[0]
 
     grade, login = int(data[0]), data[1]  # Getting chooses grade and current login
