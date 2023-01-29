@@ -86,11 +86,3 @@ def get_deleting_interface_keyboard() -> types.ReplyKeyboardMarkup:
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_DELETE_EXERCISE))
     markup.add(types.KeyboardButton(text=messages_text.BUTTON_BACK))
     return markup
-
-
-def get_choosing_exercise_or_quest_interface_keyboard() -> types.ReplyKeyboardMarkup:
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton(text=messages_text.BUTTON_CHOOSE_QUEST))
-    markup.add(types.KeyboardButton(text=messages_text.BUTTON_CHOOSE_EXERCISE))
-    markup.add(types.KeyboardButton(text=messages_text.BUTTON_BACK))
-    return markup
