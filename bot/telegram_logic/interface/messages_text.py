@@ -182,12 +182,12 @@ MESSAGE_ON_UNAVAILABLE_ANSWER_EXPLANATION = "Пояснение к выбран�
 MESSAGE_WITH_TASK_TEXT_EXPLANATION_FOR_ADMIN = "Пояснение '{login}' к задаче {task_id}:\n{text_explanation}"
 MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_ADMIN = "Пояснение '{login}' к задаче {task_id}."
 MESSAGE_WITH_TASK_TEXT_EXPLANATION_FOR_STUDENT = "Ваше пояснение к задаче {task_id}:\n{text_explanation}"
-MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_STUDENT = "Ваше пояснение к задаче к задаче {task_id}."
+MESSAGE_WITH_TASK_FILE_EXPLANATION_FOR_STUDENT = "Ваше пояснение к задаче {task_id}."
 EXPLANATION_FILE_NAME = "explanation"
 
 # compute_solved_task_description_action_switch_student_answer_callback
-MESSAGE_NOTIFICATION_FOR_STUDENT_ON_ACCEPTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был принят."
-MESSAGE_NOTIFICATION_FOR_STUDENT_ON_REJECTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был отклонён."
+MESSAGE_NOTIFICATION_FOR_STUDENT_ON_ACCEPTED_TASK = "Ваш ответ к задаче {task_id} в работе '{exercise_name}' был принят."
+MESSAGE_NOTIFICATION_FOR_STUDENT_ON_REJECTED_TASK = "Ваш ответ к задаче {task_id} в работе '{exercise_name}' был отклонён."
 MESSAGE_SUCCESS_SWITCH_STUDENT_ANSWER = "Ответ на задание успешно отредактирован."
 MESSAGE_ON_CHANGED_USER_MANA_BY_CHANGING_ANSWER = "Значение маны пользователя было изменено."
 
