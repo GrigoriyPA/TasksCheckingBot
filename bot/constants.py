@@ -13,7 +13,7 @@ PATH_TO_DATABASE = "database/"
 PATH_TO_SOLUTION_FILES = "database/solution_files"
 PATH_TO_STATEMENTS_FILES = "database/statement_files"
 DATABASE_NAME = "database.db"
-ERROR_LOG_PATH = "/"
+ERROR_LOG_PATH = ""
 ERROR_LOG_NAME = "error_log.txt"
 
 SUPER_ADMIN_STATUS = "SUPER_ADMIN"
