@@ -362,6 +362,12 @@ class DatabaseHelper:
         for task in homework.tasks:
             self.delete_file(self.__get_task_filename(homework.homework_id, task.task_id, task.file_statement[1]))
 
+        # Deleting all solutions with such homework
+        for task in homework.tasks:
+            solutions_data = cur.execute("SELECT file_answer, user_id FROM results WHERE task_id = ?", (task.task_id,))
+            for solution_extension, user_id in solutions_data:
+                self.delete_file(self.__get_solution_filename(user_id, task.task_id, solution_extension))
+
         cur.execute("DELETE FROM homeworks WHERE homework_name = ?", (homework_name,))
         con.commit()
 
