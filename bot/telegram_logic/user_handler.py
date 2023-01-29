@@ -140,16 +140,16 @@ class UserHandler:
     def check_grade(self, grade: int) -> bool:
         return len(self.__database.get_all_homeworks_for_grade(grade, 1)) == 0
 
-    def get_user_results_on_exercises(self, login: str, exercises_names: list[str]) -> list[tuple[int, int]]:
+    def get_user_results_on_exercises(self, login: str, exercises: list[Homework]) -> list[tuple[int, int]]:
         user_results: list[tuple[int, int]] = []  # List of pairs (solved tasks number, tasks number)
-        for exercise_name in exercises_names:
-            exercise_info = self.__database.get_homework_by_name(exercise_name)
+        for exercise in exercises:
+            exercise_info = self.__database.get_homework_by_name(exercise.name)
             tasks_number = len(exercise_info.tasks)
 
             # Calculate solved tasks number in current homework
             solved_tasks_number = 0
             for i in range(1, tasks_number + 1):
-                answer = self.__database.get_user_answer_for_the_task(login, exercise_name, i)
+                answer = self.__database.get_user_answer_for_the_task(login, exercise.name, i)
                 solved_tasks_number += answer is not None and answer.text_answer in \
                                        exercise_info.tasks[i - 1].right_answers
 
@@ -225,12 +225,18 @@ class UserHandler:
             return
 
         self.__add_user(callback.from_id)
-        new_state, new_data = \
-            callback_functions.compute_callback(self, callback.from_id, callback.message_id, callback.text,
-                                                callback.callback_data)
+        try:
+            new_state, new_data = \
+                callback_functions.compute_callback(self, callback.from_id, callback.message_id, callback.text,
+                                                    callback.callback_data)
 
-        if new_state is not None:
-            self.__user_state[callback.from_id], self.__user_data[callback.from_id] = new_state, new_data
+            if new_state is not None:
+                self.__user_state[callback.from_id], self.__user_data[callback.from_id] = new_state, new_data
+        except Exception as error:
+            add_error_to_log("Unknown error while computing the callback.\nDescription:\n" + str(error))
+            self.send_message(send_id=callback.from_id, text=messages_text.MESSAGE_ON_START_COMMAND)
+            self.__user_state[callback.from_id], self.__user_data[callback.from_id] = \
+                handling_functions.default_state(self, callback.from_id, callback.text, self.__user_data[callback.from_id])
 
     def __compute_user_message(self, message: Message) -> None:
         # Skip all messages from chats
@@ -239,16 +245,23 @@ class UserHandler:
 
         if message.from_id in self.__user_state and message.text == "/start":
             self.send_message(send_id=message.from_id, text=messages_text.MESSAGE_ON_START_COMMAND)
-            handling_functions.default_state(self, message.from_id, message.text, self.__user_data[message.from_id])
+            self.__user_state[message.from_id], self.__user_data[message.from_id] = \
+                handling_functions.default_state(self, message.from_id, message.text, self.__user_data[message.from_id])
             return
 
-        self.current_user_attachment[message.from_id] = message.attachment
-
         self.__add_user(message.from_id)
-        self.__user_state[message.from_id], self.__user_data[message.from_id] = \
-            self.__user_state[message.from_id](self, message.from_id, message.text, self.__user_data[message.from_id])
+        try:
+            self.current_user_attachment[message.from_id] = message.attachment
 
-        self.current_user_attachment[message.from_id] = None
+            self.__user_state[message.from_id], self.__user_data[message.from_id] = \
+                self.__user_state[message.from_id](self, message.from_id, message.text, self.__user_data[message.from_id])
+
+            self.current_user_attachment[message.from_id] = None
+        except Exception as error:
+            add_error_to_log("Unknown error while computing the message.\nDescription:\n" + str(error))
+            self.send_message(send_id=message.from_id, text=messages_text.MESSAGE_ON_START_COMMAND)
+            self.__user_state[message.from_id], self.__user_data[message.from_id] = \
+                handling_functions.default_state(self, message.from_id, message.text, self.__user_data[message.from_id])
 
     def edit_message(self, from_id: int, message_id: int, text: str, markup: MARKUP_TYPES = None) -> bool:
         try:

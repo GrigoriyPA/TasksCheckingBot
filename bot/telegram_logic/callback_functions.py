@@ -439,16 +439,29 @@ def compute_student_account_action_show_results_callback(handler, from_id: int, 
         handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_UNKNOWN_LOGIN)
         return None, None
 
-    homeworks = handler.get_all_exercises_names_for_grade(user_info.grade)
-    homeworks_names = []
-    for homework in homeworks:
-        homeworks_names.append(homework.name)
+    # Create table of user results
+    exercises = handler.get_all_exercises_names_for_grade(user_info.grade)
+    user_results_exercises = handler.get_user_results_on_exercises(login, exercises)
+    markup_exercises = inline_markups.get_user_results_table_inline_markup(exercises, user_results_exercises)
 
-    user_results = handler.get_user_results_on_exercises(login, homeworks_names)
+    quests = handler.get_all_quests_names_for_grade(user_info.grade)
+    user_results_quests = handler.get_user_results_on_exercises(login, quests)
+    markup_quests = inline_markups.get_user_results_table_inline_markup(quests, user_results_quests)
 
-    # Create table of user results and send results
-    markup = inline_markups.get_user_results_table_inline_markup(homeworks_names, user_results)
-    handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_USER_RESULTS_TABLE.format(login=login), markup=markup)
+    # Send results
+    if markup_exercises is None and markup_quests is None:
+        # There is no opened works for current user
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_EMPTY_LIST_OF_OPEN_WORKS.format(login=login))
+        return None, None
+
+    handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_USER_RESULTS_TABLE.format(login=login))
+    if markup_exercises is not None:
+       handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_USER_RESULTS_TABLE_EXERCISES,
+                            markup=markup_exercises)
+
+    if markup_quests is not None:
+        handler.send_message(send_id=from_id, text=messages_text.TOP_MESSAGE_OF_USER_RESULTS_TABLE_QUESTS,
+                             markup=markup_quests)
     return None, None
 
 
@@ -542,7 +555,7 @@ def compute_solved_task_description_action_switch_student_answer_callback(handle
 
     # Getting chooses user login, homework name and task id
     login, exercise_name, task_id = callback_data[0], callback_data[1], int(callback_data[2])
-    exercise_info = handler.get_exercise_info_by_name(exercise_name)
+    exercise_info: Homework = handler.get_exercise_info_by_name(exercise_name)
     user_info = handler.get_user_info_by_login(login)
 
     # If homework was blocked or deleted, reject choice
@@ -570,10 +583,16 @@ def compute_solved_task_description_action_switch_student_answer_callback(handle
                                                      "explanation_data": bytes(), "explanation_ext": ""})
             else:
                 handler.change_user_answer_on_exercise(login, exercise_name, task_id, correct_answers[0])
+
+            if exercise_info.is_quest:
+                handler.change_user_mana(login, 1)
         else:
             notification = messages_text.MESSAGE_NOTIFICATION_FOR_STUDENT_ON_REJECTED_TASK.format(exercise_name=exercise_name,
                                                                                                  task_id=str(task_id))
             handler.change_user_answer_on_exercise(login, exercise_name, task_id, "")
+
+            if exercise_info.is_quest:
+                handler.change_user_mana(login, -1)
         answer: Optional[Result] = handler.get_user_answer_on_task(login, exercise_name, task_id)
 
         # Send notification for current user on student account, if he exists
@@ -594,6 +613,8 @@ def compute_solved_task_description_action_switch_student_answer_callback(handle
         return None, None
 
     handler.send_message(send_id=from_id, text=messages_text.MESSAGE_SUCCESS_SWITCH_STUDENT_ANSWER)
+    if exercise_info.is_quest:
+        handler.send_message(send_id=from_id, text=messages_text.MESSAGE_ON_CHANGED_USER_MANA_BY_CHANGING_ANSWER)
     return None, None
 
 

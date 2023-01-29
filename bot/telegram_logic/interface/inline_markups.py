@@ -183,10 +183,10 @@ def get_results_table_inline_markup(results, homework_name: str, homework_size: 
     return types.InlineKeyboardMarkup(keyboard)
 
 
-def get_user_results_table_inline_markup(homework_list: list[str], user_results):
+def get_user_results_table_inline_markup(homework_list: list[Homework], user_results):
     # This function returns table of buttons for table of one user results
 
-    homework_list.sort()
+    homework_list.sort(key=lambda cur_homework: (cur_homework.is_quest, cur_homework.name))
 
     keyboard = [[types.InlineKeyboardButton(text=messages_text.BUTTON_NAME_OF_COLUMN_OF_EXERCISE_NAMES,
                                             callback_data=CALLBACK_DATA_NONE),
@@ -196,13 +196,16 @@ def get_user_results_table_inline_markup(homework_list: list[str], user_results)
                                             callback_data=CALLBACK_DATA_NONE)]]  # Final keyboard storage
     for row_id in range(len(homework_list)):
         # Add buttons on current row
-        keyboard.append([types.InlineKeyboardButton(text=homework_list[row_id],
+        keyboard.append([types.InlineKeyboardButton(text=homework_list[row_id].name,
                                                     callback_data=CALLBACK_DATA_SHOW_RESULTS_TABLE +
-                                                                  homework_list[row_id]),
+                                                                  homework_list[row_id].name),
                          types.InlineKeyboardButton(text=str(user_results[row_id][0]),
                                                     callback_data=CALLBACK_DATA_NONE),
                          types.InlineKeyboardButton(text=str(user_results[row_id][1]),
                                                     callback_data=CALLBACK_DATA_NONE)])
+
+    if len(homework_list) == 0:
+        return None
 
     # Returns created keyboard
     return types.InlineKeyboardMarkup(keyboard)
