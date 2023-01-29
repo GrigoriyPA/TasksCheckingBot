@@ -140,16 +140,16 @@ class UserHandler:
     def check_grade(self, grade: int) -> bool:
         return len(self.__database.get_all_homeworks_for_grade(grade, 1)) == 0
 
-    def get_user_results_on_exercises(self, login: str, exercises_names: list[str]) -> list[tuple[int, int]]:
+    def get_user_results_on_exercises(self, login: str, exercises: list[Homework]) -> list[tuple[int, int]]:
         user_results: list[tuple[int, int]] = []  # List of pairs (solved tasks number, tasks number)
-        for exercise_name in exercises_names:
-            exercise_info = self.__database.get_homework_by_name(exercise_name)
+        for exercise in exercises:
+            exercise_info = self.__database.get_homework_by_name(exercise.name)
             tasks_number = len(exercise_info.tasks)
 
             # Calculate solved tasks number in current homework
             solved_tasks_number = 0
             for i in range(1, tasks_number + 1):
-                answer = self.__database.get_user_answer_for_the_task(login, exercise_name, i)
+                answer = self.__database.get_user_answer_for_the_task(login, exercise.name, i)
                 solved_tasks_number += answer is not None and answer.text_answer in \
                                        exercise_info.tasks[i - 1].right_answers
 

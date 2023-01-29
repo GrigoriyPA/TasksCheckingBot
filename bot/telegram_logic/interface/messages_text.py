@@ -167,7 +167,10 @@ MESSAGE_WITH_USER_TELEGRAM_INFO = "Имя: {first_name}\nФамилия: {last_n
 MESSAGE_WITH_STUDENT_AMOUNT_MANA = "Общее количество маны пользователя '{login}': {mana}"
 
 # compute_student_account_action_show_results_callback
+MESSAGE_ON_EMPTY_LIST_OF_OPEN_WORKS = "На данный момент для пользователя '{login}' нет открытых работ."
 TOP_MESSAGE_OF_USER_RESULTS_TABLE = "Результаты '{login}':"
+TOP_MESSAGE_OF_USER_RESULTS_TABLE_EXERCISES = "Домашние работы:"
+TOP_MESSAGE_OF_USER_RESULTS_TABLE_QUESTS = "Квесты:"
 
 # compute_callback_data_show_task_statement_callback
 MESSAGE_WITH_TEXT_EXERCISE_STATEMENT = "Условие задачи {task_id}:\n{text_statement}"
@@ -186,6 +189,7 @@ EXPLANATION_FILE_NAME = "explanation"
 MESSAGE_NOTIFICATION_FOR_STUDENT_ON_ACCEPTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был принят."
 MESSAGE_NOTIFICATION_FOR_STUDENT_ON_REJECTED_TASK = "Ваш к задаче {task_id} в работе '{exercise_name}' был отклонён."
 MESSAGE_SUCCESS_SWITCH_STUDENT_ANSWER = "Ответ на задание успешно отредактирован."
+MESSAGE_ON_CHANGED_USER_MANA_BY_CHANGING_ANSWER = "Значение маны пользователя было изменено."
 
 # compute_show_right_answers_on_task_callback
 MESSAGE_WITH_LIST_OF_RIGHT_ANSWERS_ON_TASK = "Список правильных ответов к задаче {task_id}:\n{correct_answer}"
