@@ -290,7 +290,7 @@ MESSAGE_ON_VALID_LOGIN = "Введите пароль:"
 
 # unauthorized_user_waiting_password
 MESSAGE_ON_INVALID_PASSWORD = "Введён неправильный пароль, повторите попытку."
-NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT = "В ваш профиль выполнен вход с другого телеграм аккаунта, " \
+NOTIFICATION_FOR_LAST_USER_ON_AUTHORIZED_ACCOUNT = "В ваш профиль выполнен вход с другого телеграмм аккаунта, " \
                                                    "ваша сессия прекращена. Введите логин для авторизации:"
 MESSAGE_ON_SUCCESS_ADMIN_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: администратор."
 MESSAGE_ON_SUCCESS_STUDENT_AUTHORIZATION = "Успешная авторизация. Статус аккаунта: ученик."
