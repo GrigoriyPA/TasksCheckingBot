@@ -489,7 +489,7 @@ def compute_show_task_statement_callback(handler, from_id: int, message_id: int,
 
     # Send exercise statement
     attachment_data, attachment_ext = exercise_info.tasks[task_id - 1].file_statement
-    if attachment_data != bytes():
+    if attachment_data != bytes() and attachment_data is not None:
         handler.send_message(send_id=from_id, text=text,
                              attachments=[Attachment(data=attachment_data,
                                                      file_name=messages_text.STATEMENT_FILE_NAME + "." + attachment_ext)])
@@ -542,7 +542,7 @@ def compute_solved_task_description_action_show_explanation_callback(handler, fr
 
     # Getting explanation file and send explanation
     attachment_data, attachment_ext = answer.file_answer
-    if attachment_data != bytes():
+    if attachment_data != bytes() and attachment_data is not None:
         handler.send_message(send_id=from_id, text=text,
                              attachments=[Attachment(data=attachment_data,
                                                      file_name=messages_text.EXPLANATION_FILE_NAME + "." + attachment_ext)])
